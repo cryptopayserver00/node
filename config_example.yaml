@@ -1,0 +1,106 @@
+# system configuration
+system:
+  env: debug # debug | release | test
+  addr: 0000
+  db-type: mysql
+  use-redis: true
+  use-memcache: true
+  use-mongo: false
+  use-init: true
+  use-task: true
+  iplimit-count: 15000
+  iplimit-time: 3600
+  router-prefix: "api"
+
+blockchain:
+  open-sweep-block: true
+  sweep-mainnet: true
+  ethereum: true
+  bitcoin: true
+  tron: true
+  bsc: true
+  litecoin: true
+  op: false
+  arbitrum-one: false
+  arbitrum-nova: false
+
+blockchain-plugin:
+  bitcoin: "tatum" # tatum | mempool
+  litecoin: "tatum" # tatum | mempool
+
+telegram:
+  inform-bot-link:
+  inform-bot-token:
+  inform-channel-id:
+
+wss:
+  sec-wss-token:
+
+zap:
+  level: info
+  format: console
+  prefix: "[node/server]"
+  director: log
+  show-line: true
+  encode-level: LowercaseColorLevelEncoder
+  stacktrace-key: stacktrace
+  log-in-console: true
+  max-age: 0
+
+redis:
+  db:
+  addr:
+  password: ""
+
+memcache:
+  addr:
+  password: ""
+
+mysql:
+  prefix:
+  singular: false
+  path:
+  port:
+  config: charset=utf8mb4&parseTime=True
+  db-name:
+  username:
+  password:
+  max-idle-conns: 10
+  max-open-conns: 100
+  log-mode: error
+  log-zap: false
+  engine:
+
+freecoin:
+  bitcoin:
+    public_key: ""
+    private_key: ""
+    mnemonic: ""
+  ethereum:
+    public_key: ""
+    private_key: ""
+  solana:
+    public_key: ""
+    private_key: ""
+    mnemonic: ""
+  litecoin:
+    public_key: ""
+    private_key: ""
+    mnemonic: ""
+  tron:
+    public_key: ""
+    private_key: ""
+    mnemonic: ""
+  ton:
+    public_key: ""
+    mnemonic: ""
+
+key:
+  trongrid_mainnet_key: ""
+  trongrid_nile_key: ""
+  alchemy_mainnet_key: ""
+  alchemy_inner_tx_mainnet_key: ""
+  alchemy_inner_tx_testnet_key: ""
+  alchemy_testnet_key: ""
+  tatum_mainnet_key: ""
+  tatum_testnet_key: ""

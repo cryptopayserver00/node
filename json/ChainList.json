@@ -1,0 +1,670 @@
+[
+  {
+    "name": "Ethereum Mainnet",
+    "chain": "ETH",
+    "chainId": 1,
+    "networkId": 1,
+    "coins": [
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "0x0000000000000000000000000000000000000000",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "DAI",
+        "decimals": 18,
+        "contract": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "SHIB",
+        "decimals": 18,
+        "contract": "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "SAND",
+        "decimals": 18,
+        "contract": "0x3845badAde8e6dFF049820680d1F14bD3903a5d0",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "LINK",
+        "decimals": 18,
+        "contract": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "CRO",
+        "decimals": 8,
+        "contract": "0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "UNI",
+        "decimals": 18,
+        "contract": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "WBTC",
+        "decimals": 8,
+        "contract": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "WETH",
+        "decimals": 18,
+        "contract": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "MATIC",
+        "decimals": 18,
+        "contract": "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "ARB",
+        "decimals": 18,
+        "contract": "0xB50721BCf8d664c30412Cfbc6cf7a15145234ad1",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Ethereum Testnet Sepolia",
+    "chain": "ETH",
+    "chainId": 11155111,
+    "networkId": 11155111,
+    "coins": [
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "0x0000000000000000000000000000000000000000",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "0xf93D3ae82636bD3d2f62C3EcE339F2171f022Fc0",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "0x9b9064B41D71fba74833f921a7ab1E248095648C",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "DAI",
+        "decimals": 18,
+        "contract": "0x65f0A9f3506B7248e568d1C6EFFbCFC93f82A02C",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "BNB Smart Chain Mainnet",
+    "chain": "BSC",
+    "chainId": 56,
+    "networkId": 56,
+    "coins": [
+      {
+        "symbol": "BNB",
+        "decimals": 18,
+        "contract": "0x0000000000000000000000000000000000000000",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "BUSD",
+        "decimals": 18,
+        "contract": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 18,
+        "contract": "0x55d398326f99059ff775485246999027b3197955",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 18,
+        "contract": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "BNB Smart Chain Testnet",
+    "chain": "BSC",
+    "chainId": 97,
+    "networkId": 97,
+    "coins": [
+      {
+        "symbol": "BNB",
+        "decimals": 18,
+        "contract": "0x0000000000000000000000000000000000000000",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "BUSD",
+        "decimals": 18,
+        "contract": "0xf93D3ae82636bD3d2f62C3EcE339F2171f022Fc0",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 18,
+        "contract": "0x8a10400271f38acea7d22e4968d37e32276ebac5",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 18,
+        "contract": "0x8A34885Ade76107DD62b86DAb41e2A613c3609Bc",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "0xaD3603d21564Bdbd2867dc719724b23992508129",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Tron Mainnet",
+    "chain": "TRON",
+    "chainId": 728126428,
+    "networkId": 728126428,
+    "coins": [
+      {
+        "symbol": "TRX",
+        "decimals": 6,
+        "contract": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "BTC",
+        "decimals": 8,
+        "contract": "TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "LTC",
+        "decimals": 8,
+        "contract": "TR3DLthpnDdCGabhVDbD3VMsiJoCXY3bZd",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "TRFe3hT5oYhjSZ6f3ji5FJ7YCfrkWnHRvh",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "DOGE",
+        "decimals": 8,
+        "contract": "THbVQp8kMjStKNnf2iCY6NEzThKMK5aBHg",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Tron Nile",
+    "chain": "TRON",
+    "chainId": 3448148188,
+    "networkId": 3448148188,
+    "coins": [
+      {
+        "symbol": "TRX",
+        "decimals": 6,
+        "contract": "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "TEMVynQpntMqkPxP6wXTW2K7e4sM3cRmWz",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "TAZ4ffZYCbgdRvUQ8ugPD6aab84ja21XWo",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Arbitrum One",
+    "chain": "ETH",
+    "chainId": 42161,
+    "networkId": 42161,
+    "coins": [
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "0x0000000000000000000000000000000000000000",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "ARB",
+        "decimals": 18,
+        "contract": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "DAI",
+        "decimals": 18,
+        "contract": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "LINK",
+        "decimals": 18,
+        "contract": "0xf97f4df75117a78c1A5a0DBb814Af92458539FB4",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "UNI",
+        "decimals": 18,
+        "contract": "0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "WETH",
+        "decimals": 18,
+        "contract": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "BNB",
+        "decimals": 18,
+        "contract": "0x20865e63B111B2649ef829EC220536c82C58ad7B",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "WBTC",
+        "decimals": 8,
+        "contract": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Arbitrum Nova",
+    "chain": "ETH",
+    "chainId": 42170,
+    "networkId": 42170,
+    "coins": [
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "0x0000000000000000000000000000000000000000",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "ARB",
+        "decimals": 18,
+        "contract": "0xf823C3cD3CeBE0a1fA952ba88Dc9EEf8e0Bf46AD",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "0x52484E1ab2e2B22420a25c20FA49E173a26202Cd",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "0x750ba8b76187092B0D1E87E28daaf484d1b5273b",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "DAI",
+        "decimals": 18,
+        "contract": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "WETH",
+        "decimals": 18,
+        "contract": "0x722E8BdD2ce80A4422E880164f2079488e115365",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "LINK",
+        "decimals": 18,
+        "contract": "0xf7D3125DE589A47b7b23D7dA222dA3e19157a0F9",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Arbitrum Sepolia",
+    "chain": "ETH",
+    "chainId": 421614,
+    "networkId": 421614,
+    "coins": [
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "0x0000000000000000000000000000000000000000",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "0xB66bCDAcEa9c008f5Fa78Aa3E06E081d60c4C045",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "DAI",
+        "decimals": 18,
+        "contract": "0x07d77913Bc824eDa81Fe18EE9eeC0Cdf81cEa790",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "OP Mainnet",
+    "chain": "ETH",
+    "chainId": 10,
+    "networkId": 10,
+    "coins": [
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "0x0000000000000000000000000000000000000000",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "DAI",
+        "decimals": 18,
+        "contract": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "LINK",
+        "decimals": 18,
+        "contract": "0x350a791Bfc2C21F9Ed5d10980Dad2e2638ffa7f6",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "UNI",
+        "decimals": 18,
+        "contract": "0x6fd9d7AD17242c41f7131d257212c54A0e816691",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "WETH",
+        "decimals": 18,
+        "contract": "0x4200000000000000000000000000000000000006",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "WBTC",
+        "decimals": 8,
+        "contract": "0x68f180fcCe6836688e9084f035309E29Bf0A2095",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "OP",
+        "decimals": 18,
+        "contract": "0x4200000000000000000000000000000000000042",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "MATIC",
+        "decimals": 18,
+        "contract": "0xe211233fE8b6964208CfC7CA66df9C0340088670",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "SHIB",
+        "decimals": 18,
+        "contract": "0x7B536aa4DEaa421F0CC42ae26C9362001CdD2C92",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "OP Sepolia",
+    "chain": "ETH",
+    "chainId": 11155420,
+    "networkId": 11155420,
+    "coins": [
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "0x0000000000000000000000000000000000000000",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "0xf93D3ae82636bD3d2f62C3EcE339F2171f022Fc0",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "0x00ab5cfCcA17249c31B0F478c6058Cfd44166e4C",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "DAI",
+        "decimals": 18,
+        "contract": "0x9b9064B41D71fba74833f921a7ab1E248095648C",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "OP",
+        "decimals": 18,
+        "contract": "0x257144bEb41Dd19c90aa71c7874D6a725829227b",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Bitcoin Mainnet",
+    "chain": "BTC",
+    "chainId": 2,
+    "networkId": 2,
+    "coins": [
+      {
+        "symbol": "BTC",
+        "decimals": 8,
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Bitcoin Testnet",
+    "chain": "BTC",
+    "chainId": 3,
+    "networkId": 3,
+    "coins": [
+      {
+        "symbol": "BTC",
+        "decimals": 8,
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Litecoin Mainnet",
+    "chain": "LTC",
+    "chainId": 6,
+    "networkId": 6,
+    "coins": [
+      {
+        "symbol": "LTC",
+        "decimals": 8,
+        "isMainCoin": true
+      }
+    ]
+  },
+  {
+    "name": "Litecoin Testnet",
+    "chain": "LTC",
+    "chainId": 7,
+    "networkId": 7,
+    "coins": [
+      {
+        "symbol": "LTC",
+        "decimals": 8,
+        "isMainCoin": true
+      }
+    ]
+  },
+  {
+    "name": "Solana Mainnet",
+    "chain": "SOL",
+    "chainId": 101,
+    "networkId": 101,
+    "coins": [
+      {
+        "symbol": "SOL",
+        "decimals": 9,
+        "contract": "So11111111111111111111111111111111111111112",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Solana Devnet",
+    "chain": "SOL",
+    "chainId": 103,
+    "networkId": 103,
+    "coins": [
+      {
+        "symbol": "SOL",
+        "decimals": 9,
+        "contract": "So11111111111111111111111111111111111111112",
+        "isMainCoin": true
+      }
+    ]
+  },
+  {
+    "name": "Ton Mainnet",
+    "chain": "TON",
+    "chainId": 1100,
+    "networkId": 1100,
+    "coins": [
+      {
+        "symbol": "TON",
+        "decimals": 9,
+        "contract": "",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Ton Testnet",
+    "chain": "TON",
+    "chainId": 1101,
+    "networkId": 1101,
+    "coins": [
+      {
+        "symbol": "TON",
+        "decimals": 9,
+        "contract": "",
+        "isMainCoin": true
+      }
+    ]
+  }
+]
