@@ -237,7 +237,7 @@ func (n *NService) DecodeEthTransactionForRpc(chainId uint, address string, tx *
 	model.Hash = tx.Hash
 
 	if tx.Input == "0x" {
-		model.Asset = "ETH"
+		model.Asset = constant.ETH
 		value, err := utils.HexStringToBigInt(tx.Value)
 		if err != nil {
 			global.NODE_LOG.Error(err.Error())
@@ -287,7 +287,7 @@ func (n *NService) DecodeEthTransactionForAlchemy(chainId uint, address string, 
 	model.ChainId = chainId
 	model.Address = address
 	model.Hash = tx.Hash
-	if tx.Asset == "ETH" {
+	if tx.Asset == constant.ETH {
 		model.Asset = tx.Asset
 
 		hexString := strings.TrimPrefix(tx.RawContract.Value, "0x")

@@ -11,32 +11,32 @@ import (
 )
 
 var (
-	ETHAlchemyMainnetRPC = []string{
-		"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
-	}
+	// ETHAlchemyMainnetRPC = []string{
+	// 	"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
+	// }
 
-	ETHAlchemyGoerliRPC = []string{
-		"https://eth-goerli.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
-	}
+	// ETHAlchemyGoerliRPC = []string{
+	// 	"https://eth-goerli.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
+	// }
 
-	ETHAlchemySepoliaRPC = []string{
-		"https://eth-sepolia.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
-	}
+	// ETHAlchemySepoliaRPC = []string{
+	// 	"https://eth-sepolia.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
+	// }
 
 	ETHMainnetRPC = []string{
 		"https://ethereum-rpc.publicnode.com",
-		"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
+		// 	"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
 	}
 
-	ETHInnerTxMainnetRPC = []string{
-		// "https://eth.llamarpc.com",
-		// "https://eth-pokt.nodies.app",
-		// "https://eth.merkle.io",
-		// "https://eth.nodeconnect.org",
-		// "https://gateway.subquery.network/rpc/eth",
-		// "https://ethereum.rpc.subquery.network/public",
-		"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomInnertxAlchemyKey(true),
-	}
+	// ETHInnerTxMainnetRPC = []string{
+	// 	// "https://eth.llamarpc.com",
+	// 	// "https://eth-pokt.nodies.app",
+	// 	// "https://eth.merkle.io",
+	// 	// "https://eth.nodeconnect.org",
+	// 	// "https://gateway.subquery.network/rpc/eth",
+	// 	// "https://ethereum.rpc.subquery.network/public",
+	// 	"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomInnertxAlchemyKey(true),
+	// }
 
 	ETHGeneralMainnetRPC = []string{
 		"https://ethereum-rpc.publicnode.com",
@@ -103,7 +103,7 @@ var (
 	}
 
 	OPSepoliaRPC = []string{
-		"https://opt-sepolia.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
+		// "https://opt-sepolia.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
 		"https://sepolia.optimism.io",
 		"https://optimism-sepolia.drpc.org",
 		"https://endpoints.omniatech.io/v1/op/sepolia/public",
@@ -189,14 +189,17 @@ func GetAlchemyRPCUrlByNetwork(chainId uint) string {
 
 	switch chainId {
 	case ETH_MAINNET:
-		index := rand.Intn(len(ETHAlchemyMainnetRPC))
-		return ETHAlchemyMainnetRPC[index]
-	case ETH_GOERLI:
-		index := rand.Intn(len(ETHAlchemyGoerliRPC))
-		return ETHAlchemyGoerliRPC[index]
+		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
+		return "https://eth-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
 	case ETH_SEPOLIA:
-		index := rand.Intn(len(ETHAlchemySepoliaRPC))
-		return ETHAlchemySepoliaRPC[index]
+		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
+		return "https://eth-sepolia.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+	case BSC_MAINNET:
+		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
+		return "https://bnb-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
+	case BSC_TESTNET:
+		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
+		return "https://bnb-testnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
 	}
 
 	return ""
@@ -265,28 +268,20 @@ func GetInnerTxRPCUrlByNetwork(chainId uint) string {
 
 	switch chainId {
 	case ETH_MAINNET:
-		index := rand.Intn(len(ETHInnerTxMainnetRPC))
-		return ETHInnerTxMainnetRPC[index]
-		// return GetRealRpcByArray(ETHInnerTxMainnetRPC)
+		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
+		return "https://eth-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")[index]
 	case ETH_SEPOLIA:
-		index := rand.Intn(len(ETHInnerTxSepoliaRPC))
-		return ETHInnerTxSepoliaRPC[index]
-		// return GetRealRpcByArray(ETHInnerTxSepoliaRPC)
+		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
+		return "https://eth-sepolia.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")[index]
+	case BSC_MAINNET:
+		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
+		return "https://bnb-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")[index]
+	case BSC_TESTNET:
+		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
+		return "https://bnb-testnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")[index]
 	}
 
 	return ""
-}
-
-func GetRandomAlchemyKey(isMainnet bool) string {
-	rand.Seed(time.Now().UnixNano())
-
-	if isMainnet {
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
-	} else {
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
-		return strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
-	}
 }
 
 func GetRandomInnertxAlchemyKey(isMainnet bool) string {

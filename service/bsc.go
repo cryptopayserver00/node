@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"node/global"
@@ -11,37 +10,19 @@ import (
 	"node/model/node/response"
 	chainUtils "node/sweep/utils"
 	"node/utils"
-	"strconv"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
 )
 
-var (
-	// tx-chainId-coin(bnb,bep20)-address
-	constantBscTransactionHistory = "txs-%d-%s-%s"
-	bnb                           = "bnb"
-	bep20                         = "bep20"
-	BscTokenAction                = "tokentx"
-	BscBnbAction                  = "txlist"
-)
-
 func (n *NService) GetBscTransactions(req request.GetBscTransactions) ([]response.ClientTransaction, error) {
-	var action string
-
-	if req.Action == BscTokenAction && req.ContractAddress != "" {
-		action = bep20
-	} else if req.Action == BscBnbAction {
-		action = bnb
-	} else {
-		return nil, errors.New("no support the action or contractAddress")
-	}
-
-	if err := n.UpdateBscTransactions(req, action); err != nil {
+	if err := n.UpdateBscTransactionsByAlchemy(req); err != nil {
 		global.NODE_LOG.Error(err.Error())
 	}
 
-	item, err := global.NODE_MEMCACHE.Get(fmt.Sprintf(constantBscTransactionHistory, req.ChainId, action, req.Address))
+	item, err := global.NODE_MEMCACHE.Get(fmt.Sprintf(constantTransactionHistory, req.ChainId, req.Address))
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return nil, nil
@@ -55,46 +36,104 @@ func (n *NService) GetBscTransactions(req request.GetBscTransactions) ([]respons
 		return nil, err
 	}
 
-	if req.Action == BscTokenAction {
-		for _, v := range txs {
-			if strings.EqualFold(v.ContractAddress, req.ContractAddress) {
-				filterTxs = append(filterTxs, v)
-			}
+	for _, v := range txs {
+		if req.Asset == "" {
+			filterTxs = append(filterTxs, v)
+		} else if v.Asset == req.Asset {
+			filterTxs = append(filterTxs, v)
 		}
-		return filterTxs, nil
-	} else {
-		return txs, nil
 	}
+
+	sort.Slice(filterTxs, func(i, j int) bool {
+		if filterTxs[i].BlockTimestamp == 0 && filterTxs[j].BlockTimestamp != 0 {
+			return true
+		} else if filterTxs[i].BlockTimestamp != 0 && filterTxs[j].BlockTimestamp == 0 {
+			return false
+		} else {
+			return filterTxs[i].BlockTimestamp > filterTxs[j].BlockTimestamp
+		}
+	})
+
+	return filterTxs, nil
 }
 
-func (n *NService) UpdateBscTransactions(req request.GetBscTransactions, action string) (err error) {
-	var (
-		saveTxs []response.ClientTransaction
-		page    = 1
-		offset  = 300
-		sort    = "desc"
-	)
+func (n *NService) UpdateBscTransactionsByAlchemy(req request.GetBscTransactions) (err error) {
+	client.URL = constant.GetAlchemyRPCUrlByNetwork(req.ChainId)
 
-	client.URL = fmt.Sprintf("%s/api?module=account&action=%s&address=%s&startblock=0x0&endblock=latest&page=%d&offset=%d&sort=%s", constant.GetBscscanUrlByNetwork(req.ChainId), req.Action, req.Address, page, offset, sort)
-	var transactionResponse response.BscscanTransactionResponse
-	err = client.HTTPGet(&transactionResponse)
+	var fromRpcAlchemyTxs response.RPCAlchemyTransactionDetails
+	var toRpcAlchemyTxs response.RPCAlchemyTransactionDetails
+	var transfers []response.RPCAlchemyTransactionTransfer
+	fromPayload := map[string]interface{}{
+		"id":      1,
+		"jsonrpc": "2.0",
+		"method":  "alchemy_getAssetTransfers",
+		"params": []map[string]interface{}{
+			{
+				"fromBlock":        "0x0",
+				"toBlock":          "latest",
+				"fromAddress":      req.Address,
+				"category":         []string{"erc20", "external"},
+				"order":            "desc",
+				"withMetadata":     true,
+				"excludeZeroValue": true,
+				"maxCount":         "0x78",
+			},
+		},
+	}
+
+	toPayload := map[string]interface{}{
+		"id":      1,
+		"jsonrpc": "2.0",
+		"method":  "alchemy_getAssetTransfers",
+		"params": []map[string]interface{}{
+			{
+				"fromBlock":        "0x0",
+				"toBlock":          "latest",
+				"toAddress":        req.Address,
+				"category":         []string{"erc20", "external"},
+				"order":            "desc",
+				"withMetadata":     true,
+				"excludeZeroValue": true,
+				"maxCount":         "0x78",
+			},
+		},
+	}
+
+	err = client.HTTPPost(fromPayload, &fromRpcAlchemyTxs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
 	}
 
-	if len(transactionResponse.Result) == 0 || transactionResponse.Status != "1" {
+	err = client.HTTPPost(toPayload, &toRpcAlchemyTxs)
+	if err != nil {
+		global.NODE_LOG.Error(err.Error())
 		return
 	}
 
-	for _, v := range transactionResponse.Result {
-		tx, decodeErr := n.DecodeBscTransaction(req.ChainId, req.Address, req.Action, v)
-		if decodeErr != nil {
-			global.NODE_LOG.Error(decodeErr.Error())
+	transfers = append(transfers, fromRpcAlchemyTxs.Result.Transfers...)
+	transfers = append(transfers, toRpcAlchemyTxs.Result.Transfers...)
+
+	if len(transfers) == 0 {
+		return
+	}
+
+	var saveTxs []response.ClientTransaction
+
+	for _, v := range transfers {
+		model, err := n.DecodeBscTransactionForAlchemy(req.ChainId, req.Address, v)
+		if err != nil {
+			global.NODE_LOG.Error(err.Error())
 			continue
 		}
-		saveTxs = append(saveTxs, tx)
+		saveTxs = append(saveTxs, model)
 	}
+
+	// get pending transaction
+	// pendingTxs, err := n.GetEthPendingTransactions(req)
+	// if err == nil {
+	// 	saveTxs = append(saveTxs, pendingTxs...)
+	// }
 
 	byteTxs, err := json.Marshal(saveTxs)
 	if err != nil {
@@ -103,7 +142,7 @@ func (n *NService) UpdateBscTransactions(req request.GetBscTransactions, action 
 	}
 
 	err = global.NODE_MEMCACHE.Set(&memcache.Item{
-		Key:        fmt.Sprintf(constantBscTransactionHistory, req.ChainId, action, req.Address),
+		Key:        fmt.Sprintf(constantTransactionHistory, req.ChainId, req.Address),
 		Value:      byteTxs,
 		Expiration: 86400,
 	})
@@ -115,67 +154,49 @@ func (n *NService) UpdateBscTransactions(req request.GetBscTransactions, action 
 	return nil
 }
 
-func (n *NService) DecodeBscTransaction(chainId uint, address, action string, tx response.BscscanTransactionResult) (model response.ClientTransaction, err error) {
+func (n *NService) DecodeBscTransactionForAlchemy(chainId uint, address string, tx response.RPCAlchemyTransactionTransfer) (model response.ClientTransaction, err error) {
 	model.ChainId = chainId
 	model.Address = address
 	model.Hash = tx.Hash
+	if tx.Asset == constant.ETH {
+		model.Asset = constant.BNB
 
-	var contractAddress string
+		hexString := strings.TrimPrefix(tx.RawContract.Value, "0x")
+		bigIntValue, _ := new(big.Int).SetString(hexString, 16)
+		model.Amount = utils.CalculateBalance(bigIntValue, 18)
 
-	if action == BscBnbAction {
-		if tx.Input != "0x" {
-			return model, errors.New("no support the tx")
+	} else if tx.Category == "erc20" {
+		isSupportContract, contractName, _, decimals := chainUtils.GetContractInfo(chainId, tx.RawContract.Address)
+		if !isSupportContract {
+			return
 		}
-		contractAddress = "0x0000000000000000000000000000000000000000"
-		if tx.TxreceiptStatus == "1" {
-			model.Status = "Success"
-		} else {
-			model.Status = "Failed"
-		}
-		// isSupportContract, contractName, _, decimals := chainUtils.GetContractInfo(chainId, "0x0000000000000000000000000000000000000000")
-		// if !isSupportContract {
-		// 	return
-		// }
-		// model.Asset = contractName
-		// bigIntValue, _ := new(big.Int).SetString(tx.Value, 10)
-		// model.Amount = utils.CalculateBalance(bigIntValue, decimals)
+		model.Asset = contractName
 
-		// if strings.EqualFold(tx.From, address) {
-		// 	model.Type = "Send"
-		// } else if strings.EqualFold(tx.To, address) {
-		// 	model.Type = "Received"
-		// } else {
-		// 	return
-		// }
-	} else if action == BscTokenAction {
-		contractAddress = tx.ContractAddress
-		model.Status = "Success"
+		hexString := strings.TrimPrefix(tx.RawContract.Value, "0x")
+		bigIntValue, _ := new(big.Int).SetString(hexString, 16)
+		model.Amount = utils.CalculateBalance(bigIntValue, decimals)
 	} else {
-		return model, errors.New("no support the tx")
+		global.NODE_LOG.Error(tx.Hash)
+		return
 	}
 
-	isSupportContract, contractName, _, decimals := chainUtils.GetContractInfo(chainId, contractAddress)
-	if !isSupportContract {
-		return model, errors.New("no support the tx")
-	}
-	model.Asset = contractName
-	bigIntValue, _ := new(big.Int).SetString(tx.Value, 10)
-	model.Amount = utils.CalculateBalance(bigIntValue, decimals)
-	model.ContractAddress = contractAddress
-	if strings.EqualFold(tx.From, address) {
+	_, contractName, _, _ := chainUtils.GetContractInfo(chainId, tx.To)
+
+	if strings.EqualFold(tx.From, address) && contractName == constant.SWAP {
+		model.Type = "Swap"
+	} else if strings.EqualFold(tx.From, address) {
 		model.Type = "Send"
 	} else if strings.EqualFold(tx.To, address) {
 		model.Type = "Received"
 	} else {
-		return model, errors.New("no support the tx")
+		global.NODE_LOG.Error(tx.Hash)
+		return
 	}
 
-	timeNum, _ := strconv.Atoi(tx.TimeStamp)
-	if timeNum != 0 {
-		model.BlockTimestamp = timeNum * 1000
-	} else {
-		model.BlockTimestamp = 0
-	}
+	model.Status = "Success"
+	model.Category = tx.Category
+	timestamp, _ := time.Parse(time.RFC3339, tx.Metadata.BlockTimestamp)
+	model.BlockTimestamp = int(timestamp.Unix()) * 1000
 
 	return
 }
