@@ -3,10 +3,23 @@ package wallet
 import (
 	"errors"
 	"fmt"
+	"log"
 	"node/global"
 	"node/global/constant"
 	sweepUtils "node/sweep/utils"
 	"node/utils"
+
+	// "github.com/btcsuite/btcd/chaincfg"
+	// "github.com/btcsuite/btcd/rpcclient"
+	// "github.com/btcsuite/btcjson"
+
+	"github.com/btcsuite/btcd/btcutil/hdkeychain"
+	"github.com/btcsuite/btcd/chaincfg"
+
+	// "github.com/btcsuite/btcd/hdkeychain"
+	"github.com/btcsuite/btcwallet/wallet"
+	// "github.com/ltcsuite/ltcd/ltcutil/hdkeychain"
+	// "github.com/xssnick/tonutils-go/ton/wallet"
 )
 
 func TransferFreeCoinToReceiveAddress(chainId uint, coin, address, amount string) (hash string, err error) {
@@ -30,6 +43,10 @@ func TransferFreeCoinToReceiveAddress(chainId uint, coin, address, amount string
 			hash, err = SendTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
 		}
 	case constant.TRON_NILE:
+		break
+	case constant.SOL_DEVNET:
+		break
+	case constant.TON_TESTNET:
 		break
 	}
 
@@ -92,4 +109,23 @@ func SendTokenTransfer(chainId uint, pri, pub, toAddress, coin string, sendVal s
 
 	hash, err = CallTokenTransfer(chainId, rpc, pri, pub, toAddress, contractAddress, sendValue, gasLimit)
 	return
+}
+
+func SendBtcTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
+	seedBytes, err := wallet.FromSeed("")
+	if err != nil {
+		global.NODE_LOG.Error(err.Error())
+		return
+	}
+
+	masterKey, err := hdkeychain.NewMaster(seedBytes, &chaincfg.TestNet3Params)
+	if err != nil {
+		global.NODE_LOG.Error(err.Error())
+		return
+	}
+
+	childKey, err := masterKey.ChildIndex(0)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
