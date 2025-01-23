@@ -3,7 +3,12 @@ package wallet
 import (
 	"crypto/ecdsa"
 	"errors"
+	"fmt"
 	"math/big"
+	"node/global"
+	"node/global/constant"
+	sweepUtils "node/sweep/utils"
+	"node/utils"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -128,4 +133,52 @@ func CallTokenBalanceOf(rpc, fromPub, tokenAddress string) (balance *big.Int, er
 func GetTransactionSenderFromTx(tx *types.Transaction) (string, error) {
 	from, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
 	return from.String(), err
+}
+
+func SendEthTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
+	rpc := constant.GetRPCUrlByNetwork(chainId)
+	if rpc == "" {
+		err = errors.New("chain not support")
+		return
+	}
+
+	var (
+		gasLimit uint64 = 21000
+		decimals int    = 18
+	)
+
+	sendValue, err := utils.FormatToOriginalValue(sendVal, decimals)
+	if err != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		return "", err
+	}
+
+	hash, err = CallEthTransfer(chainId, rpc, pri, pub, toAddress, sendValue, gasLimit)
+	return
+}
+
+func SendTokenTransfer(chainId uint, pri, pub, toAddress, coin string, sendVal string) (hash string, err error) {
+	rpc := constant.GetRPCUrlByNetwork(chainId)
+	if rpc == "" {
+		err = errors.New("chain not support")
+		return
+	}
+
+	isSupport, _, contractAddress, decimals := sweepUtils.GetContractInfoByChainIdAndSymbol(chainId, coin)
+	if !isSupport {
+		return "", errors.New("contract address not found")
+	}
+
+	var (
+		gasLimit uint64 = 96000
+	)
+
+	sendValue, err := utils.FormatToOriginalValue(sendVal, decimals)
+	if err != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		return "", err
+	}
+
+	hash, err = CallTokenTransfer(chainId, rpc, pri, pub, toAddress, contractAddress, sendValue, gasLimit)
+	return
 }
