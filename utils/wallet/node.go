@@ -11,7 +11,7 @@ func TransferFreeCoinToReceiveAddress(chainId uint, coin, address, amount string
 	case constant.BTC_TESTNET:
 		hash, err = SendBtcTransfer(chainId, global.NODE_CONFIG.FreeCoin.Bitcoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Bitcoin.PublicKey, address, amount)
 	case constant.LTC_TESTNET:
-		break
+		hash, err = SendLtcTransfer(chainId, global.NODE_CONFIG.FreeCoin.Litecoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Litecoin.PublicKey, address, amount)
 	case constant.ETH_SEPOLIA, constant.OP_SEPOLIA, constant.ARBITRUM_SEPOLIA:
 		switch coin {
 		case constant.ETH:
