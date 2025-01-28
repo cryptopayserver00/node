@@ -157,7 +157,7 @@ func SendEthTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (
 	return
 }
 
-func SendTokenTransfer(chainId uint, pri, pub, toAddress, coin string, sendVal string) (hash string, err error) {
+func SendEthTokenTransfer(chainId uint, pri, pub, toAddress, coin string, sendVal string) (hash string, err error) {
 	rpc := constant.GetRPCUrlByNetwork(chainId)
 	if rpc == "" {
 		err = errors.New("chain not support")

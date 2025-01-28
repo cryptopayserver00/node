@@ -17,17 +17,22 @@ func TransferFreeCoinToReceiveAddress(chainId uint, coin, address, amount string
 		case constant.ETH:
 			hash, err = SendEthTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
 		default:
-			hash, err = SendTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
+			hash, err = SendEthTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
 		}
 	case constant.BSC_TESTNET:
 		switch coin {
 		case constant.BNB:
 			hash, err = SendEthTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
 		default:
-			hash, err = SendTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
+			hash, err = SendEthTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
 		}
 	case constant.TRON_NILE:
-		break
+		switch coin {
+		case constant.TRX:
+			hash, err = SendTrxTransfer(chainId, global.NODE_CONFIG.FreeCoin.Tron.PrivateKey, global.NODE_CONFIG.FreeCoin.Tron.PublicKey, address, amount)
+		default:
+			hash, err = SendTronTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Tron.PrivateKey, global.NODE_CONFIG.FreeCoin.Tron.PublicKey, address, coin, amount)
+		}
 	case constant.SOL_DEVNET:
 		break
 	case constant.TON_TESTNET:

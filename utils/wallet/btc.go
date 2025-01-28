@@ -8,82 +8,132 @@ import (
 	"node/utils"
 	"strconv"
 
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/okx/go-wallet-sdk/coins/bitcoin"
+	"github.com/okx/go-wallet-sdk/util"
 )
 
 func SendBtcTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
 
 	sendValFloat, err := strconv.ParseFloat(sendVal, 64)
 	if err != nil {
+		global.NODE_LOG.Error(err.Error())
 		return "", err
 	}
 
 	satoshiValue := utils.FormatToSatoshiValue(sendValFloat)
 
-	wif, err := btcutil.DecodeWIF(pri)
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return
-	}
-
-	addrPubKey, err := btcutil.NewAddressPubKey(wif.PrivKey.PubKey().SerializeCompressed(), &chaincfg.TestNet3Params)
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return
-	}
-
-	pkScript := "001438dc6790cb66e6e8934af0eb6d41ea0f499d4c21"
-
-	txid, balance, err := GetUTXO(addrPubKey.EncodeAddress())
+	txBuild := bitcoin.NewTxBuild(1, &chaincfg.TestNet3Params)
+	txBuild.AddInput("166327ccddcf1428ab591681f9018ab1f2d78039efef0e14967850b68142f1cf", 0, "", "", "", 5000000)
+	txBuild.AddOutput(toAddress, satoshiValue)
+	pubKeyMap := make(map[int]string)
+	pubKeyMap[0] = "001438dc6790cb66e6e8934af0eb6d41ea0f499d4c21"
+	txHex, hashes, err := txBuild.UnSignedTx(pubKeyMap)
 	if err != nil {
 		return "", err
 	}
-
-	if balance < satoshiValue {
-		return "", fmt.Errorf("the balance of the account is not sufficient")
+	signatureMap := make(map[int]string)
+	for i, h := range hashes {
+		privateBytes, err := hex.DecodeString(pri)
+		if err != nil {
+			return "", err
+		}
+		prvKey, _ := btcec.PrivKeyFromBytes(privateBytes)
+		sign := ecdsa.Sign(prvKey, util.RemoveZeroHex(h))
+		signatureMap[i] = hex.EncodeToString(sign.Serialize())
 	}
-
-	destinationAddr, err := btcutil.DecodeAddress(toAddress, &chaincfg.TestNet3Params)
+	txHex, err = bitcoin.SignTx(txHex, pubKeyMap, signatureMap)
 	if err != nil {
 		return "", err
 	}
+	fmt.Println(txHex)
 
-	destinationAddrByte, err := txscript.PayToAddrScript(destinationAddr)
-	if err != nil {
-		return "", err
-	}
-
-	redeemTx, err := NewTx()
-	if err != nil {
-		return "", err
-	}
-
-	utxoHash, err := chainhash.NewHashFromStr(txid)
-	if err != nil {
-		return "", err
-	}
-
-	outPoint := wire.NewOutPoint(utxoHash, 0)
-
-	var byteArray [][]byte
-	txIn := wire.NewTxIn(outPoint, nil, nil)
-	txIn.Witness = byteArray
-	redeemTx.AddTxIn(txIn)
-
-	redeemTxOut := wire.NewTxOut(satoshiValue, destinationAddrByte)
-	redeemTx.AddTxOut(redeemTxOut)
-
-	finalRawTx, err := SignTx(pri, pkScript, redeemTx)
-	if err != nil {
-		return "", err
-	}
-
-	return finalRawTx, nil
+	return "", nil
 }
+
+// func SendBtcTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
+
+// 	sendValFloat, err := strconv.ParseFloat(sendVal, 64)
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return "", err
+// 	}
+
+// 	satoshiValue := utils.FormatToSatoshiValue(sendValFloat)
+
+// 	wif, err := btcutil.DecodeWIF(pri)
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return
+// 	}
+
+// 	addrPubKey, err := btcutil.NewAddressPubKey(wif.PrivKey.PubKey().SerializeCompressed(), &chaincfg.TestNet3Params)
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return
+// 	}
+
+// 	global.NODE_LOG.Info(addrPubKey.EncodeAddress())
+
+// 	pkScript := "001438dc6790cb66e6e8934af0eb6d41ea0f499d4c21"
+
+// 	txid, balance, err := GetUTXO(addrPubKey.EncodeAddress())
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return "", err
+// 	}
+
+// 	if balance < satoshiValue {
+// 		return "", fmt.Errorf("the balance of the account is not sufficient")
+// 	}
+
+// 	destinationAddr, err := btcutil.DecodeAddress(toAddress, &chaincfg.TestNet3Params)
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return "", err
+// 	}
+
+// 	destinationAddrByte, err := txscript.PayToAddrScript(destinationAddr)
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return "", err
+// 	}
+
+// 	redeemTx, err := NewTx()
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return "", err
+// 	}
+
+// 	utxoHash, err := chainhash.NewHashFromStr(txid)
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return "", err
+// 	}
+
+// 	outPoint := wire.NewOutPoint(utxoHash, 0)
+
+// 	var byteArray [][]byte
+// 	txIn := wire.NewTxIn(outPoint, nil, nil)
+// 	txIn.Witness = byteArray
+// 	redeemTx.AddTxIn(txIn)
+
+// 	redeemTxOut := wire.NewTxOut(satoshiValue, destinationAddrByte)
+// 	redeemTx.AddTxOut(redeemTxOut)
+
+// 	finalRawTx, err := SignTx(pri, pkScript, redeemTx)
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return "", err
+// 	}
+
+// 	return finalRawTx, nil
+// }
 
 func GetUTXO(address string) (string, int64, error) {
 	var previousTxid string = "166327ccddcf1428ab591681f9018ab1f2d78039efef0e14967850b68142f1cf"
@@ -99,16 +149,19 @@ func SignTx(privKey string, pkScript string, redeemTx *wire.MsgTx) (string, erro
 
 	wif, err := btcutil.DecodeWIF(privKey)
 	if err != nil {
+		global.NODE_LOG.Error(err.Error())
 		return "", err
 	}
 
 	sourcePKScript, err := hex.DecodeString(pkScript)
 	if err != nil {
+		global.NODE_LOG.Error(err.Error())
 		return "", err
 	}
 
 	signature, err := txscript.SignatureScript(redeemTx, 0, sourcePKScript, txscript.SigHashAll, wif.PrivKey, false)
 	if err != nil {
+		global.NODE_LOG.Error(err.Error())
 		return "", err
 	}
 
