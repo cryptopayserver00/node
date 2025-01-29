@@ -9,7 +9,7 @@ import (
 func TransferFreeCoinToReceiveAddress(chainId uint, coin, address, amount string) (hash string, err error) {
 	switch chainId {
 	case constant.BTC_TESTNET:
-		hash, err = SendBtcTransfer(chainId, global.NODE_CONFIG.FreeCoin.Bitcoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Bitcoin.PublicKey, address, amount)
+		hash, err = SendBtcTransferByPsbt(chainId, global.NODE_CONFIG.FreeCoin.Bitcoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Bitcoin.PublicKey, address, amount)
 	case constant.LTC_TESTNET:
 		hash, err = SendLtcTransfer(chainId, global.NODE_CONFIG.FreeCoin.Litecoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Litecoin.PublicKey, address, amount)
 	case constant.ETH_SEPOLIA, constant.OP_SEPOLIA, constant.ARBITRUM_SEPOLIA:
@@ -34,9 +34,19 @@ func TransferFreeCoinToReceiveAddress(chainId uint, coin, address, amount string
 			hash, err = SendTronTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Tron.PrivateKey, global.NODE_CONFIG.FreeCoin.Tron.PublicKey, address, coin, amount)
 		}
 	case constant.SOL_DEVNET:
-		break
+		switch coin {
+		case constant.SOL:
+			hash, err = SendSolTransfer(chainId, global.NODE_CONFIG.FreeCoin.Solana.PrivateKey, global.NODE_CONFIG.FreeCoin.Solana.PublicKey, address, amount)
+		default:
+			hash, err = SendSolTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Solana.PrivateKey, global.NODE_CONFIG.FreeCoin.Solana.PublicKey, address, coin, amount)
+		}
 	case constant.TON_TESTNET:
-		break
+		switch coin {
+		case constant.TON:
+			hash, err = SendTonTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ton.Mnemonic, global.NODE_CONFIG.FreeCoin.Ton.PublicKey, address, amount)
+		default:
+			hash, err = SendTonTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ton.Mnemonic, global.NODE_CONFIG.FreeCoin.Ton.PublicKey, address, coin, amount)
+		}
 	}
 
 	if err != nil {

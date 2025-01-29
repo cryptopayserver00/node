@@ -23,6 +23,8 @@ var (
 	DOGE     = "DOGE"
 	OP       = "OP"
 	ARB      = "ARB"
+	SOL      = "SOL"
+	TON      = "TON"
 
 	SWAP = "SWAP"
 )
