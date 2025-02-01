@@ -25,6 +25,10 @@ var ChainId = map[uint]string{
 	5:          "Ethereum Goerli",
 	6:          "Litecoin Mainnet",
 	7:          "Litecoin Testnet",
+	8:          "Xrp Mainnet",
+	9:          "Xrp Testnet",
+	11:         "Bitcoin Cash Mainnet",
+	12:         "Bitcoin Cash Testnet",
 	11155111:   "Ethereum Sepolia",
 	101:        "Solana Mainnet",
 	103:        "Solana Devnet",
@@ -475,6 +479,7 @@ func AddressToLower(chainId uint, address string) string {
 		ARBITRUM_SEPOLIA,
 		OP_MAINNET,
 		OP_SEPOLIA:
+
 		return strings.ToLower(address)
 	}
 
