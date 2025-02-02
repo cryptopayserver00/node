@@ -36,122 +36,163 @@ var (
 		constant.SOL_DEVNET_PUBLIC_KEY,
 		constant.TON_PUBLIC_KEY,
 		constant.TON_TESTNET_PUBLIC_KEY,
+		constant.XRP_PUBLIC_KEY,
+		constant.XRP_TESTNET_PUBLIC_KEY,
+		constant.BCH_PUBLIC_KEY,
+		constant.BCH_TESTNET_PUBLIC_KEY,
+		constant.POL_PUBLIC_KEY,
+		constant.POL_TESTNET_PUBLIC_KEY,
+		constant.AVALANCHE_PUBLIC_KEY,
+		constant.AVALANCHE_TESTNET_PUBLIC_KEY,
+		constant.BASE_PUBLIC_KEY,
+		constant.BASE_SEPOLIA_PUBLIC_KEY,
 	}
 
-	EthPublicKey             []string
-	BtcPublicKey             []string
-	BtcTestnetPublicKey      []string
-	EthSepoliaPublicKey      []string
-	BscPublicKey             []string
-	BscTestnetPublicKey      []string
-	ArbitrumOnePublicKey     []string
-	ArbitrumNovaPublicKey    []string
-	ArbitrumSepoliaPublicKey []string
-	TronPublicKey            []string
-	TronNilePublicKey        []string
-	LtcPublicKey             []string
-	LtcTestnetPublicKey      []string
-	OpPublicKey              []string
-	OpSepoliaPublicKey       []string
-	SolPublicKey             []string
-	SolDevnetPublicKey       []string
-	TonPublicKey             []string
-	TonTestnetPublicKey      []string
+	EthPublicKey              []string
+	EthSepoliaPublicKey       []string
+	BtcPublicKey              []string
+	BtcTestnetPublicKey       []string
+	BscPublicKey              []string
+	BscTestnetPublicKey       []string
+	ArbitrumOnePublicKey      []string
+	ArbitrumNovaPublicKey     []string
+	ArbitrumSepoliaPublicKey  []string
+	TronPublicKey             []string
+	TronNilePublicKey         []string
+	LtcPublicKey              []string
+	LtcTestnetPublicKey       []string
+	OpPublicKey               []string
+	OpSepoliaPublicKey        []string
+	SolPublicKey              []string
+	SolDevnetPublicKey        []string
+	TonPublicKey              []string
+	TonTestnetPublicKey       []string
+	XrpPublicKey              []string
+	XrpTestnetPublicKey       []string
+	BchPublicKey              []string
+	BchTestnetPublicKey       []string
+	PolPublicKey              []string
+	PolTestnetPublicKey       []string
+	AvalanchePublicKey        []string
+	AvalancheTestnetPublicKey []string
+	BasePublicKey             []string
+	BaseSepoliaPublicKey      []string
 
-	// eth mainnet
 	EthLatestBlockHeight int64
 	EthCacheBlockHeight  int64
 	EthSweepBlockHeight  int64
 
-	// eth sepolia
 	EthSepoliaLatestBlockHeight int64
 	EthSepoliaCacheBlockHeight  int64
 	EthSepoliaSweepBlockHeight  int64
 
-	// btc mainnet
 	BtcLatestBlockHeight int64
 	BtcCacheBlockHeight  int64
 	BtcSweepBlockHeight  int64
 
-	// btc testnet
 	BtcTestnetLatestBlockHeight int64
 	BtcTestnetCacheBlockHeight  int64
 	BtcTestnetSweepBlockHeight  int64
 
-	// bsc mainnet
 	BscLatestBlockHeight int64
 	BscCacheBlockHeight  int64
 	BscSweepBlockHeight  int64
 
-	// bsc testnet
 	BscTestnetLatestBlockHeight int64
 	BscTestnetCacheBlockHeight  int64
 	BscTestnetSweepBlockHeight  int64
 
-	// arbitrum one
 	ArbitrumOneLatestBlockHeight int64
 	ArbitrumOneCacheBlockHeight  int64
 	ArbitrumOneSweepBlockHeight  int64
 
-	// arbitrum nova
 	ArbitrumNovaLatestBlockHeight int64
 	ArbitrumNovaCacheBlockHeight  int64
 	ArbitrumNovaSweepBlockHeight  int64
 
-	// arbitrum sepolia
 	ArbitrumSepoliaLatestBlockHeight int64
 	ArbitrumSepoliaCacheBlockHeight  int64
 	ArbitrumSepoliaSweepBlockHeight  int64
 
-	// tron mainnet
 	TronLatestBlockHeight int64
 	TronCacheBlockHeight  int64
 	TronSweepBlockHeight  int64
 
-	// tron nile
 	TronNileLatestBlockHeight int64
 	TronNileCacheBlockHeight  int64
 	TronNileSweepBlockHeight  int64
 
-	// ltc mainnet
 	LtcLatestBlockHeight int64
 	LtcCacheBlockHeight  int64
 	LtcSweepBlockHeight  int64
 
-	// ltc testnet
 	LtcTestnetLatestBlockHeight int64
 	LtcTestnetCacheBlockHeight  int64
 	LtcTestnetSweepBlockHeight  int64
 
-	// op mainnet
 	OpLatestBlockHeight int64
 	OpCacheBlockHeight  int64
 	OpSweepBlockHeight  int64
 
-	// op Sepolia
 	OpSepoliaLatestBlockHeight int64
 	OpSepoliaCacheBlockHeight  int64
 	OpSepoliaSweepBlockHeight  int64
 
-	// sol mainnet
 	SolLatestBlockHeight int64
 	SolCacheBlockHeight  int64
 	SolSweepBlockHeight  int64
 
-	// sol devnet
 	SolDevnetLatestBlockHeight int64
 	SolDevnetCacheBlockHeight  int64
 	SolDevnetSweepBlockHeight  int64
 
-	// ton mainnet
 	TonLatestBlockHeight int64
 	TonCacheBlockHeight  int64
 	TonSweepBlockHeight  int64
 
-	// ton testnet
 	TonTestnetLatestBlockHeight int64
 	TonTestnetCacheBlockHeight  int64
 	TonTestnetSweepBlockHeight  int64
+
+	XrpLatestBlockHeight int64
+	XrpCacheBlockHeight  int64
+	XrpSweepBlockHeight  int64
+
+	XrpTestnetLatestBlockHeight int64
+	XrpTestnetCacheBlockHeight  int64
+	XrpTestnetSweepBlockHeight  int64
+
+	BchLatestBlockHeight int64
+	BchCacheBlockHeight  int64
+	BchSweepBlockHeight  int64
+
+	BchTestnetLatestBlockHeight int64
+	BchTestnetCacheBlockHeight  int64
+	BchTestnetSweepBlockHeight  int64
+
+	PolLatestBlockHeight int64
+	PolCacheBlockHeight  int64
+	PolSweepBlockHeight  int64
+
+	PolTestnetLatestBlockHeight int64
+	PolTestnetCacheBlockHeight  int64
+	PolTestnetSweepBlockHeight  int64
+
+	AvalancheLatestBlockHeight int64
+	AvalancheCacheBlockHeight  int64
+	AvalancheSweepBlockHeight  int64
+
+	AvalancheTestnetLatestBlockHeight int64
+	AvalancheTestnetCacheBlockHeight  int64
+	AvalancheTestnetSweepBlockHeight  int64
+
+	BaseLatestBlockHeight int64
+	BaseCacheBlockHeight  int64
+	BaseSweepBlockHeight  int64
+
+	BaseSepoliaLatestBlockHeight int64
+	BaseSepoliaCacheBlockHeight  int64
+	BaseSepoliaSweepBlockHeight  int64
 )
 
 func SetupPublicKey(ctx context.Context) {
@@ -307,6 +348,76 @@ func SetupPublicKey(ctx context.Context) {
 					return
 				}
 				TonTestnetPublicKey = append(TonTestnetPublicKey, w.Address)
+			case constant.XRP_MAINNET:
+				_, err = global.NODE_REDIS.RPush(ctx, constant.XRP_PUBLIC_KEY, w.Address).Result()
+				if err != nil {
+					global.NODE_LOG.Error(err.Error())
+					return
+				}
+				XrpPublicKey = append(XrpPublicKey, w.Address)
+			case constant.XRP_TESTNET:
+				_, err = global.NODE_REDIS.RPush(ctx, constant.XRP_TESTNET_PUBLIC_KEY, w.Address).Result()
+				if err != nil {
+					global.NODE_LOG.Error(err.Error())
+					return
+				}
+				XrpTestnetPublicKey = append(XrpTestnetPublicKey, w.Address)
+			case constant.BCH_MAINNET:
+				_, err = global.NODE_REDIS.RPush(ctx, constant.BCH_PUBLIC_KEY, w.Address).Result()
+				if err != nil {
+					global.NODE_LOG.Error(err.Error())
+					return
+				}
+				BchPublicKey = append(BchPublicKey, w.Address)
+			case constant.BCH_TESTNET:
+				_, err = global.NODE_REDIS.RPush(ctx, constant.BCH_TESTNET_PUBLIC_KEY, w.Address).Result()
+				if err != nil {
+					global.NODE_LOG.Error(err.Error())
+					return
+				}
+				BchTestnetPublicKey = append(BchTestnetPublicKey, w.Address)
+			case constant.POL_MAINNET:
+				_, err = global.NODE_REDIS.RPush(ctx, constant.POL_PUBLIC_KEY, w.Address).Result()
+				if err != nil {
+					global.NODE_LOG.Error(err.Error())
+					return
+				}
+				PolPublicKey = append(PolPublicKey, w.Address)
+			case constant.POL_TESTNET:
+				_, err = global.NODE_REDIS.RPush(ctx, constant.POL_TESTNET_PUBLIC_KEY, w.Address).Result()
+				if err != nil {
+					global.NODE_LOG.Error(err.Error())
+					return
+				}
+				PolTestnetPublicKey = append(PolTestnetPublicKey, w.Address)
+			case constant.AVALANCHE_MAINNET:
+				_, err = global.NODE_REDIS.RPush(ctx, constant.AVALANCHE_PUBLIC_KEY, w.Address).Result()
+				if err != nil {
+					global.NODE_LOG.Error(err.Error())
+					return
+				}
+				AvalanchePublicKey = append(AvalanchePublicKey, w.Address)
+			case constant.AVALANCHE_TESTNET:
+				_, err = global.NODE_REDIS.RPush(ctx, constant.AVALANCHE_TESTNET_PUBLIC_KEY, w.Address).Result()
+				if err != nil {
+					global.NODE_LOG.Error(err.Error())
+					return
+				}
+				AvalancheTestnetPublicKey = append(AvalancheTestnetPublicKey, w.Address)
+			case constant.BASE_MAINNET:
+				_, err = global.NODE_REDIS.RPush(ctx, constant.BASE_PUBLIC_KEY, w.Address).Result()
+				if err != nil {
+					global.NODE_LOG.Error(err.Error())
+					return
+				}
+				BasePublicKey = append(BasePublicKey, w.Address)
+			case constant.BASE_SEPOLIA:
+				_, err = global.NODE_REDIS.RPush(ctx, constant.BASE_SEPOLIA_PUBLIC_KEY, w.Address).Result()
+				if err != nil {
+					global.NODE_LOG.Error(err.Error())
+					return
+				}
+				BaseSepoliaPublicKey = append(BaseSepoliaPublicKey, w.Address)
 			}
 		}
 	}
@@ -379,6 +490,37 @@ func SetupLatestBlockHeight(ctx context.Context, chainId uint, blockNumber int64
 	case constant.TON_TESTNET:
 		latestBlockKey = constant.TON_TESTNET_LATEST_BLOCK
 		latestHeightVal = &TonTestnetLatestBlockHeight
+	case constant.XRP_MAINNET:
+		latestBlockKey = constant.XRP_LATEST_BLOCK
+		latestHeightVal = &XrpLatestBlockHeight
+	case constant.XRP_TESTNET:
+		latestBlockKey = constant.XRP_TESTNET_LATEST_BLOCK
+		latestHeightVal = &XrpTestnetLatestBlockHeight
+	case constant.BCH_MAINNET:
+		latestBlockKey = constant.BCH_LATEST_BLOCK
+		latestHeightVal = &BchLatestBlockHeight
+	case constant.BCH_TESTNET:
+		latestBlockKey = constant.BCH_TESTNET_LATEST_BLOCK
+		latestHeightVal = &BchTestnetLatestBlockHeight
+	case constant.POL_MAINNET:
+		latestBlockKey = constant.POL_LATEST_BLOCK
+		latestHeightVal = &PolLatestBlockHeight
+	case constant.POL_TESTNET:
+		latestBlockKey = constant.POL_TESTNET_LATEST_BLOCK
+		latestHeightVal = &PolTestnetLatestBlockHeight
+	case constant.AVALANCHE_MAINNET:
+		latestBlockKey = constant.AVALANCHE_LATEST_BLOCK
+		latestHeightVal = &AvalancheLatestBlockHeight
+	case constant.AVALANCHE_TESTNET:
+		latestBlockKey = constant.AVALANCHE_TESTNET_LATEST_BLOCK
+		latestHeightVal = &AvalancheTestnetLatestBlockHeight
+	case constant.BASE_MAINNET:
+		latestBlockKey = constant.BASE_LATEST_BLOCK
+		latestHeightVal = &BaseLatestBlockHeight
+	case constant.BASE_SEPOLIA:
+		latestBlockKey = constant.BASE_SEPOLIA_LATEST_BLOCK
+		latestHeightVal = &BaseSepoliaLatestBlockHeight
+
 	default:
 		return
 	}
@@ -478,6 +620,46 @@ func SetupCacheBlockHeight(ctx context.Context, chainId uint) {
 		cacheBlockKey = constant.TON_TESTNET_CACHE_BLOCK
 		cacheHeightVal = &TonTestnetCacheBlockHeight
 		latestBlockHeight = TonTestnetLatestBlockHeight
+	case constant.XRP_MAINNET:
+		cacheBlockKey = constant.XRP_CACHE_BLOCK
+		cacheHeightVal = &XrpCacheBlockHeight
+		latestBlockHeight = XrpLatestBlockHeight
+	case constant.XRP_TESTNET:
+		cacheBlockKey = constant.XRP_TESTNET_CACHE_BLOCK
+		cacheHeightVal = &XrpTestnetCacheBlockHeight
+		latestBlockHeight = XrpTestnetLatestBlockHeight
+	case constant.BCH_MAINNET:
+		cacheBlockKey = constant.BCH_CACHE_BLOCK
+		cacheHeightVal = &BchCacheBlockHeight
+		latestBlockHeight = BchLatestBlockHeight
+	case constant.BCH_TESTNET:
+		cacheBlockKey = constant.BCH_TESTNET_CACHE_BLOCK
+		cacheHeightVal = &BchTestnetCacheBlockHeight
+		latestBlockHeight = BchTestnetLatestBlockHeight
+	case constant.POL_MAINNET:
+		cacheBlockKey = constant.POL_CACHE_BLOCK
+		cacheHeightVal = &PolCacheBlockHeight
+		latestBlockHeight = PolLatestBlockHeight
+	case constant.POL_TESTNET:
+		cacheBlockKey = constant.POL_TESTNET_CACHE_BLOCK
+		cacheHeightVal = &PolTestnetCacheBlockHeight
+		latestBlockHeight = PolTestnetLatestBlockHeight
+	case constant.AVALANCHE_MAINNET:
+		cacheBlockKey = constant.AVALANCHE_CACHE_BLOCK
+		cacheHeightVal = &AvalancheCacheBlockHeight
+		latestBlockHeight = AvalancheLatestBlockHeight
+	case constant.AVALANCHE_TESTNET:
+		cacheBlockKey = constant.AVALANCHE_TESTNET_CACHE_BLOCK
+		cacheHeightVal = &AvalancheTestnetCacheBlockHeight
+		latestBlockHeight = AvalancheTestnetLatestBlockHeight
+	case constant.BASE_MAINNET:
+		cacheBlockKey = constant.BASE_CACHE_BLOCK
+		cacheHeightVal = &BaseCacheBlockHeight
+		latestBlockHeight = BaseLatestBlockHeight
+	case constant.BASE_SEPOLIA:
+		cacheBlockKey = constant.BASE_SEPOLIA_CACHE_BLOCK
+		cacheHeightVal = &BaseSepoliaCacheBlockHeight
+		latestBlockHeight = BaseSepoliaLatestBlockHeight
 	default:
 		return
 	}
@@ -586,6 +768,46 @@ func SetupSweepBlockHeight(ctx context.Context, chainId uint) {
 		sweepBlockKey = constant.TON_TESTNET_SWEEP_BLOCK
 		sweepHeightVal = &TonTestnetSweepBlockHeight
 		cacheBlockHeight = TonTestnetCacheBlockHeight
+	case constant.XRP_MAINNET:
+		sweepBlockKey = constant.XRP_SWEEP_BLOCK
+		sweepHeightVal = &XrpSweepBlockHeight
+		cacheBlockHeight = XrpCacheBlockHeight
+	case constant.XRP_TESTNET:
+		sweepBlockKey = constant.XRP_TESTNET_SWEEP_BLOCK
+		sweepHeightVal = &XrpTestnetSweepBlockHeight
+		cacheBlockHeight = XrpTestnetCacheBlockHeight
+	case constant.BCH_MAINNET:
+		sweepBlockKey = constant.BCH_SWEEP_BLOCK
+		sweepHeightVal = &BchSweepBlockHeight
+		cacheBlockHeight = BchCacheBlockHeight
+	case constant.BCH_TESTNET:
+		sweepBlockKey = constant.BCH_TESTNET_SWEEP_BLOCK
+		sweepHeightVal = &BchTestnetSweepBlockHeight
+		cacheBlockHeight = BchTestnetCacheBlockHeight
+	case constant.POL_MAINNET:
+		sweepBlockKey = constant.POL_SWEEP_BLOCK
+		sweepHeightVal = &PolSweepBlockHeight
+		cacheBlockHeight = PolCacheBlockHeight
+	case constant.POL_TESTNET:
+		sweepBlockKey = constant.POL_TESTNET_SWEEP_BLOCK
+		sweepHeightVal = &PolTestnetSweepBlockHeight
+		cacheBlockHeight = PolTestnetCacheBlockHeight
+	case constant.AVALANCHE_MAINNET:
+		sweepBlockKey = constant.AVALANCHE_SWEEP_BLOCK
+		sweepHeightVal = &AvalancheSweepBlockHeight
+		cacheBlockHeight = AvalancheCacheBlockHeight
+	case constant.AVALANCHE_TESTNET:
+		sweepBlockKey = constant.AVALANCHE_TESTNET_SWEEP_BLOCK
+		sweepHeightVal = &AvalancheTestnetSweepBlockHeight
+		cacheBlockHeight = AvalancheTestnetCacheBlockHeight
+	case constant.BASE_MAINNET:
+		sweepBlockKey = constant.BASE_SWEEP_BLOCK
+		sweepHeightVal = &BaseSweepBlockHeight
+		cacheBlockHeight = BaseCacheBlockHeight
+	case constant.BASE_SEPOLIA:
+		sweepBlockKey = constant.BASE_SEPOLIA_SWEEP_BLOCK
+		sweepHeightVal = &BaseSepoliaSweepBlockHeight
+		cacheBlockHeight = BaseSepoliaCacheBlockHeight
 	default:
 		return
 	}
@@ -674,6 +896,36 @@ func UpdatePublicKey(ctx context.Context, chainId uint) {
 	case constant.TON_TESTNET:
 		publicKeyString = constant.TON_TESTNET_PUBLIC_KEY
 		publicKeys = &TonTestnetPublicKey
+	case constant.XRP_MAINNET:
+		publicKeyString = constant.XRP_PUBLIC_KEY
+		publicKeys = &XrpPublicKey
+	case constant.XRP_TESTNET:
+		publicKeyString = constant.XRP_TESTNET_PUBLIC_KEY
+		publicKeys = &XrpTestnetPublicKey
+	case constant.BCH_MAINNET:
+		publicKeyString = constant.BCH_PUBLIC_KEY
+		publicKeys = &BchPublicKey
+	case constant.BCH_TESTNET:
+		publicKeyString = constant.BCH_TESTNET_PUBLIC_KEY
+		publicKeys = &BchTestnetPublicKey
+	case constant.POL_MAINNET:
+		publicKeyString = constant.POL_PUBLIC_KEY
+		publicKeys = &PolPublicKey
+	case constant.POL_TESTNET:
+		publicKeyString = constant.POL_TESTNET_PUBLIC_KEY
+		publicKeys = &PolTestnetPublicKey
+	case constant.AVALANCHE_MAINNET:
+		publicKeyString = constant.AVALANCHE_PUBLIC_KEY
+		publicKeys = &AvalanchePublicKey
+	case constant.AVALANCHE_TESTNET:
+		publicKeyString = constant.AVALANCHE_TESTNET_PUBLIC_KEY
+		publicKeys = &AvalancheTestnetPublicKey
+	case constant.BASE_MAINNET:
+		publicKeyString = constant.BASE_PUBLIC_KEY
+		publicKeys = &BasePublicKey
+	case constant.BASE_SEPOLIA:
+		publicKeyString = constant.BASE_SEPOLIA_PUBLIC_KEY
+		publicKeys = &BaseSepoliaPublicKey
 	default:
 		return
 	}
@@ -790,6 +1042,46 @@ func UpdateCacheBlockHeight(ctx context.Context, chainId uint) {
 		cacheBlockString = constant.TON_TESTNET_CACHE_BLOCK
 		latestBlockHeight = &TonTestnetLatestBlockHeight
 		TonTestnetCacheBlockHeight = TonTestnetLatestBlockHeight
+	case constant.XRP_MAINNET:
+		cacheBlockString = constant.XRP_CACHE_BLOCK
+		latestBlockHeight = &XrpLatestBlockHeight
+		XrpCacheBlockHeight = XrpLatestBlockHeight
+	case constant.XRP_TESTNET:
+		cacheBlockString = constant.XRP_TESTNET_CACHE_BLOCK
+		latestBlockHeight = &XrpTestnetLatestBlockHeight
+		XrpTestnetCacheBlockHeight = XrpTestnetLatestBlockHeight
+	case constant.BCH_MAINNET:
+		cacheBlockString = constant.BCH_CACHE_BLOCK
+		latestBlockHeight = &BchLatestBlockHeight
+		BchCacheBlockHeight = BchLatestBlockHeight
+	case constant.BCH_TESTNET:
+		cacheBlockString = constant.BCH_TESTNET_CACHE_BLOCK
+		latestBlockHeight = &BchTestnetLatestBlockHeight
+		BchTestnetCacheBlockHeight = BchTestnetLatestBlockHeight
+	case constant.POL_MAINNET:
+		cacheBlockString = constant.POL_CACHE_BLOCK
+		latestBlockHeight = &PolLatestBlockHeight
+		PolCacheBlockHeight = PolLatestBlockHeight
+	case constant.POL_TESTNET:
+		cacheBlockString = constant.POL_TESTNET_CACHE_BLOCK
+		latestBlockHeight = &PolTestnetLatestBlockHeight
+		PolTestnetCacheBlockHeight = PolTestnetLatestBlockHeight
+	case constant.AVALANCHE_MAINNET:
+		cacheBlockString = constant.AVALANCHE_CACHE_BLOCK
+		latestBlockHeight = &AvalancheLatestBlockHeight
+		AvalancheCacheBlockHeight = AvalancheLatestBlockHeight
+	case constant.AVALANCHE_TESTNET:
+		cacheBlockString = constant.AVALANCHE_TESTNET_CACHE_BLOCK
+		latestBlockHeight = &AvalancheTestnetLatestBlockHeight
+		AvalancheTestnetCacheBlockHeight = AvalancheTestnetLatestBlockHeight
+	case constant.BASE_MAINNET:
+		cacheBlockString = constant.BASE_CACHE_BLOCK
+		latestBlockHeight = &BaseLatestBlockHeight
+		BaseCacheBlockHeight = BaseLatestBlockHeight
+	case constant.BASE_SEPOLIA:
+		cacheBlockString = constant.BASE_SEPOLIA_CACHE_BLOCK
+		latestBlockHeight = &BaseSepoliaLatestBlockHeight
+		BaseSepoliaCacheBlockHeight = BaseSepoliaLatestBlockHeight
 	default:
 		return
 	}
@@ -887,6 +1179,46 @@ func UpdateSweepBlockHeight(ctx context.Context, chainId uint) {
 		sweepBlockString = constant.TON_TESTNET_SWEEP_BLOCK
 		cacheBlockHeight = &TonTestnetCacheBlockHeight
 		TonTestnetSweepBlockHeight = TonTestnetCacheBlockHeight
+	case constant.XRP_MAINNET:
+		sweepBlockString = constant.XRP_SWEEP_BLOCK
+		cacheBlockHeight = &XrpCacheBlockHeight
+		XrpSweepBlockHeight = XrpCacheBlockHeight
+	case constant.XRP_TESTNET:
+		sweepBlockString = constant.XRP_TESTNET_SWEEP_BLOCK
+		cacheBlockHeight = &XrpTestnetCacheBlockHeight
+		XrpTestnetSweepBlockHeight = XrpTestnetCacheBlockHeight
+	case constant.BCH_MAINNET:
+		sweepBlockString = constant.BCH_SWEEP_BLOCK
+		cacheBlockHeight = &BchCacheBlockHeight
+		BchSweepBlockHeight = BchCacheBlockHeight
+	case constant.BCH_TESTNET:
+		sweepBlockString = constant.BCH_TESTNET_SWEEP_BLOCK
+		cacheBlockHeight = &BchTestnetCacheBlockHeight
+		BchTestnetSweepBlockHeight = BchTestnetCacheBlockHeight
+	case constant.POL_MAINNET:
+		sweepBlockString = constant.POL_SWEEP_BLOCK
+		cacheBlockHeight = &PolCacheBlockHeight
+		PolSweepBlockHeight = PolCacheBlockHeight
+	case constant.POL_TESTNET:
+		sweepBlockString = constant.POL_TESTNET_SWEEP_BLOCK
+		cacheBlockHeight = &PolTestnetCacheBlockHeight
+		PolTestnetSweepBlockHeight = PolTestnetCacheBlockHeight
+	case constant.AVALANCHE_MAINNET:
+		sweepBlockString = constant.AVALANCHE_SWEEP_BLOCK
+		cacheBlockHeight = &AvalancheCacheBlockHeight
+		AvalancheSweepBlockHeight = AvalancheCacheBlockHeight
+	case constant.AVALANCHE_TESTNET:
+		sweepBlockString = constant.AVALANCHE_TESTNET_SWEEP_BLOCK
+		cacheBlockHeight = &AvalancheTestnetCacheBlockHeight
+		AvalancheTestnetSweepBlockHeight = AvalancheTestnetCacheBlockHeight
+	case constant.BASE_MAINNET:
+		sweepBlockString = constant.BASE_SWEEP_BLOCK
+		cacheBlockHeight = &BaseCacheBlockHeight
+		BaseSweepBlockHeight = BaseCacheBlockHeight
+	case constant.BASE_SEPOLIA:
+		sweepBlockString = constant.BASE_SEPOLIA_SWEEP_BLOCK
+		cacheBlockHeight = &BaseSepoliaCacheBlockHeight
+		BaseSepoliaSweepBlockHeight = BaseSepoliaCacheBlockHeight
 	default:
 		return
 	}
@@ -949,6 +1281,26 @@ func SavePublicKeyToRedis(ctx context.Context, chainId uint, address string) (er
 		publicKeyString = constant.TON_PUBLIC_KEY
 	case constant.TON_TESTNET:
 		publicKeyString = constant.TON_TESTNET_PUBLIC_KEY
+	case constant.XRP_MAINNET:
+		publicKeyString = constant.XRP_PUBLIC_KEY
+	case constant.XRP_TESTNET:
+		publicKeyString = constant.XRP_TESTNET_PUBLIC_KEY
+	case constant.BCH_MAINNET:
+		publicKeyString = constant.BCH_PUBLIC_KEY
+	case constant.BCH_TESTNET:
+		publicKeyString = constant.BCH_TESTNET_PUBLIC_KEY
+	case constant.POL_MAINNET:
+		publicKeyString = constant.POL_PUBLIC_KEY
+	case constant.POL_TESTNET:
+		publicKeyString = constant.POL_TESTNET_PUBLIC_KEY
+	case constant.AVALANCHE_MAINNET:
+		publicKeyString = constant.AVALANCHE_PUBLIC_KEY
+	case constant.AVALANCHE_TESTNET:
+		publicKeyString = constant.AVALANCHE_TESTNET_PUBLIC_KEY
+	case constant.BASE_MAINNET:
+		publicKeyString = constant.BASE_PUBLIC_KEY
+	case constant.BASE_SEPOLIA:
+		publicKeyString = constant.BASE_SEPOLIA_PUBLIC_KEY
 	default:
 		return
 	}

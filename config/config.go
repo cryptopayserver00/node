@@ -97,6 +97,11 @@ type Blockchain struct {
 	ArbitrumNova   bool `mapstructure:"arbitrum-nova" json:"arbitrum-nova" yaml:"arbitrum-nova"`
 	Solana         bool `mapstructure:"solana" json:"solana" yaml:"solana"`
 	Ton            bool `mapstructure:"ton" json:"ton" yaml:"ton"`
+	Xrp            bool `mapstructure:"xrp" json:"xrp" yaml:"xrp"`
+	BitcoinCash    bool `mapstructure:"bitcoin-cash" json:"bitcoin-cash" yaml:"bitcoin-cash"`
+	Polygon        bool `mapstructure:"polygon" json:"polygon" yaml:"polygon"`
+	Avalanche      bool `mapstructure:"avalanche" json:"avalanche" yaml:"avalanche"`
+	Base           bool `mapstructure:"base" json:"base" yaml:"base"`
 }
 
 type BlockchainPlugin struct {

@@ -71,7 +71,6 @@ func RunBlockSweep() {
 	if global.NODE_CONFIG.Blockchain.ArbitrumNova {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
 			mainnet.SweepArbitrumNovaBlockchain()
-		} else {
 		}
 	}
 
@@ -90,4 +89,44 @@ func RunBlockSweep() {
 			testnet.SweepTonTestnetBlockchain()
 		}
 	}
+
+	// if global.NODE_CONFIG.Blockchain.Xrp {
+	// 	if global.NODE_CONFIG.Blockchain.SweepMainnet {
+	// 		mainnet.SweepXrpBlockchain()
+	// 	} else {
+	// 		testnet.SweepXrpTestnetBlockchain()
+	// 	}
+	// }
+
+	// if global.NODE_CONFIG.Blockchain.BitcoinCash {
+	// 	if global.NODE_CONFIG.Blockchain.SweepMainnet {
+	// 		mainnet.SweepBitcoinCashBlockchain()
+	// 	} else {
+	// 		testnet.SweepBitcoinCashTestnetBlockchain()
+	// 	}
+	// }
+
+	// if global.NODE_CONFIG.Blockchain.Polygon {
+	// 	if global.NODE_CONFIG.Blockchain.SweepMainnet {
+	// 		mainnet.SweepPolygonBlockchain()
+	// 	} else {
+	// 		testnet.SweepPolygonTestnetBlockchain()
+	// 	}
+	// }
+
+	// if global.NODE_CONFIG.Blockchain.Avalanche {
+	// 	if global.NODE_CONFIG.Blockchain.SweepMainnet {
+	// 		mainnet.SweepAvalancheBlockchain()
+	// 	} else {
+	// 		testnet.SweepAvalancheTestnetBlockchain()
+	// 	}
+	// }
+
+	// if global.NODE_CONFIG.Blockchain.Base {
+	// 	if global.NODE_CONFIG.Blockchain.SweepMainnet {
+	// 		mainnet.SweepBaseBlockchain()
+	// 	} else {
+	// 		testnet.SweepBaseSepoliaBlockchain()
+	// 	}
+	// }
 }

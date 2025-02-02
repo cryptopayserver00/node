@@ -23,6 +23,13 @@ blockchain:
   op: false
   arbitrum-one: false
   arbitrum-nova: false
+  solana: false
+  ton: false
+  xrp: false
+  bitcoin-cash: false
+  polygon: false
+  avalanche: false
+  base: false
 
 blockchain-plugin:
   bitcoin: "tatum" # tatum | mempool
