@@ -69,7 +69,7 @@ func (n *NService) UpdateChainListFromDB() (err error) {
 
 	if len(chains) > 0 {
 		var infos []model.ChainInfo
-		var ethMainnetChain, ethSepoliaChain, ethGoerliChain, btcMainnetChain, btcTestnetChain, ltcMainnetChain, ltcTestnetChain, bscMainnetChain, bscTestnetChain, opMainnetChain, opSepoliaChain, arbOneChain, arbNovaChain, arbSepoliaChain, arbGoerliChain, tronMainnetChain, tronNileChain model.ChainInfo
+		var ethMainnetChain, ethSepoliaChain, btcMainnetChain, btcTestnetChain, ltcMainnetChain, ltcTestnetChain, bscMainnetChain, bscTestnetChain, opMainnetChain, opSepoliaChain, arbOneChain, arbNovaChain, arbSepoliaChain, tronMainnetChain, tronNileChain model.ChainInfo
 		for _, v := range chains {
 			var coin model.Coin
 
@@ -96,14 +96,6 @@ func (n *NService) UpdateChainListFromDB() (err error) {
 					ethSepoliaChain.NetworkId = v.NetworkId
 				}
 				ethSepoliaChain.Coins = append(ethSepoliaChain.Coins, coin)
-			case constant.ETH_GOERLI:
-				if ethGoerliChain.Name == "" {
-					ethGoerliChain.Name = v.Name
-					ethGoerliChain.Chain = v.Chain
-					ethGoerliChain.ChainId = v.ChainId
-					ethGoerliChain.NetworkId = v.NetworkId
-				}
-				ethGoerliChain.Coins = append(ethGoerliChain.Coins, coin)
 			case constant.BSC_MAINNET:
 				if bscMainnetChain.Name == "" {
 					bscMainnetChain.Name = v.Name
@@ -203,15 +195,6 @@ func (n *NService) UpdateChainListFromDB() (err error) {
 				}
 
 				arbSepoliaChain.Coins = append(arbSepoliaChain.Coins, coin)
-			case constant.ARBITRUM_GOERLI:
-				if arbGoerliChain.Name == "" {
-					arbGoerliChain.Name = v.Name
-					arbGoerliChain.Chain = v.Chain
-					arbGoerliChain.ChainId = v.ChainId
-					arbGoerliChain.NetworkId = v.NetworkId
-				}
-
-				arbGoerliChain.Coins = append(arbGoerliChain.Coins, coin)
 			case constant.TRON_MAINNET:
 				if tronMainnetChain.Name == "" {
 					tronMainnetChain.Name = v.Name
@@ -233,7 +216,7 @@ func (n *NService) UpdateChainListFromDB() (err error) {
 			}
 		}
 
-		infos = append(infos, ethMainnetChain, ethGoerliChain, ethSepoliaChain, bscMainnetChain, bscTestnetChain, opMainnetChain, opSepoliaChain, arbOneChain, arbNovaChain, arbSepoliaChain, arbGoerliChain, tronMainnetChain, tronNileChain, btcMainnetChain, btcTestnetChain, ltcTestnetChain, ltcMainnetChain)
+		infos = append(infos, ethMainnetChain, ethSepoliaChain, bscMainnetChain, bscTestnetChain, opMainnetChain, opSepoliaChain, arbOneChain, arbNovaChain, arbSepoliaChain, tronMainnetChain, tronNileChain, btcMainnetChain, btcTestnetChain, ltcTestnetChain, ltcMainnetChain)
 		model.ChainList = infos
 	}
 

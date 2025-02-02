@@ -113,32 +113,51 @@ var ChainId = map[uint]string{
 }
 
 var (
-	ETH_MAINNET      uint = 1
-	BTC_MAINNET      uint = 2
-	BTC_TESTNET      uint = 3
-	ETH_GOERLI       uint = 5
-	LTC_MAINNET      uint = 6
-	LTC_TESTNET      uint = 7
-	OP_MAINNET       uint = 10
-	BSC_MAINNET      uint = 56
-	BSC_TESTNET      uint = 97
-	OP_GOERLI        uint = 420
+	ETH_MAINNET uint = 1
+	ETH_SEPOLIA uint = 11155111
+
+	BTC_MAINNET uint = 2
+	BTC_TESTNET uint = 3
+
+	LTC_MAINNET uint = 6
+	LTC_TESTNET uint = 7
+
+	BSC_MAINNET uint = 56
+	BSC_TESTNET uint = 97
+
 	ARBITRUM_ONE     uint = 42161
 	ARBITRUM_NOVA    uint = 42170
-	ARBITRUM_GOERLI  uint = 421613
 	ARBITRUM_SEPOLIA uint = 421614
-	ETH_SEPOLIA      uint = 11155111
-	OP_SEPOLIA       uint = 11155420
-	TRON_MAINNET     uint = 728126428
-	TRON_NILE        uint = 3448148188
-	SOL_MAINNET      uint = 101
-	SOL_DEVNET       uint = 103
-	TON_MAINNET      uint = 1100
-	TON_TESTNET      uint = 1101
+
+	OP_MAINNET uint = 10
+	OP_SEPOLIA uint = 11155420
+
+	TRON_MAINNET uint = 728126428
+	TRON_NILE    uint = 3448148188
+
+	SOL_MAINNET uint = 101
+	SOL_DEVNET  uint = 103
+
+	TON_MAINNET uint = 1100
+	TON_TESTNET uint = 1101
+
+	XRP_MAINNET uint = 8
+	XRP_TESTNET uint = 9
+
+	BCH_MAINNET uint = 11
+	BCH_TESTNET uint = 12
+
+	POL_MAINNET uint = 137
+	POL_TESTNET uint = 80001
+
+	AVALANCHE_MAINNET uint = 43114
+	AVALANCHE_TESTNET uint = 43113
+
+	BASE_MAINNET uint = 8453
+	BASE_SEPOLIA uint = 84532
 
 	JoinSweep = []uint{
 		ETH_MAINNET,
-		ETH_GOERLI,
 		ETH_SEPOLIA,
 		BTC_MAINNET,
 		BTC_TESTNET,
@@ -146,7 +165,6 @@ var (
 		BSC_TESTNET,
 		ARBITRUM_ONE,
 		ARBITRUM_NOVA,
-		ARBITRUM_GOERLI,
 		ARBITRUM_SEPOLIA,
 		TRON_MAINNET,
 		TRON_NILE,
@@ -158,6 +176,16 @@ var (
 		SOL_DEVNET,
 		TON_MAINNET,
 		TON_TESTNET,
+		XRP_MAINNET,
+		XRP_TESTNET,
+		BCH_MAINNET,
+		BCH_TESTNET,
+		POL_MAINNET,
+		POL_TESTNET,
+		AVALANCHE_MAINNET,
+		AVALANCHE_TESTNET,
+		BASE_MAINNET,
+		BASE_SEPOLIA,
 	}
 
 	LikeMainnetEthChain = []uint{
@@ -166,29 +194,37 @@ var (
 		ARBITRUM_ONE,
 		ARBITRUM_NOVA,
 		OP_MAINNET,
+		POL_MAINNET,
+		AVALANCHE_MAINNET,
+		BASE_MAINNET,
 	}
 
 	LikeTestnetEthChain = []uint{
-		ETH_GOERLI,
 		ETH_SEPOLIA,
 		BSC_TESTNET,
-		ARBITRUM_GOERLI,
 		ARBITRUM_SEPOLIA,
 		OP_SEPOLIA,
+		POL_TESTNET,
+		AVALANCHE_TESTNET,
+		BASE_SEPOLIA,
 	}
 
 	LikeEthChain = []uint{
 		ETH_MAINNET,
+		ETH_SEPOLIA,
 		BSC_MAINNET,
+		BSC_TESTNET,
 		ARBITRUM_ONE,
 		ARBITRUM_NOVA,
-		OP_MAINNET,
-		ETH_GOERLI,
-		ETH_SEPOLIA,
-		BSC_TESTNET,
-		ARBITRUM_GOERLI,
 		ARBITRUM_SEPOLIA,
+		OP_MAINNET,
 		OP_SEPOLIA,
+		POL_MAINNET,
+		POL_TESTNET,
+		AVALANCHE_MAINNET,
+		AVALANCHE_TESTNET,
+		BASE_MAINNET,
+		BASE_SEPOLIA,
 	}
 
 	LikeMainnetTronChain = []uint{
@@ -241,6 +277,11 @@ var (
 		TRON_MAINNET,
 		SOL_MAINNET,
 		TON_MAINNET,
+		XRP_MAINNET,
+		BCH_MAINNET,
+		POL_MAINNET,
+		AVALANCHE_MAINNET,
+		BASE_MAINNET,
 	}
 
 	TestnetChain = []uint{
@@ -253,6 +294,11 @@ var (
 		TRON_NILE,
 		SOL_DEVNET,
 		TON_TESTNET,
+		XRP_TESTNET,
+		BCH_TESTNET,
+		POL_TESTNET,
+		AVALANCHE_TESTNET,
+		BASE_SEPOLIA,
 	}
 )
 
@@ -327,16 +373,20 @@ func IsAddressSupport(chainId uint, address string) bool {
 
 	switch chainId {
 	case ETH_MAINNET,
-		ETH_GOERLI,
 		ETH_SEPOLIA,
 		BSC_MAINNET,
 		BSC_TESTNET,
 		ARBITRUM_ONE,
 		ARBITRUM_NOVA,
-		ARBITRUM_GOERLI,
 		ARBITRUM_SEPOLIA,
 		OP_MAINNET,
-		OP_SEPOLIA:
+		OP_SEPOLIA,
+		POL_MAINNET,
+		POL_TESTNET,
+		AVALANCHE_MAINNET,
+		AVALANCHE_TESTNET,
+		BASE_MAINNET,
+		BASE_SEPOLIA:
 		return common.IsHexAddress(address)
 	case BTC_MAINNET:
 		_, err := btcutil.DecodeAddress(address, &btcCfg.MainNetParams)
@@ -402,16 +452,20 @@ func IsAddressContractSupport(chainId uint, address string) bool {
 
 	switch chainId {
 	case ETH_MAINNET,
-		ETH_GOERLI,
 		ETH_SEPOLIA,
 		BSC_MAINNET,
 		BSC_TESTNET,
 		ARBITRUM_ONE,
 		ARBITRUM_NOVA,
-		ARBITRUM_GOERLI,
 		ARBITRUM_SEPOLIA,
 		OP_MAINNET,
-		OP_SEPOLIA:
+		OP_SEPOLIA,
+		POL_MAINNET,
+		POL_TESTNET,
+		AVALANCHE_MAINNET,
+		AVALANCHE_TESTNET,
+		BASE_MAINNET,
+		BASE_SEPOLIA:
 		client.URL = GetRPCUrlByNetwork(chainId)
 		var rpcGeneral response.RPCGeneral
 		var jsonRpcRequest request.JsonRpcRequest
@@ -469,17 +523,20 @@ func AddressToLower(chainId uint, address string) string {
 
 	switch chainId {
 	case ETH_MAINNET,
-		ETH_GOERLI,
 		ETH_SEPOLIA,
 		BSC_MAINNET,
 		BSC_TESTNET,
 		ARBITRUM_ONE,
 		ARBITRUM_NOVA,
-		ARBITRUM_GOERLI,
 		ARBITRUM_SEPOLIA,
 		OP_MAINNET,
-		OP_SEPOLIA:
-
+		OP_SEPOLIA,
+		POL_MAINNET,
+		POL_TESTNET,
+		AVALANCHE_MAINNET,
+		AVALANCHE_TESTNET,
+		BASE_MAINNET,
+		BASE_SEPOLIA:
 		return strings.ToLower(address)
 	}
 

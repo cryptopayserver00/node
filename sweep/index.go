@@ -64,7 +64,6 @@ func RunBlockSweep() {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
 			mainnet.SweepArbitrumOneBlockchain()
 		} else {
-			// testnet.SweepArbitrumGoerliBlockchain()
 			testnet.SweepArbitrumSepoliaBlockchain()
 		}
 	}

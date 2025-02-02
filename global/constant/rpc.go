@@ -15,10 +15,6 @@ var (
 	// 	"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
 	// }
 
-	// ETHAlchemyGoerliRPC = []string{
-	// 	"https://eth-goerli.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
-	// }
-
 	// ETHAlchemySepoliaRPC = []string{
 	// 	"https://eth-sepolia.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
 	// }
@@ -40,16 +36,6 @@ var (
 
 	ETHGeneralMainnetRPC = []string{
 		"https://ethereum-rpc.publicnode.com",
-	}
-
-	ETHGoerliRPC = []string{
-		"https://rpc.ankr.com/eth_goerli",
-		"https://rpc.tornadoeth.cash/goerli",
-	}
-
-	ETHGeneralGoerliRPC = []string{
-		"https://rpc.ankr.com/eth_goerli",
-		"https://rpc.tornadoeth.cash/goerli",
 	}
 
 	ETHSepoliaRPC = []string{
@@ -97,11 +83,6 @@ var (
 		"https://1rpc.io/op",
 	}
 
-	OPGoerliRPC = []string{
-		// "https://opt-goerli.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
-		"https://goerli.optimism.io",
-	}
-
 	OPSepoliaRPC = []string{
 		// "https://opt-sepolia.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
 		"https://sepolia.optimism.io",
@@ -124,11 +105,6 @@ var (
 		"https://nova.arbitrum.io/rpc",
 	}
 
-	ArbitrumGoerliRPC = []string{
-		// "https://arb-goerli.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
-		"https://goerli-rollup.arbitrum.io/rpc",
-	}
-
 	ArbitrumSepoliaRPC = []string{
 		"https://sepolia-rollup.arbitrum.io/rpc",
 		"https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
@@ -139,14 +115,10 @@ func GetAllRPCUrlByNetwork(chainId uint) []string {
 	switch chainId {
 	case ETH_MAINNET:
 		return ETHMainnetRPC
-	case ETH_GOERLI:
-		return ETHGoerliRPC
 	case ETH_SEPOLIA:
 		return ETHSepoliaRPC
 	case OP_MAINNET:
 		return OPMainnetRPC
-	case OP_GOERLI:
-		return OPGoerliRPC
 	case OP_SEPOLIA:
 		return OPSepoliaRPC
 	case BSC_MAINNET:
@@ -157,8 +129,6 @@ func GetAllRPCUrlByNetwork(chainId uint) []string {
 		return ArbitrumOneRPC
 	case ARBITRUM_NOVA:
 		return ArbitrumNovaRPC
-	case ARBITRUM_GOERLI:
-		return ArbitrumGoerliRPC
 	case ARBITRUM_SEPOLIA:
 		return ArbitrumSepoliaRPC
 	}
@@ -173,9 +143,6 @@ func GetGeneralRPCUrlByNetwork(chainId uint) string {
 	case ETH_MAINNET:
 		index := rand.Intn(len(ETHGeneralMainnetRPC))
 		return ETHGeneralMainnetRPC[index]
-	case ETH_GOERLI:
-		index := rand.Intn(len(ETHGeneralGoerliRPC))
-		return ETHGeneralGoerliRPC[index]
 	case ETH_SEPOLIA:
 		index := rand.Intn(len(ETHGeneralSepoliaRPC))
 		return ETHGeneralSepoliaRPC[index]
@@ -233,14 +200,10 @@ func GetRPCUrlByNetwork(chainId uint) string {
 	switch chainId {
 	case ETH_MAINNET:
 		return GetRealRpcByArray(ETHMainnetRPC)
-	case ETH_GOERLI:
-		return GetRealRpcByArray(ETHGoerliRPC)
 	case ETH_SEPOLIA:
 		return GetRealRpcByArray(ETHSepoliaRPC)
 	case OP_MAINNET:
 		return GetRealRpcByArray(OPMainnetRPC)
-	case OP_GOERLI:
-		return GetRealRpcByArray(OPGoerliRPC)
 	case OP_SEPOLIA:
 		return GetRealRpcByArray(OPSepoliaRPC)
 	case BSC_MAINNET:
@@ -253,8 +216,6 @@ func GetRPCUrlByNetwork(chainId uint) string {
 		return ArbitrumOneRPC[index]
 	case ARBITRUM_NOVA:
 		return GetRealRpcByArray(ArbitrumNovaRPC)
-	case ARBITRUM_GOERLI:
-		return GetRealRpcByArray(ArbitrumGoerliRPC)
 	case ARBITRUM_SEPOLIA:
 		return GetRealRpcByArray(ArbitrumSepoliaRPC)
 	}

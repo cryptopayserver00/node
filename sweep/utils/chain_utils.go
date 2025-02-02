@@ -35,7 +35,6 @@ func GetContractInfo(chainId uint, contractAddress string) (bool, string, string
 		for _, coin := range element.Coins {
 			switch chainId {
 			case constant.ETH_MAINNET,
-				constant.ETH_GOERLI,
 				constant.ETH_SEPOLIA,
 				constant.BSC_MAINNET,
 				constant.BSC_TESTNET,
@@ -43,7 +42,6 @@ func GetContractInfo(chainId uint, contractAddress string) (bool, string, string
 				constant.OP_SEPOLIA,
 				constant.ARBITRUM_ONE,
 				constant.ARBITRUM_NOVA,
-				constant.ARBITRUM_GOERLI,
 				constant.ARBITRUM_SEPOLIA:
 				if utils.HexToAddress(coin.Contract) == utils.HexToAddress(contractAddress) {
 					return true, coin.Symbol, coin.Contract, coin.Decimals

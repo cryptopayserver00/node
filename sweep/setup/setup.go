@@ -18,7 +18,6 @@ var (
 
 	SweepPublicKeyArray = []string{
 		constant.ETH_PUBLIC_KEY,
-		constant.ETH_GOERLI_PUBLIC_KEY,
 		constant.ETH_SEPOLIA_PUBLIC_KEY,
 		constant.BTC_PUBLIC_KEY,
 		constant.BTC_TESTNET_PUBLIC_KEY,
@@ -28,7 +27,6 @@ var (
 		constant.BSC_TESTNET_PUBLIC_KEY,
 		constant.ARBITRUM_ONE_PUBLIC_KEY,
 		constant.ARBITRUM_NOVA_PUBLIC_KEY,
-		constant.ARBITRUM_GOERLI_PUBLIC_KEY,
 		constant.ARBITRUM_SEPOLIA_PUBLIC_KEY,
 		constant.LTC_PUBLIC_KEY,
 		constant.LTC_TESTNET_PUBLIC_KEY,
@@ -43,13 +41,11 @@ var (
 	EthPublicKey             []string
 	BtcPublicKey             []string
 	BtcTestnetPublicKey      []string
-	EthGoerliPublicKey       []string
 	EthSepoliaPublicKey      []string
 	BscPublicKey             []string
 	BscTestnetPublicKey      []string
 	ArbitrumOnePublicKey     []string
 	ArbitrumNovaPublicKey    []string
-	ArbitrumGoerliPublicKey  []string
 	ArbitrumSepoliaPublicKey []string
 	TronPublicKey            []string
 	TronNilePublicKey        []string
@@ -66,11 +62,6 @@ var (
 	EthLatestBlockHeight int64
 	EthCacheBlockHeight  int64
 	EthSweepBlockHeight  int64
-
-	// eth goerli
-	EthGoerliLatestBlockHeight int64
-	EthGoerliCacheBlockHeight  int64
-	EthGoerliSweepBlockHeight  int64
 
 	// eth sepolia
 	EthSepoliaLatestBlockHeight int64
@@ -106,11 +97,6 @@ var (
 	ArbitrumNovaLatestBlockHeight int64
 	ArbitrumNovaCacheBlockHeight  int64
 	ArbitrumNovaSweepBlockHeight  int64
-
-	// arbitrum goerli
-	ArbitrumGoerliLatestBlockHeight int64
-	ArbitrumGoerliCacheBlockHeight  int64
-	ArbitrumGoerliSweepBlockHeight  int64
 
 	// arbitrum sepolia
 	ArbitrumSepoliaLatestBlockHeight int64
@@ -195,13 +181,6 @@ func SetupPublicKey(ctx context.Context) {
 					return
 				}
 				EthPublicKey = append(EthPublicKey, w.Address)
-			case constant.ETH_GOERLI:
-				_, err = global.NODE_REDIS.RPush(ctx, constant.ETH_GOERLI_PUBLIC_KEY, w.Address).Result()
-				if err != nil {
-					global.NODE_LOG.Error(err.Error())
-					return
-				}
-				EthGoerliPublicKey = append(EthGoerliPublicKey, w.Address)
 			case constant.ETH_SEPOLIA:
 				_, err = global.NODE_REDIS.RPush(ctx, constant.ETH_SEPOLIA_PUBLIC_KEY, w.Address).Result()
 				if err != nil {
@@ -251,13 +230,6 @@ func SetupPublicKey(ctx context.Context) {
 					return
 				}
 				ArbitrumNovaPublicKey = append(ArbitrumNovaPublicKey, w.Address)
-			case constant.ARBITRUM_GOERLI:
-				_, err = global.NODE_REDIS.RPush(ctx, constant.ARBITRUM_GOERLI_PUBLIC_KEY, w.Address).Result()
-				if err != nil {
-					global.NODE_LOG.Error(err.Error())
-					return
-				}
-				ArbitrumGoerliPublicKey = append(ArbitrumGoerliPublicKey, w.Address)
 			case constant.ARBITRUM_SEPOLIA:
 				_, err = global.NODE_REDIS.RPush(ctx, constant.ARBITRUM_SEPOLIA_PUBLIC_KEY, w.Address).Result()
 				if err != nil {
@@ -353,9 +325,6 @@ func SetupLatestBlockHeight(ctx context.Context, chainId uint, blockNumber int64
 	case constant.ETH_MAINNET:
 		latestBlockKey = constant.ETH_LATEST_BLOCK
 		latestHeightVal = &EthLatestBlockHeight
-	case constant.ETH_GOERLI:
-		latestBlockKey = constant.ETH_GOERLI_LATEST_BLOCK
-		latestHeightVal = &EthGoerliLatestBlockHeight
 	case constant.ETH_SEPOLIA:
 		latestBlockKey = constant.ETH_SEPOLIA_LATEST_BLOCK
 		latestHeightVal = &EthSepoliaLatestBlockHeight
@@ -377,9 +346,6 @@ func SetupLatestBlockHeight(ctx context.Context, chainId uint, blockNumber int64
 	case constant.ARBITRUM_NOVA:
 		latestBlockKey = constant.ARBITRUM_NOVA_LATEST_BLOCK
 		latestHeightVal = &ArbitrumNovaLatestBlockHeight
-	case constant.ARBITRUM_GOERLI:
-		latestBlockKey = constant.ARBITRUM_GOERLI_LATEST_BLOCK
-		latestHeightVal = &ArbitrumGoerliLatestBlockHeight
 	case constant.ARBITRUM_SEPOLIA:
 		latestBlockKey = constant.ARBITRUM_SEPOLIA_LATEST_BLOCK
 		latestHeightVal = &ArbitrumSepoliaLatestBlockHeight
@@ -440,10 +406,6 @@ func SetupCacheBlockHeight(ctx context.Context, chainId uint) {
 		cacheBlockKey = constant.ETH_CACHE_BLOCK
 		cacheHeightVal = &EthCacheBlockHeight
 		latestBlockHeight = EthLatestBlockHeight
-	case constant.ETH_GOERLI:
-		cacheBlockKey = constant.ETH_GOERLI_CACHE_BLOCK
-		cacheHeightVal = &EthGoerliCacheBlockHeight
-		latestBlockHeight = EthGoerliLatestBlockHeight
 	case constant.ETH_SEPOLIA:
 		cacheBlockKey = constant.ETH_SEPOLIA_CACHE_BLOCK
 		cacheHeightVal = &EthSepoliaCacheBlockHeight
@@ -472,10 +434,6 @@ func SetupCacheBlockHeight(ctx context.Context, chainId uint) {
 		cacheBlockKey = constant.ARBITRUM_NOVA_CACHE_BLOCK
 		cacheHeightVal = &ArbitrumNovaCacheBlockHeight
 		latestBlockHeight = ArbitrumNovaLatestBlockHeight
-	case constant.ARBITRUM_GOERLI:
-		cacheBlockKey = constant.ARBITRUM_GOERLI_CACHE_BLOCK
-		cacheHeightVal = &ArbitrumGoerliCacheBlockHeight
-		latestBlockHeight = ArbitrumGoerliLatestBlockHeight
 	case constant.ARBITRUM_SEPOLIA:
 		cacheBlockKey = constant.ARBITRUM_SEPOLIA_CACHE_BLOCK
 		cacheHeightVal = &ArbitrumSepoliaCacheBlockHeight
@@ -556,10 +514,6 @@ func SetupSweepBlockHeight(ctx context.Context, chainId uint) {
 		sweepBlockKey = constant.ETH_SWEEP_BLOCK
 		sweepHeightVal = &EthSweepBlockHeight
 		cacheBlockHeight = EthCacheBlockHeight
-	case constant.ETH_GOERLI:
-		sweepBlockKey = constant.ETH_GOERLI_SWEEP_BLOCK
-		sweepHeightVal = &EthGoerliSweepBlockHeight
-		cacheBlockHeight = EthGoerliCacheBlockHeight
 	case constant.ETH_SEPOLIA:
 		sweepBlockKey = constant.ETH_SEPOLIA_SWEEP_BLOCK
 		sweepHeightVal = &EthSepoliaSweepBlockHeight
@@ -588,10 +542,6 @@ func SetupSweepBlockHeight(ctx context.Context, chainId uint) {
 		sweepBlockKey = constant.ARBITRUM_NOVA_SWEEP_BLOCK
 		sweepHeightVal = &ArbitrumNovaSweepBlockHeight
 		cacheBlockHeight = ArbitrumNovaCacheBlockHeight
-	case constant.ARBITRUM_GOERLI:
-		sweepBlockKey = constant.ARBITRUM_GOERLI_SWEEP_BLOCK
-		sweepHeightVal = &ArbitrumGoerliSweepBlockHeight
-		cacheBlockHeight = ArbitrumGoerliCacheBlockHeight
 	case constant.ARBITRUM_SEPOLIA:
 		sweepBlockKey = constant.ARBITRUM_SEPOLIA_SWEEP_BLOCK
 		sweepHeightVal = &ArbitrumSepoliaSweepBlockHeight
@@ -670,9 +620,6 @@ func UpdatePublicKey(ctx context.Context, chainId uint) {
 	case constant.ETH_MAINNET:
 		publicKeyString = constant.ETH_PUBLIC_KEY
 		publicKeys = &EthPublicKey
-	case constant.ETH_GOERLI:
-		publicKeyString = constant.ETH_GOERLI_PUBLIC_KEY
-		publicKeys = &EthGoerliPublicKey
 	case constant.ETH_SEPOLIA:
 		publicKeyString = constant.ETH_SEPOLIA_PUBLIC_KEY
 		publicKeys = &EthSepoliaPublicKey
@@ -694,9 +641,6 @@ func UpdatePublicKey(ctx context.Context, chainId uint) {
 	case constant.ARBITRUM_NOVA:
 		publicKeyString = constant.ARBITRUM_NOVA_PUBLIC_KEY
 		publicKeys = &ArbitrumNovaPublicKey
-	case constant.ARBITRUM_GOERLI:
-		publicKeyString = constant.ARBITRUM_GOERLI_PUBLIC_KEY
-		publicKeys = &ArbitrumGoerliPublicKey
 	case constant.ARBITRUM_SEPOLIA:
 		publicKeyString = constant.ARBITRUM_SEPOLIA_PUBLIC_KEY
 		publicKeys = &ArbitrumSepoliaPublicKey
@@ -774,10 +718,6 @@ func UpdateCacheBlockHeight(ctx context.Context, chainId uint) {
 		cacheBlockString = constant.ETH_CACHE_BLOCK
 		latestBlockHeight = &EthLatestBlockHeight
 		EthCacheBlockHeight = EthLatestBlockHeight
-	case constant.ETH_GOERLI:
-		cacheBlockString = constant.ETH_GOERLI_CACHE_BLOCK
-		latestBlockHeight = &EthGoerliLatestBlockHeight
-		EthGoerliCacheBlockHeight = EthGoerliLatestBlockHeight
 	case constant.ETH_SEPOLIA:
 		cacheBlockString = constant.ETH_SEPOLIA_CACHE_BLOCK
 		latestBlockHeight = &EthSepoliaLatestBlockHeight
@@ -830,10 +770,6 @@ func UpdateCacheBlockHeight(ctx context.Context, chainId uint) {
 		cacheBlockString = constant.ARBITRUM_NOVA_CACHE_BLOCK
 		latestBlockHeight = &ArbitrumNovaLatestBlockHeight
 		ArbitrumNovaCacheBlockHeight = ArbitrumNovaLatestBlockHeight
-	case constant.ARBITRUM_GOERLI:
-		cacheBlockString = constant.ARBITRUM_GOERLI_CACHE_BLOCK
-		latestBlockHeight = &ArbitrumGoerliLatestBlockHeight
-		ArbitrumGoerliCacheBlockHeight = ArbitrumGoerliLatestBlockHeight
 	case constant.ARBITRUM_SEPOLIA:
 		cacheBlockString = constant.ARBITRUM_SEPOLIA_CACHE_BLOCK
 		latestBlockHeight = &ArbitrumSepoliaLatestBlockHeight
@@ -879,10 +815,6 @@ func UpdateSweepBlockHeight(ctx context.Context, chainId uint) {
 		sweepBlockString = constant.ETH_SWEEP_BLOCK
 		cacheBlockHeight = &EthCacheBlockHeight
 		EthSweepBlockHeight = EthCacheBlockHeight
-	case constant.ETH_GOERLI:
-		sweepBlockString = constant.ETH_GOERLI_SWEEP_BLOCK
-		cacheBlockHeight = &EthGoerliCacheBlockHeight
-		EthGoerliSweepBlockHeight = EthGoerliCacheBlockHeight
 	case constant.ETH_SEPOLIA:
 		sweepBlockString = constant.ETH_SEPOLIA_SWEEP_BLOCK
 		cacheBlockHeight = &EthSepoliaCacheBlockHeight
@@ -935,10 +867,6 @@ func UpdateSweepBlockHeight(ctx context.Context, chainId uint) {
 		sweepBlockString = constant.ARBITRUM_NOVA_SWEEP_BLOCK
 		cacheBlockHeight = &ArbitrumNovaCacheBlockHeight
 		ArbitrumNovaSweepBlockHeight = ArbitrumNovaCacheBlockHeight
-	case constant.ARBITRUM_GOERLI:
-		sweepBlockString = constant.ARBITRUM_GOERLI_SWEEP_BLOCK
-		cacheBlockHeight = &ArbitrumGoerliCacheBlockHeight
-		ArbitrumGoerliSweepBlockHeight = ArbitrumGoerliCacheBlockHeight
 	case constant.ARBITRUM_SEPOLIA:
 		sweepBlockString = constant.ARBITRUM_SEPOLIA_SWEEP_BLOCK
 		cacheBlockHeight = &ArbitrumSepoliaCacheBlockHeight
@@ -985,8 +913,6 @@ func SavePublicKeyToRedis(ctx context.Context, chainId uint, address string) (er
 	switch chainId {
 	case constant.ETH_MAINNET:
 		publicKeyString = constant.ETH_PUBLIC_KEY
-	case constant.ETH_GOERLI:
-		publicKeyString = constant.ETH_GOERLI_PUBLIC_KEY
 	case constant.ETH_SEPOLIA:
 		publicKeyString = constant.ETH_SEPOLIA_PUBLIC_KEY
 	case constant.BSC_MAINNET:
@@ -1013,8 +939,6 @@ func SavePublicKeyToRedis(ctx context.Context, chainId uint, address string) (er
 		publicKeyString = constant.ARBITRUM_ONE_PUBLIC_KEY
 	case constant.ARBITRUM_NOVA:
 		publicKeyString = constant.ARBITRUM_NOVA_PUBLIC_KEY
-	case constant.ARBITRUM_GOERLI:
-		publicKeyString = constant.ARBITRUM_GOERLI_PUBLIC_KEY
 	case constant.ARBITRUM_SEPOLIA:
 		publicKeyString = constant.ARBITRUM_SEPOLIA_PUBLIC_KEY
 	case constant.SOL_MAINNET:
