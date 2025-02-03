@@ -26,9 +26,9 @@ blockchain:
   solana: false
   ton: false
   xrp: false
-  bitcoin-cash: false
-  polygon: false
-  avalanche: false
+  bch: false
+  pol: false
+  avax: false
   base: false
 
 blockchain-plugin:

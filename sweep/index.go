@@ -90,43 +90,43 @@ func RunBlockSweep() {
 		}
 	}
 
-	// if global.NODE_CONFIG.Blockchain.Xrp {
-	// 	if global.NODE_CONFIG.Blockchain.SweepMainnet {
-	// 		mainnet.SweepXrpBlockchain()
-	// 	} else {
-	// 		testnet.SweepXrpTestnetBlockchain()
-	// 	}
-	// }
+	if global.NODE_CONFIG.Blockchain.Xrp {
+		if global.NODE_CONFIG.Blockchain.SweepMainnet {
+			mainnet.SweepXrpBlockchain()
+		} else {
+			testnet.SweepXrpTestnetBlockchain()
+		}
+	}
 
-	// if global.NODE_CONFIG.Blockchain.BitcoinCash {
-	// 	if global.NODE_CONFIG.Blockchain.SweepMainnet {
-	// 		mainnet.SweepBitcoinCashBlockchain()
-	// 	} else {
-	// 		testnet.SweepBitcoinCashTestnetBlockchain()
-	// 	}
-	// }
+	if global.NODE_CONFIG.Blockchain.Bch {
+		if global.NODE_CONFIG.Blockchain.SweepMainnet {
+			mainnet.SweepBchBlockchain()
+		} else {
+			testnet.SweepBchTestnetBlockchain()
+		}
+	}
 
-	// if global.NODE_CONFIG.Blockchain.Polygon {
-	// 	if global.NODE_CONFIG.Blockchain.SweepMainnet {
-	// 		mainnet.SweepPolygonBlockchain()
-	// 	} else {
-	// 		testnet.SweepPolygonTestnetBlockchain()
-	// 	}
-	// }
+	if global.NODE_CONFIG.Blockchain.Pol {
+		if global.NODE_CONFIG.Blockchain.SweepMainnet {
+			mainnet.SweepPolBlockchain()
+		} else {
+			testnet.SweepPolTestnetBlockchain()
+		}
+	}
 
-	// if global.NODE_CONFIG.Blockchain.Avalanche {
-	// 	if global.NODE_CONFIG.Blockchain.SweepMainnet {
-	// 		mainnet.SweepAvalancheBlockchain()
-	// 	} else {
-	// 		testnet.SweepAvalancheTestnetBlockchain()
-	// 	}
-	// }
+	if global.NODE_CONFIG.Blockchain.Avax {
+		if global.NODE_CONFIG.Blockchain.SweepMainnet {
+			mainnet.SweepAvaxBlockchain()
+		} else {
+			testnet.SweepAvaxTestnetBlockchain()
+		}
+	}
 
-	// if global.NODE_CONFIG.Blockchain.Base {
-	// 	if global.NODE_CONFIG.Blockchain.SweepMainnet {
-	// 		mainnet.SweepBaseBlockchain()
-	// 	} else {
-	// 		testnet.SweepBaseSepoliaBlockchain()
-	// 	}
-	// }
+	if global.NODE_CONFIG.Blockchain.Base {
+		if global.NODE_CONFIG.Blockchain.SweepMainnet {
+			mainnet.SweepBaseBlockchain()
+		} else {
+			testnet.SweepBaseSepoliaBlockchain()
+		}
+	}
 }
