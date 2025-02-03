@@ -630,6 +630,12 @@
         "decimals": 9,
         "contract": "So11111111111111111111111111111111111111112",
         "isMainCoin": true
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr",
+        "isMainCoin": false
       }
     ]
   },

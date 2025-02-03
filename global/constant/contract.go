@@ -25,6 +25,7 @@ var (
 	ARB      = "ARB"
 	SOL      = "SOL"
 	TON      = "TON"
+	AVAX     = "AVAX"
 
 	SWAP = "SWAP"
 )

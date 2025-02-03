@@ -19,11 +19,6 @@ var (
 	// 	"https://eth-sepolia.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
 	// }
 
-	ETHMainnetRPC = []string{
-		"https://ethereum-rpc.publicnode.com",
-		// 	"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
-	}
-
 	// ETHInnerTxMainnetRPC = []string{
 	// 	// "https://eth.llamarpc.com",
 	// 	// "https://eth-pokt.nodies.app",
@@ -34,30 +29,26 @@ var (
 	// 	"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomInnertxAlchemyKey(true),
 	// }
 
+	// ETHInnerTxSepoliaRPC = []string{
+	// 	"https://eth-sepolia.g.alchemy.com/v2/" + GetRandomInnertxAlchemyKey(false),
+	// }
+
 	ETHGeneralMainnetRPC = []string{
 		"https://ethereum-rpc.publicnode.com",
-	}
-
-	ETHSepoliaRPC = []string{
-		// "https://eth-sepolia.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
-		"https://ethereum-sepolia.publicnode.com",
-	}
-
-	ETHInnerTxSepoliaRPC = []string{
-		"https://eth-sepolia.g.alchemy.com/v2/" + GetRandomInnertxAlchemyKey(false),
 	}
 
 	ETHGeneralSepoliaRPC = []string{
 		"https://ethereum-sepolia.publicnode.com",
 	}
 
-	BSCTestnetRPC = []string{
-		"https://data-seed-prebsc-1-s1.binance.org:8545",
-		"https://data-seed-prebsc-2-s1.binance.org:8545",
-		"https://data-seed-prebsc-1-s2.binance.org:8545",
-		"https://data-seed-prebsc-2-s2.binance.org:8545",
-		"https://data-seed-prebsc-1-s3.binance.org:8545",
-		"https://data-seed-prebsc-2-s3.binance.org:8545",
+	ETHMainnetRPC = []string{
+		// 	"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
+		"https://ethereum-rpc.publicnode.com",
+	}
+
+	ETHSepoliaRPC = []string{
+		// "https://eth-sepolia.g.alchemy.com/v2/" + GetRandomAlchemyKey(false),
+		"https://ethereum-sepolia.publicnode.com",
 	}
 
 	BSCMainnetRPC = []string{
@@ -75,9 +66,18 @@ var (
 		"https://bsc-dataseed4.ninicoin.io",
 	}
 
+	BSCTestnetRPC = []string{
+		"https://data-seed-prebsc-1-s1.binance.org:8545",
+		"https://data-seed-prebsc-2-s1.binance.org:8545",
+		"https://data-seed-prebsc-1-s2.binance.org:8545",
+		"https://data-seed-prebsc-2-s2.binance.org:8545",
+		"https://data-seed-prebsc-1-s3.binance.org:8545",
+		"https://data-seed-prebsc-2-s3.binance.org:8545",
+	}
+
 	OPMainnetRPC = []string{
 		// "https://opt-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
-		// "https://mainnet.optimism.io",
+		"https://mainnet.optimism.io",
 		"https://optimism-rpc.publicnode.com",
 		"https://op-pokt.nodies.app",
 		"https://1rpc.io/op",
@@ -93,12 +93,12 @@ var (
 	ArbitrumOneRPC = []string{
 		// "https://arb-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
 		"https://arb1.arbitrum.io/rpc",
-		// "https://arbitrum.llamarpc.com",
+		"https://arbitrum.llamarpc.com",
 		"https://arbitrum.meowrpc.com",
-		// "https://arbitrum.drpc.org",
-		// "https://arbitrum-one.publicnode.com",
-		// "https://arbitrum-one-rpc.publicnode.com",
-		// "https://1rpc.io/arb",
+		"https://arbitrum.drpc.org",
+		"https://arbitrum-one.publicnode.com",
+		"https://arbitrum-one-rpc.publicnode.com",
+		"https://1rpc.io/arb",
 	}
 
 	ArbitrumNovaRPC = []string{
@@ -107,7 +107,49 @@ var (
 
 	ArbitrumSepoliaRPC = []string{
 		"https://sepolia-rollup.arbitrum.io/rpc",
-		"https://arbitrum-sepolia.blockpi.network/v1/rpc/public",
+	}
+
+	PolMainnetRPC = []string{
+		"https://polygon-bor-rpc.publicnode.com",
+		"https://polygon-pokt.nodies.app",
+		"https://1rpc.io/matic",
+	}
+
+	PolTestnetRPC = []string{
+		"https://polygon-amoy-bor-rpc.publicnode.com",
+		"https://rpc-amoy.polygon.technology",
+		"https://polygon-amoy.drpc.org",
+	}
+
+	AvaxMainnetRPC = []string{
+		"https://avalanche-c-chain-rpc.publicnode.com",
+		"https://avalanche.drpc.org",
+		"https://avax.meowrpc.com",
+		"https://1rpc.io/avax/c",
+	}
+
+	AvaxTestnetRPC = []string{
+		"https://ava-testnet.public.blastapi.io/ext/bc/C/rpc",
+		"https://endpoints.omniatech.io/v1/avax/fuji/public",
+		"https://api.avax-test.network/ext/bc/C/rpc",
+		"https://rpc.ankr.com/avalanche_fuji",
+	}
+
+	BaseMainnetRPC = []string{
+		"https://base.llamarpc.com",
+		"https://mainnet.base.org",
+		"https://developer-access-mainnet.base.org",
+		"https://1rpc.io/base",
+		"https://base-pokt.nodies.app",
+		"https://base.meowrpc.com",
+		"https://base-rpc.publicnode.com",
+		"https://base.drpc.org",
+	}
+
+	BaseSepoliaRPC = []string{
+		"https://base-sepolia-rpc.publicnode.com",
+		"https://sepolia.base.org",
+		"https://base-sepolia.gateway.tenderly.co",
 	}
 )
 
@@ -131,6 +173,19 @@ func GetAllRPCUrlByNetwork(chainId uint) []string {
 		return ArbitrumNovaRPC
 	case ARBITRUM_SEPOLIA:
 		return ArbitrumSepoliaRPC
+	case POL_MAINNET:
+		return PolMainnetRPC
+	case POL_TESTNET:
+		return PolTestnetRPC
+	case AVAX_MAINNET:
+		return AvaxMainnetRPC
+	case AVAX_TESTNET:
+		return AvaxTestnetRPC
+	case BASE_MAINNET:
+		return BaseMainnetRPC
+	case BASE_SEPOLIA:
+		return BaseSepoliaRPC
+
 	}
 
 	return nil
@@ -195,7 +250,6 @@ func GetRealRpcByArray(rpcs []string) string {
 	return ""
 }
 
-// get real rpc url
 func GetRPCUrlByNetwork(chainId uint) string {
 	switch chainId {
 	case ETH_MAINNET:
@@ -211,13 +265,23 @@ func GetRPCUrlByNetwork(chainId uint) string {
 	case BSC_TESTNET:
 		return GetRealRpcByArray(BSCTestnetRPC)
 	case ARBITRUM_ONE:
-		rand.Seed(time.Now().UnixNano())
-		index := rand.Intn(len(ArbitrumOneRPC))
-		return ArbitrumOneRPC[index]
+		return GetRealRpcByArray(ArbitrumOneRPC)
 	case ARBITRUM_NOVA:
 		return GetRealRpcByArray(ArbitrumNovaRPC)
 	case ARBITRUM_SEPOLIA:
 		return GetRealRpcByArray(ArbitrumSepoliaRPC)
+	case POL_MAINNET:
+		return GetRealRpcByArray(PolMainnetRPC)
+	case POL_TESTNET:
+		return GetRealRpcByArray(PolTestnetRPC)
+	case AVAX_MAINNET:
+		return GetRealRpcByArray(AvaxMainnetRPC)
+	case AVAX_TESTNET:
+		return GetRealRpcByArray(AvaxTestnetRPC)
+	case BASE_MAINNET:
+		return GetRealRpcByArray(BaseMainnetRPC)
+	case BASE_SEPOLIA:
+		return GetRealRpcByArray(BaseSepoliaRPC)
 	}
 
 	return ""

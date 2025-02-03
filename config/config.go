@@ -20,15 +20,6 @@ type Server struct {
 	Key              Key              `mapstructure:"key" json:"key" yaml:"key"`
 }
 
-type FreeCoin struct {
-	Bitcoin  Bitcoin  `mapstructure:"bitcoin" json:"bitcoin" yaml:"bitcoin"`
-	Ethereum Ethereum `mapstructure:"ethereum" json:"ethereum" yaml:"ethereum"`
-	Solana   Solana   `mapstructure:"solana" json:"solana" yaml:"solana"`
-	Litecoin Litecoin `mapstructure:"litecoin" json:"litecoin" yaml:"litecoin"`
-	Tron     Tron     `mapstructure:"tron" json:"tron" yaml:"tron"`
-	Ton      Ton      `mapstructure:"ton" json:"ton" yaml:"ton"`
-}
-
 type Key struct {
 	TrongridMainnetKey       string `mapstructure:"trongrid_mainnet_key" json:"trongrid_mainnet_key" yaml:"trongrid_mainnet_key"`
 	TrongridNileKey          string `mapstructure:"trongrid_nile_key" json:"trongrid_nile_key" yaml:"trongrid_nile_key"`
@@ -38,6 +29,17 @@ type Key struct {
 	AlchemyTestnetKey        string `mapstructure:"alchemy_testnet_key" json:"alchemy_testnet_key" yaml:"alchemy_testnet_key"`
 	TatumMainnetKey          string `mapstructure:"tatum_mainnet_key" json:"tatum_mainnet_key" yaml:"tatum_mainnet_key"`
 	TatumTestnetKey          string `mapstructure:"tatum_testnet_key" json:"tatum_testnet_key" yaml:"tatum_testnet_key"`
+}
+
+type FreeCoin struct {
+	Bitcoin     Bitcoin     `mapstructure:"bitcoin" json:"bitcoin" yaml:"bitcoin"`
+	Ethereum    Ethereum    `mapstructure:"ethereum" json:"ethereum" yaml:"ethereum"`
+	Solana      Solana      `mapstructure:"solana" json:"solana" yaml:"solana"`
+	Litecoin    Litecoin    `mapstructure:"litecoin" json:"litecoin" yaml:"litecoin"`
+	Tron        Tron        `mapstructure:"tron" json:"tron" yaml:"tron"`
+	Ton         Ton         `mapstructure:"ton" json:"ton" yaml:"ton"`
+	Xrp         Xrp         `mapstructure:"xrp" json:"xrp" yaml:"xrp"`
+	BitcoinCash BitcoinCash `mapstructure:"bitcoincash" json:"bitcoincash" yaml:"bitcoincash"`
 }
 
 type Bitcoin struct {
@@ -72,6 +74,18 @@ type Tron struct {
 type Ton struct {
 	PublicKey string `mapstructure:"public_key" json:"public_key" yaml:"public_key"`
 	Mnemonic  string `mapstructure:"mnemonic" json:"mnemonic" yaml:"mnemonic"`
+}
+
+type Xrp struct {
+	PublicKey  string `mapstructure:"public_key" json:"public_key" yaml:"public_key"`
+	PrivateKey string `mapstructure:"private_key" json:"private_key" yaml:"private_key"`
+	Mnemonic   string `mapstructure:"mnemonic" json:"mnemonic" yaml:"mnemonic"`
+}
+
+type BitcoinCash struct {
+	PublicKey  string `mapstructure:"public_key" json:"public_key" yaml:"public_key"`
+	PrivateKey string `mapstructure:"private_key" json:"private_key" yaml:"private_key"`
+	Mnemonic   string `mapstructure:"mnemonic" json:"mnemonic" yaml:"mnemonic"`
 }
 
 type Telegram struct {

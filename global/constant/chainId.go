@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ltcCfg "github.com/ltcsuite/ltcd/chaincfg"
 	"github.com/ltcsuite/ltcd/ltcutil"
+	"github.com/xrpscan/xrpl-go"
 	tonAddress "github.com/xssnick/tonutils-go/address"
 )
 
@@ -40,6 +41,7 @@ var ChainId = map[uint]string{
 	5611:       "opBNB Testnet",
 	137:        "Polygon Mainnet",
 	80001:      "Polygon Testnet(Mumbai)",
+	80002:      "Polygon Testnet(Amoy)",
 	43114:      "Avalanche Mainnet(C-Chain)",
 	43113:      "Avalanche Testnet (FUji)",
 	250:        "Fantom Mainnet(Opera)",
@@ -148,7 +150,7 @@ var (
 	BCH_TESTNET uint = 12
 
 	POL_MAINNET uint = 137
-	POL_TESTNET uint = 80001
+	POL_TESTNET uint = 80002
 
 	AVAX_MAINNET uint = 43114
 	AVAX_TESTNET uint = 43113
@@ -436,6 +438,12 @@ func IsAddressSupport(chainId uint, address string) bool {
 			return true
 		}
 		return false
+	case XRP_MAINNET, XRP_TESTNET:
+		return XrpValidateAddress(address)
+	case BCH_MAINNET:
+		return false
+	case BCH_TESTNET:
+		return false
 	}
 
 	return false
@@ -506,6 +514,14 @@ func IsAddressContractSupport(chainId uint, address string) bool {
 		if resultVal.Type() == tonAddress.VarAddress {
 			return true
 		}
+		return false
+	case XRP_MAINNET:
+		return false
+	case XRP_TESTNET:
+		return false
+	case BCH_MAINNET:
+		return false
+	case BCH_TESTNET:
 		return false
 	}
 
@@ -601,4 +617,28 @@ func SolanaValidateAddress(rpc, address string) (bool, string) {
 	} else {
 		return true, "address"
 	}
+}
+
+func XrpValidateAddress(address string) bool {
+	config := xrpl.ClientConfig{
+		URL: "wss://s.altnet.rippletest.net:51233",
+	}
+	client := xrpl.NewClient(config)
+	err := client.Ping([]byte("PING"))
+	if err != nil {
+		return false
+	}
+
+	request := xrpl.BaseRequest{
+		"command":      "account_info",
+		"account":      address,
+		"ledger_index": "validated",
+	}
+
+	response, err := client.Request(request)
+	if err == nil && response["status"] == "success" {
+		return true
+	}
+
+	return false
 }
