@@ -101,6 +101,14 @@ freecoin:
   ton:
     public_key: ""
     mnemonic: ""
+  xrp:
+    public_key: ""
+    private_key: ""
+    mnemonic: ""
+  bitcoincash:
+    public_key: ""
+    private_key: ""
+    mnemonic: ""
 
 key:
   trongrid_mainnet_key: ""

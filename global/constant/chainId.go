@@ -441,9 +441,9 @@ func IsAddressSupport(chainId uint, address string) bool {
 	case XRP_MAINNET, XRP_TESTNET:
 		return XrpValidateAddress(address)
 	case BCH_MAINNET:
-		return false
+		return BchValidateAddress(address)
 	case BCH_TESTNET:
-		return false
+		return BchValidateAddress(address)
 	}
 
 	return false
@@ -514,14 +514,6 @@ func IsAddressContractSupport(chainId uint, address string) bool {
 		if resultVal.Type() == tonAddress.VarAddress {
 			return true
 		}
-		return false
-	case XRP_MAINNET:
-		return false
-	case XRP_TESTNET:
-		return false
-	case BCH_MAINNET:
-		return false
-	case BCH_TESTNET:
 		return false
 	}
 
@@ -640,5 +632,9 @@ func XrpValidateAddress(address string) bool {
 		return true
 	}
 
+	return false
+}
+
+func BchValidateAddress(address string) bool {
 	return false
 }
