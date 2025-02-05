@@ -16,7 +16,7 @@ func (m *NService) GetFreeCoin(c *gin.Context, req request.GetFreeCoin) (freeCoi
 	var hash string
 
 	if !utils.IsFreeCoinSupport(req.ChainId, req.Coin) {
-		return freeCoin, errors.New("do not support the coin for free coin")
+		return freeCoin, errors.New("do not support the coin for the free coin")
 	}
 
 	if !constant.IsAddressSupport(req.ChainId, req.Address) {

@@ -9,7 +9,7 @@ import (
 func TransferFreeCoinToReceiveAddress(chainId uint, coin, address, amount string) (hash string, err error) {
 	switch chainId {
 	case constant.BTC_TESTNET:
-		hash, err = SendBtcTransferByPsbt(chainId, global.NODE_CONFIG.FreeCoin.Bitcoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Bitcoin.PublicKey, address, amount)
+		hash, err = SendBtcTransfer(chainId, global.NODE_CONFIG.FreeCoin.Bitcoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Bitcoin.PublicKey, address, amount)
 	case constant.LTC_TESTNET:
 		hash, err = SendLtcTransfer(chainId, global.NODE_CONFIG.FreeCoin.Litecoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Litecoin.PublicKey, address, amount)
 	case constant.ETH_SEPOLIA, constant.OP_SEPOLIA, constant.ARBITRUM_SEPOLIA, constant.BASE_SEPOLIA:
