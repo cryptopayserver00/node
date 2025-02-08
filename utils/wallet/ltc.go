@@ -20,10 +20,16 @@ func SendLtcTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (
 	sendValFloat, err := strconv.ParseFloat(sendVal, 64)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
-		return "", err
+		return
 	}
 
 	satoshiValue := utils.FormatToSatoshiValue(sendValFloat)
+
+	// privateKey, err := hex.DecodeString(pri)
+	// if err != nil {
+	// 	global.NODE_LOG.Error(err.Error())
+	// 	return
+	// }
 
 	wif, err := ltcutil.DecodeWIF(pri)
 	if err != nil {
@@ -95,8 +101,8 @@ func SendLtcTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (
 }
 
 func GetLtcUTXO(address string) (string, int64, error) {
-	var previousTxid string = "166327ccddcf1428ab591681f9018ab1f2d78039efef0e14967850b68142f1cf"
-	var balance int64 = 5000000
+	var previousTxid string = "fd02222cee28803d1f6a2f64599e5d16f61067db25ce11d0b41ba91dba65c72d"
+	var balance int64 = 973
 	return previousTxid, balance, nil
 }
 
