@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"node/core/internal"
 	"node/global"
 	"node/utils"
@@ -25,7 +26,7 @@ func Zap() *zap.Logger {
 	globalHook := func(entry zapcore.Entry) error {
 		switch entry.Level {
 		case zapcore.ErrorLevel:
-			// utils.InformToTelegram(fmt.Sprintf("[%s]\n\n%s | %s\n\n %s", entry.Time.UTC().Format("2006-01-02 15:04:05"), entry.Level.CapitalString(), utils.GenerateStringRandomly("node_", 12), entry.Message))
+			utils.InformToTelegram(fmt.Sprintf("[%s]\n\n%s | %s\n\n %s", entry.Time.UTC().Format("2006-01-02 15:04:05"), entry.Level.CapitalString(), utils.GenerateStringRandomly("node_", 12), entry.Message))
 			// count, err := global.NODE_REDIS.Get(context.Background(), constant.DAILY_REPORT_ERROR).Result()
 			// if err == nil || errors.Is(err, redis.Nil) {
 			// 	var countInt int64
