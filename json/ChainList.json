@@ -672,5 +672,181 @@
         "isMainCoin": true
       }
     ]
+  },
+  {
+    "name": "Xrp Mainnet",
+    "chain": "XRP",
+    "chainId": 8,
+    "networkId": 8,
+    "coins": [
+      {
+        "symbol": "XRP",
+        "decimals": 6,
+        "contract": "",
+        "isMainCoin": true
+      }
+    ]
+  },
+  {
+    "name": "Xrp Testnet",
+    "chain": "XRP",
+    "chainId": 9,
+    "networkId": 9,
+    "coins": [
+      {
+        "symbol": "XRP",
+        "decimals": 6,
+        "contract": "",
+        "isMainCoin": true
+      }
+    ]
+  },
+  {
+    "name": "BitcoinCash Mainnet",
+    "chain": "BCH",
+    "chainId": 11,
+    "networkId": 11,
+    "coins": [
+      {
+        "symbol": "BCH",
+        "decimals": 6,
+        "contract": "",
+        "isMainCoin": true
+      }
+    ]
+  },
+  {
+    "name": "BitcoinCash Testnet",
+    "chain": "BCH",
+    "chainId": 12,
+    "networkId": 12,
+    "coins": [
+      {
+        "symbol": "BCH",
+        "decimals": 6,
+        "contract": "",
+        "isMainCoin": true
+      }
+    ]
+  },
+  {
+    "name": "Polygon Mainnet",
+    "chain": "POL",
+    "chainId": 137,
+    "networkId": 137,
+    "coins": [
+      {
+        "symbol": "POL",
+        "decimals": 18,
+        "contract": "",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "0xc2132d05d31c914a87c6611c10748aeb04b58e8f",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Polygon Testnet",
+    "chain": "POL",
+    "chainId": 80002,
+    "networkId": 80002,
+    "coins": [
+      {
+        "symbol": "POL",
+        "decimals": 18,
+        "contract": "",
+        "isMainCoin": true
+      }
+    ]
+  },
+  {
+    "name": "Avalanche Mainnet",
+    "chain": "AVAX",
+    "chainId": 43114,
+    "networkId": 43114,
+    "coins": [
+      {
+        "symbol": "AVAX",
+        "decimals": 18,
+        "contract": "",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Avalanche Testnet",
+    "chain": "AVAX",
+    "chainId": 43113,
+    "networkId": 43113,
+    "coins": [
+      {
+        "symbol": "AVAX",
+        "decimals": 18,
+        "contract": "",
+        "isMainCoin": true
+      }
+    ]
+  },
+  {
+    "name": "Base Mainnet",
+    "chain": "BASE",
+    "chainId": 8453,
+    "networkId": 8453,
+    "coins": [
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "",
+        "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USDC",
+        "decimals": 6,
+        "contract": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "isMainCoin": false
+      }
+    ]
+  },
+  {
+    "name": "Base Sepolia",
+    "chain": "BASE",
+    "chainId": 84532,
+    "networkId": 84532,
+    "coins": [
+      {
+        "symbol": "ETH",
+        "decimals": 18,
+        "contract": "",
+        "isMainCoin": true
+      }
+    ]
   }
 ]

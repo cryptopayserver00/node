@@ -69,7 +69,7 @@ func (n *NService) UpdateChainListFromDB() (err error) {
 
 	if len(chains) > 0 {
 		var infos []model.ChainInfo
-		var ethMainnetChain, ethSepoliaChain, btcMainnetChain, btcTestnetChain, ltcMainnetChain, ltcTestnetChain, bscMainnetChain, bscTestnetChain, opMainnetChain, opSepoliaChain, arbOneChain, arbNovaChain, arbSepoliaChain, tronMainnetChain, tronNileChain model.ChainInfo
+		var ethMainnetChain, ethSepoliaChain, btcMainnetChain, btcTestnetChain, ltcMainnetChain, ltcTestnetChain, bscMainnetChain, bscTestnetChain, opMainnetChain, opSepoliaChain, arbOneChain, arbNovaChain, arbSepoliaChain, tronMainnetChain, tronNileChain, solMainnetChain, solDevnetChain, tonMainnetChain, tonTestnetChain, xrpMainnetChain, xrpTestnetChain, bchMainnetChain, bchTestnetChain, polMainnetChain, polTestnetChain, avaxMainnetChain, avaxTestnetChain, baseMainnetChain, baseSepoliaChain model.ChainInfo
 		for _, v := range chains {
 			var coin model.Coin
 
@@ -213,10 +213,136 @@ func (n *NService) UpdateChainListFromDB() (err error) {
 				}
 
 				tronNileChain.Coins = append(tronNileChain.Coins, coin)
+			case constant.SOL_MAINNET:
+				if solMainnetChain.Name == "" {
+					solMainnetChain.Name = v.Name
+					solMainnetChain.Chain = v.Chain
+					solMainnetChain.ChainId = v.ChainId
+					solMainnetChain.NetworkId = v.NetworkId
+				}
+
+				solMainnetChain.Coins = append(solMainnetChain.Coins, coin)
+			case constant.SOL_DEVNET:
+				if solDevnetChain.Name == "" {
+					solDevnetChain.Name = v.Name
+					solDevnetChain.Chain = v.Chain
+					solDevnetChain.ChainId = v.ChainId
+					solDevnetChain.NetworkId = v.NetworkId
+				}
+
+				solDevnetChain.Coins = append(solDevnetChain.Coins, coin)
+			case constant.TON_MAINNET:
+				if tonMainnetChain.Name == "" {
+					tonMainnetChain.Name = v.Name
+					tonMainnetChain.Chain = v.Chain
+					tonMainnetChain.ChainId = v.ChainId
+					tonMainnetChain.NetworkId = v.NetworkId
+				}
+
+				tonMainnetChain.Coins = append(tonMainnetChain.Coins, coin)
+			case constant.TON_TESTNET:
+				if tonTestnetChain.Name == "" {
+					tonTestnetChain.Name = v.Name
+					tonTestnetChain.Chain = v.Chain
+					tonTestnetChain.ChainId = v.ChainId
+					tonTestnetChain.NetworkId = v.NetworkId
+				}
+
+				tonTestnetChain.Coins = append(tonTestnetChain.Coins, coin)
+			case constant.XRP_MAINNET:
+				if xrpMainnetChain.Name == "" {
+					xrpMainnetChain.Name = v.Name
+					xrpMainnetChain.Chain = v.Chain
+					xrpMainnetChain.ChainId = v.ChainId
+					xrpMainnetChain.NetworkId = v.NetworkId
+				}
+
+				xrpMainnetChain.Coins = append(xrpMainnetChain.Coins, coin)
+			case constant.XRP_TESTNET:
+				if xrpTestnetChain.Name == "" {
+					xrpTestnetChain.Name = v.Name
+					xrpTestnetChain.Chain = v.Chain
+					xrpTestnetChain.ChainId = v.ChainId
+					xrpTestnetChain.NetworkId = v.NetworkId
+				}
+
+				xrpTestnetChain.Coins = append(xrpTestnetChain.Coins, coin)
+			case constant.BCH_MAINNET:
+				if bchMainnetChain.Name == "" {
+					bchMainnetChain.Name = v.Name
+					bchMainnetChain.Chain = v.Chain
+					bchMainnetChain.ChainId = v.ChainId
+					bchMainnetChain.NetworkId = v.NetworkId
+				}
+
+				bchMainnetChain.Coins = append(bchMainnetChain.Coins, coin)
+			case constant.BCH_TESTNET:
+				if bchTestnetChain.Name == "" {
+					bchTestnetChain.Name = v.Name
+					bchTestnetChain.Chain = v.Chain
+					bchTestnetChain.ChainId = v.ChainId
+					bchTestnetChain.NetworkId = v.NetworkId
+				}
+
+				bchTestnetChain.Coins = append(bchTestnetChain.Coins, coin)
+			case constant.POL_MAINNET:
+				if polMainnetChain.Name == "" {
+					polMainnetChain.Name = v.Name
+					polMainnetChain.Chain = v.Chain
+					polMainnetChain.ChainId = v.ChainId
+					polMainnetChain.NetworkId = v.NetworkId
+				}
+
+				polMainnetChain.Coins = append(polMainnetChain.Coins, coin)
+			case constant.POL_TESTNET:
+				if polTestnetChain.Name == "" {
+					polTestnetChain.Name = v.Name
+					polTestnetChain.Chain = v.Chain
+					polTestnetChain.ChainId = v.ChainId
+					polTestnetChain.NetworkId = v.NetworkId
+				}
+
+				polTestnetChain.Coins = append(polTestnetChain.Coins, coin)
+			case constant.AVAX_MAINNET:
+				if avaxMainnetChain.Name == "" {
+					avaxMainnetChain.Name = v.Name
+					avaxMainnetChain.Chain = v.Chain
+					avaxMainnetChain.ChainId = v.ChainId
+					avaxMainnetChain.NetworkId = v.NetworkId
+				}
+
+				avaxMainnetChain.Coins = append(avaxMainnetChain.Coins, coin)
+			case constant.AVAX_TESTNET:
+				if avaxTestnetChain.Name == "" {
+					avaxTestnetChain.Name = v.Name
+					avaxTestnetChain.Chain = v.Chain
+					avaxTestnetChain.ChainId = v.ChainId
+					avaxTestnetChain.NetworkId = v.NetworkId
+				}
+
+				avaxTestnetChain.Coins = append(avaxTestnetChain.Coins, coin)
+			case constant.BASE_MAINNET:
+				if baseMainnetChain.Name == "" {
+					baseMainnetChain.Name = v.Name
+					baseMainnetChain.Chain = v.Chain
+					baseMainnetChain.ChainId = v.ChainId
+					baseMainnetChain.NetworkId = v.NetworkId
+				}
+
+				baseMainnetChain.Coins = append(baseMainnetChain.Coins, coin)
+			case constant.BASE_SEPOLIA:
+				if baseSepoliaChain.Name == "" {
+					baseSepoliaChain.Name = v.Name
+					baseSepoliaChain.Chain = v.Chain
+					baseSepoliaChain.ChainId = v.ChainId
+					baseSepoliaChain.NetworkId = v.NetworkId
+				}
+
+				baseSepoliaChain.Coins = append(baseSepoliaChain.Coins, coin)
 			}
 		}
 
-		infos = append(infos, ethMainnetChain, ethSepoliaChain, bscMainnetChain, bscTestnetChain, opMainnetChain, opSepoliaChain, arbOneChain, arbNovaChain, arbSepoliaChain, tronMainnetChain, tronNileChain, btcMainnetChain, btcTestnetChain, ltcTestnetChain, ltcMainnetChain)
+		infos = append(infos, ethMainnetChain, ethSepoliaChain, bscMainnetChain, bscTestnetChain, opMainnetChain, opSepoliaChain, arbOneChain, arbNovaChain, arbSepoliaChain, tronMainnetChain, tronNileChain, btcMainnetChain, btcTestnetChain, ltcTestnetChain, ltcMainnetChain, solMainnetChain, solDevnetChain, tonMainnetChain, tonTestnetChain, xrpMainnetChain, xrpTestnetChain, bchMainnetChain, bchTestnetChain, polMainnetChain, polTestnetChain, avaxMainnetChain, avaxTestnetChain, baseMainnetChain, baseSepoliaChain)
 		model.ChainList = infos
 	}
 

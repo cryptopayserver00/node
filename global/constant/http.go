@@ -22,6 +22,9 @@ var (
 
 	BscscanMainnetAPI = "https://api.bscscan.com"
 	BscscanTestnetAPI = "https://api-testnet.bscscan.com"
+
+	TonMainnetAPI = "https://ton.org/global.config.json"
+	TonTestnetAPI = "https://ton.org/testnet-global.config.json"
 )
 
 func GetBscscanUrlByNetwork(network uint) string {
@@ -41,6 +44,10 @@ func GetHttpUrlByNetwork(network uint) string {
 		return TrongridMainnetAPI
 	case TRON_NILE:
 		return TrongridNileAPI
+	case TON_MAINNET:
+		return TonMainnetAPI
+	case TON_TESTNET:
+		return TonTestnetAPI
 	}
 
 	return ""
