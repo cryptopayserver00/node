@@ -179,3 +179,52 @@ type GetFreeCoin struct {
 	Coin    string `json:"coin" form:"coin" binding:"required"`
 	Amount  string `json:"amount" form:"amount"`
 }
+
+// xrp
+type GetXrpTransactions struct {
+	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Address string `json:"address" form:"address" binding:"required"`
+	Asset   string `json:"asset" form:"asset"`
+}
+
+// bch
+type GetBchTransactions struct {
+	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Address string `json:"address" form:"address" binding:"required"`
+	Asset   string `json:"asset" form:"asset"`
+}
+
+// arb
+type GetArbTransactions struct {
+	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Address string `json:"address" form:"address" binding:"required"`
+	Asset   string `json:"asset" form:"asset"`
+}
+
+// avax
+type GetAvaxTransactions struct {
+	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Address string `json:"address" form:"address" binding:"required"`
+	Asset   string `json:"asset" form:"asset"`
+}
+
+// pol
+type GetPolTransactions struct {
+	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Address string `json:"address" form:"address" binding:"required"`
+	Asset   string `json:"asset" form:"asset"`
+}
+
+// base
+type GetBaseTransactions struct {
+	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Address string `json:"address" form:"address" binding:"required"`
+	Asset   string `json:"asset" form:"asset"`
+}
+
+// op
+type GetOpTransactions struct {
+	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Address string `json:"address" form:"address" binding:"required"`
+	Asset   string `json:"asset" form:"asset"`
+}

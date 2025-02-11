@@ -88,4 +88,38 @@ func (mRouter *MainRouter) InitRouter(Router *gin.RouterGroup) {
 		nodeForTon.GET("getTon20Transactions", api.GetTon20Transactions)
 	}
 
+	nodeForXrp := node.Group("xrp")
+	{
+		nodeForXrp.GET("getTransactions", api.GetXrpTransactions)
+	}
+
+	nodeForBch := node.Group("bch")
+	{
+		nodeForBch.GET("getTransactions", api.GetBchTransactions)
+	}
+
+	nodeForArb := node.Group("arb")
+	{
+		nodeForArb.GET("getTransactions", api.GetArbTransactions)
+	}
+
+	nodeForAvax := node.Group("avax")
+	{
+		nodeForAvax.GET("getTransactions", api.GetAvaxTransactions)
+	}
+
+	nodeForPol := node.Group("pol")
+	{
+		nodeForPol.GET("getTransactions", api.GetPolTransactions)
+	}
+
+	nodeForBase := node.Group("base")
+	{
+		nodeForBase.GET("getTransactions", api.GetBaseTransactions)
+	}
+
+	nodeForOp := node.Group("op")
+	{
+		nodeForOp.GET("getTransactions", api.GetOpTransactions)
+	}
 }
