@@ -55,7 +55,7 @@ func SweepBtcBlockchainTransaction(
 		return
 	}
 
-	if *sweepBlockHeight >= *cacheBlockHeight {
+	if *sweepBlockHeight > *cacheBlockHeight {
 		SetupBtcLatestBlockHeight(client, chainId)
 		setup.UpdateCacheBlockHeight(context.Background(), chainId)
 		setup.UpdatePublicKey(context.Background(), chainId)

@@ -50,7 +50,7 @@ func SweepLtcBlockchainTransaction(
 		return
 	}
 
-	if *sweepBlockHeight >= *cacheBlockHeight {
+	if *sweepBlockHeight > *cacheBlockHeight {
 		SetupLtcLatestBlockHeight(client, chainId)
 		setup.UpdateCacheBlockHeight(context.Background(), chainId)
 		setup.UpdatePublicKey(context.Background(), chainId)
