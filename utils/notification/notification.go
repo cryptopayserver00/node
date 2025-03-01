@@ -29,12 +29,6 @@ func NotificationRequest(request request.NotificationRequest) (err error) {
 }
 
 func handleNotification(request request.NotificationRequest) (err error) {
-	// err = service.NodeService.SaveTx(request.Chain, request.Hash)
-	// if err != nil {
-	// 	global.NODE_LOG.Error(err.Error())
-	// 	return
-	// }
-
 	ownId, err := service.NodeService.SaveOwnTx(request)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
