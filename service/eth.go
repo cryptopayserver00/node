@@ -295,11 +295,12 @@ func (n *NService) DecodeEthTransactionForAlchemy(chainId uint, address string, 
 		model.Amount = utils.CalculateBalance(bigIntValue, 18)
 
 	} else if tx.Category == "erc20" {
-		isSupportContract, contractName, _, decimals := chainUtils.GetContractInfo(chainId, tx.RawContract.Address)
+		isSupportContract, contractName, contractAddress, decimals := chainUtils.GetContractInfo(chainId, tx.RawContract.Address)
 		if !isSupportContract {
 			return
 		}
 		model.Asset = contractName
+		model.ContractAddress = contractAddress
 
 		hexString := strings.TrimPrefix(tx.RawContract.Value, "0x")
 		bigIntValue, _ := new(big.Int).SetString(hexString, 16)
