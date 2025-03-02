@@ -30,8 +30,8 @@ type TransactionByChainAndHash struct {
 }
 
 type TransactionsByChainAndAddress struct {
-	ChainId  uint   `json:"chain_id" form:"chain_id" binding:"required"`
-	Address  string `json:"address" form:"address" binding:"required"`
+	ChainId  uint   `json:"chain_id" form:"chain_id"`
+	Address  string `json:"address" form:"address"`
 	Page     int    `json:"page" form:"page"`
 	PageSize int    `json:"pageSize" form:"page_size"`
 }

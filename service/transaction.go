@@ -130,7 +130,15 @@ func (n *NService) GetTransactionsByChainAndAddress(req request.TransactionsByCh
 	offset := req.PageSize * (req.Page - 1)
 	db := global.NODE_DB.Model(&model.OwnTransaction{})
 
-	if err := db.Where("chain_id = ? AND (from_address = ? OR to_address = ?)", req.ChainId, req.Address, req.Address).Count(&total).Order("created_at desc").Offset(offset).Limit(limit).Find(&txs).Error; err != nil {
+	if req.ChainId != 0 {
+		db.Where("chain_id", req.ChainId)
+	}
+
+	if req.Address != "" {
+		db.Where("from_address = ? OR to_address = ?", req.Address, req.Address)
+	}
+
+	if err := db.Count(&total).Order("created_at desc").Offset(offset).Limit(limit).Find(&txs).Error; err != nil {
 		return nil, total, err
 	}
 
