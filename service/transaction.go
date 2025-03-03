@@ -6,6 +6,7 @@ import (
 	"node/global/constant"
 	"node/model"
 	"node/model/node/request"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -130,8 +131,9 @@ func (n *NService) GetTransactionsByChainAndAddress(req request.TransactionsByCh
 	offset := req.PageSize * (req.Page - 1)
 	db := global.NODE_DB.Model(&model.OwnTransaction{})
 
-	if req.ChainId != 0 {
-		db.Where("chain_id", req.ChainId)
+	if req.ChainIds != "" {
+		chainIds := strings.Split(req.ChainIds, ",")
+		db.Where("chain_id IN (?)", chainIds)
 	}
 
 	if req.Address != "" {
