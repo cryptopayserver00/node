@@ -30,10 +30,10 @@ type TransactionByChainAndHash struct {
 }
 
 type TransactionsByChainAndAddress struct {
-	ChainIds string `json:"chainids" form:"chainids"`
-	Address  string `json:"address" form:"address"`
-	Page     int    `json:"page" form:"page"`
-	PageSize int    `json:"pageSize" form:"page_size"`
+	ChainIds  string `json:"chainids" form:"chainids"`
+	Addresses string `json:"addresses" form:"addresses"`
+	Page      int    `json:"page" form:"page"`
+	PageSize  int    `json:"pageSize" form:"page_size"`
 }
 
 type SendMessageToTelegram struct {

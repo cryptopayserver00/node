@@ -136,8 +136,9 @@ func (n *NService) GetTransactionsByChainAndAddress(req request.TransactionsByCh
 		db.Where("chain_id IN (?)", chainIds)
 	}
 
-	if req.Address != "" {
-		db.Where("from_address = ? OR to_address = ?", req.Address, req.Address)
+	if req.Addresses != "" {
+		addresses := strings.Split(req.Addresses, ",")
+		db.Where("from_address IN (?) OR to_address IN (?)", addresses, addresses)
 	}
 
 	if err := db.Count(&total).Order("created_at desc").Offset(offset).Limit(limit).Find(&txs).Error; err != nil {
