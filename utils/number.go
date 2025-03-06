@@ -98,20 +98,55 @@ func FormatToEtherValue(value float64) int64 {
 	return int64(formattedBalance)
 }
 
+// func FormatToOriginalValue(value string, decimals int) (*big.Int, error) {
+// 	bigValue, _, err := new(big.Float).Parse(value, 10)
+// 	if err != nil {
+// 		return &big.Int{}, errors.New("error parsing value")
+// 	}
+
+// 	tenPower := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
+
+// 	tenPowerFloat := new(big.Float).SetInt(tenPower)
+
+// 	result := new(big.Float).Mul(bigValue, tenPowerFloat)
+
+// 	resultInt := new(big.Int)
+// 	result.Int(resultInt)
+
+// 	return resultInt, nil
+// }
+
 func FormatToOriginalValue(value string, decimals int) (*big.Int, error) {
-	bigValue, _, err := new(big.Float).Parse(value, 10)
-	if err != nil {
-		return &big.Int{}, errors.New("error parsing value")
+	parts := strings.Split(value, ".")
+	if len(parts) > 2 {
+		return nil, errors.New("invalid value format")
 	}
 
-	tenPower := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
+	intPart := strings.TrimLeft(parts[0], "0")
+	if intPart == "" {
+		intPart = "0"
+	}
 
-	tenPowerFloat := new(big.Float).SetInt(tenPower)
+	var fracPart string
+	if len(parts) == 2 {
+		fracPart = parts[1]
+	} else {
+		fracPart = ""
+	}
 
-	result := new(big.Float).Mul(bigValue, tenPowerFloat)
+	if len(fracPart) < decimals {
+		fracPart += strings.Repeat("0", decimals-len(fracPart))
+	} else if len(fracPart) > decimals {
+		fracPart = fracPart[:decimals]
+	}
 
-	resultInt := new(big.Int)
-	result.Int(resultInt)
+	combined := intPart + fracPart
 
-	return resultInt, nil
+	result := new(big.Int)
+	_, ok := result.SetString(combined, 10)
+	if !ok {
+		return nil, errors.New("error converting to big.Int")
+	}
+
+	return result, nil
 }
