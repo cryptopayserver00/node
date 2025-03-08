@@ -114,7 +114,7 @@ var (
 	}
 
 	SolanaDevnetRpc = []string{
-		// "https://api.devnet.solana.com",
+		"https://api.devnet.solana.com",
 		"https://rpc.ankr.com/solana_devnet",
 	}
 

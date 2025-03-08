@@ -18,7 +18,9 @@ import (
 
 	sweepUtils "node/sweep/utils"
 
+	bin "github.com/gagliardetto/binary"
 	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/programs/token"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/redis/go-redis/v9"
 )
@@ -121,7 +123,7 @@ func SweepSolBlockchainTransactionCore(
 
 	blockResult, err := client.GetBlockWithOpts(context.Background(), uint64(sweepBlockHeight), &rpc.GetBlockOpts{
 		Encoding:                       solana.EncodingBase64,
-		Commitment:                     rpc.CommitmentFinalized,
+		Commitment:                     rpc.CommitmentConfirmed,
 		Rewards:                        &includeRewards,
 		MaxSupportedTransactionVersion: &rpc.MaxSupportedTransactionVersion0,
 	})
@@ -294,51 +296,122 @@ func SweepSolBlockchainTransactionDetails(
 			}
 
 			var amount uint64
-			var source, to, from, mint, mintAccount solana.PublicKey
+			var fromAccount, toAccount, from, to, mintAccount solana.PublicKey
+			var fromTokenAccount, toTokenAccount token.Account
 
 			switch inst.Data[0] {
 			case 3:
-				if len(inst.Data) < 9 {
+
+				if len(inst.Data) < 9 || len(inst.Accounts) < 3 {
 					break
 				}
 
-				source = transaction.Message.AccountKeys[inst.Accounts[0]]
-				mintAccount = transaction.Message.AccountKeys[inst.Accounts[1]]
-				to = transaction.Message.AccountKeys[inst.Accounts[2]]
-				from = transaction.Message.AccountKeys[inst.Accounts[3]]
-
-				isSupportContract, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, mintAccount.String())
-				if !isSupportContract {
-					break
-				}
-
-				notifyRequest.FromAddress = from.String()
-				notifyRequest.ToAddress = to.String()
-				notifyRequest.Token = contractName
-				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(amount)), decimals)
-
-				return
-			case 12:
+				// source = transaction.Message.AccountKeys[inst.Accounts[0]]
 				amount = binary.LittleEndian.Uint64(inst.Data[1:9])
-				source = transaction.Message.AccountKeys[inst.Accounts[0]]
+				fromAccount = transaction.Message.AccountKeys[inst.Accounts[0]]
+				toAccount = transaction.Message.AccountKeys[inst.Accounts[1]]
+				// from = transaction.Message.AccountKeys[inst.Accounts[2]]
+
+				fromAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), fromAccount, &rpc.GetAccountInfoOpts{
+					Encoding: solana.EncodingBase64,
+				})
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return
+				}
+
+				fromDecoder := bin.NewBinDecoder(fromAccountInfo.Value.Data.GetBinary())
+				err = fromTokenAccount.UnmarshalWithDecoder(fromDecoder)
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return
+				}
+
+				toAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), toAccount, &rpc.GetAccountInfoOpts{
+					Encoding: solana.EncodingBase64,
+				})
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return
+				}
+
+				toDecoder := bin.NewBinDecoder(toAccountInfo.Value.Data.GetBinary())
+				err = toTokenAccount.UnmarshalWithDecoder(toDecoder)
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return
+				}
+
+				if !fromTokenAccount.Mint.Equals(toTokenAccount.Mint) {
+					return
+				}
+
+				isSupportContract, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, fromTokenAccount.Mint.String())
+				if !isSupportContract {
+					break
+				}
+
+				notifyRequest.FromAddress = fromTokenAccount.Owner.String()
+				notifyRequest.ToAddress = toTokenAccount.Owner.String()
+				notifyRequest.Token = contractName
+				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(amount)), decimals)
+
+				from = fromTokenAccount.Owner
+				to = toTokenAccount.Owner
+
+			case 12:
+
+				amount = binary.LittleEndian.Uint64(inst.Data[1:9])
+				fromAccount = transaction.Message.AccountKeys[inst.Accounts[0]]
 				mintAccount = transaction.Message.AccountKeys[inst.Accounts[1]]
-				to = transaction.Message.AccountKeys[inst.Accounts[2]]
-				from = transaction.Message.AccountKeys[inst.Accounts[3]]
+				toAccount = transaction.Message.AccountKeys[inst.Accounts[2]]
+				// source = transaction.Message.AccountKeys[inst.Accounts[3]]
+
+				fromAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), fromAccount, &rpc.GetAccountInfoOpts{
+					Encoding: solana.EncodingBase64,
+				})
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return
+				}
+
+				fromDecoder := bin.NewBinDecoder(fromAccountInfo.Value.Data.GetBinary())
+				err = fromTokenAccount.UnmarshalWithDecoder(fromDecoder)
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return
+				}
+
+				toAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), toAccount, &rpc.GetAccountInfoOpts{
+					Encoding: solana.EncodingBase64,
+				})
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return
+				}
+
+				toDecoder := bin.NewBinDecoder(toAccountInfo.Value.Data.GetBinary())
+				err = toTokenAccount.UnmarshalWithDecoder(toDecoder)
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return
+				}
 
 				isSupportContract, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, mintAccount.String())
 				if !isSupportContract {
 					break
 				}
 
-				notifyRequest.FromAddress = from.String()
-				notifyRequest.ToAddress = to.String()
+				notifyRequest.FromAddress = fromTokenAccount.Owner.String()
+				notifyRequest.ToAddress = toTokenAccount.Owner.String()
 				notifyRequest.Token = contractName
 				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(amount)), decimals)
+
+				from = fromTokenAccount.Owner
+				to = toTokenAccount.Owner
 			default:
 				break
 			}
-
-			fmt.Println(source.String(), mint.String())
 
 			for _, v := range *publicKey {
 				targetAddress := solana.MustPublicKeyFromBase58(v)

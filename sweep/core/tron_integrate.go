@@ -58,7 +58,7 @@ func SweepTronBlockchainTransaction(
 		return
 	}
 
-	if *sweepBlockHeight > *cacheBlockHeight {
+	if *sweepBlockHeight >= *cacheBlockHeight {
 		SetupTronLatestBlockHeight(client, chainId)
 		setup.UpdateCacheBlockHeight(context.Background(), chainId)
 		setup.UpdatePublicKey(context.Background(), chainId)
