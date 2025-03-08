@@ -133,183 +133,178 @@ func SweepSolBlockchainTransactionCore(
 		return err
 	}
 
-	if (sweepBlockHeight) == int64(blockResult.ParentSlot+1) {
-		if len(blockResult.Transactions) > 0 {
-			for _, transaction := range blockResult.Transactions {
+	if len(blockResult.Transactions) > 0 {
+		for _, transaction := range blockResult.Transactions {
 
-				isMonitorTx := false
-				matchArray := make([]solana.PublicKey, 0)
+			isMonitorTx := false
+			matchArray := make([]solana.PublicKey, 0)
 
-				parsedTx, err := transaction.GetTransaction()
-				if err != nil {
-					return err
-				}
+			parsedTx, err := transaction.GetTransaction()
+			if err != nil {
+				return err
+			}
 
-				for _, inst := range parsedTx.Message.Instructions {
-					programID := parsedTx.Message.AccountKeys[inst.ProgramIDIndex]
+			for _, inst := range parsedTx.Message.Instructions {
+				programID := parsedTx.Message.AccountKeys[inst.ProgramIDIndex]
 
-					switch programID {
-					case solana.SystemProgramID:
-						if len(inst.Data) >= 12 && binary.LittleEndian.Uint32(inst.Data[0:4]) == 2 {
-							from := parsedTx.Message.AccountKeys[inst.Accounts[0]]
-							to := parsedTx.Message.AccountKeys[inst.Accounts[1]]
+				switch programID {
+				case solana.SystemProgramID:
+					if len(inst.Data) >= 12 && binary.LittleEndian.Uint32(inst.Data[0:4]) == 2 {
+						from := parsedTx.Message.AccountKeys[inst.Accounts[0]]
+						to := parsedTx.Message.AccountKeys[inst.Accounts[1]]
 
-							matchArray = append(matchArray, from, to)
-						}
+						matchArray = append(matchArray, from, to)
+					}
 
-					case solana.TokenProgramID:
-						if len(inst.Data) < 1 {
+				case solana.TokenProgramID:
+					if len(inst.Data) < 1 {
+						break
+					}
+
+					var fromAccount, toAccount, mintAccount solana.PublicKey
+					var fromTokenAccount, toTokenAccount token.Account
+
+					switch inst.Data[0] {
+					case 3:
+
+						if len(inst.Data) < 9 || len(inst.Accounts) < 3 {
 							break
 						}
 
-						var fromAccount, toAccount, mintAccount solana.PublicKey
-						var fromTokenAccount, toTokenAccount token.Account
+						fromAccount = parsedTx.Message.AccountKeys[inst.Accounts[0]]
+						toAccount = parsedTx.Message.AccountKeys[inst.Accounts[1]]
 
-						switch inst.Data[0] {
-						case 3:
-
-							if len(inst.Data) < 9 || len(inst.Accounts) < 3 {
-								break
-							}
-
-							fromAccount = parsedTx.Message.AccountKeys[inst.Accounts[0]]
-							toAccount = parsedTx.Message.AccountKeys[inst.Accounts[1]]
-
-							fromAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), fromAccount, &rpc.GetAccountInfoOpts{
-								Encoding: solana.EncodingBase64,
-							})
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								break
-							}
-
-							fromDecoder := bin.NewBinDecoder(fromAccountInfo.Value.Data.GetBinary())
-							err = fromTokenAccount.UnmarshalWithDecoder(fromDecoder)
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								break
-							}
-
-							toAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), toAccount, &rpc.GetAccountInfoOpts{
-								Encoding: solana.EncodingBase64,
-							})
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								break
-							}
-
-							toDecoder := bin.NewBinDecoder(toAccountInfo.Value.Data.GetBinary())
-							err = toTokenAccount.UnmarshalWithDecoder(toDecoder)
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								break
-							}
-
-							if !fromTokenAccount.Mint.Equals(toTokenAccount.Mint) {
-								break
-							}
-
-							isSupportContract, _, _, _ := sweepUtils.GetContractInfo(chainId, fromTokenAccount.Mint.String())
-							if !isSupportContract {
-								break
-							}
-
-							matchArray = append(matchArray, fromTokenAccount.Owner, toTokenAccount.Owner)
-
-						case 12:
-
-							fromAccount = parsedTx.Message.AccountKeys[inst.Accounts[0]]
-							mintAccount = parsedTx.Message.AccountKeys[inst.Accounts[1]]
-							toAccount = parsedTx.Message.AccountKeys[inst.Accounts[2]]
-
-							fromAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), fromAccount, &rpc.GetAccountInfoOpts{
-								Encoding: solana.EncodingBase64,
-							})
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								break
-							}
-
-							fromDecoder := bin.NewBinDecoder(fromAccountInfo.Value.Data.GetBinary())
-							err = fromTokenAccount.UnmarshalWithDecoder(fromDecoder)
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								break
-							}
-
-							toAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), toAccount, &rpc.GetAccountInfoOpts{
-								Encoding: solana.EncodingBase64,
-							})
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								break
-							}
-
-							toDecoder := bin.NewBinDecoder(toAccountInfo.Value.Data.GetBinary())
-							err = toTokenAccount.UnmarshalWithDecoder(toDecoder)
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								break
-							}
-
-							isSupportContract, _, _, _ := sweepUtils.GetContractInfo(chainId, mintAccount.String())
-							if !isSupportContract {
-								break
-							}
-
-							matchArray = append(matchArray, fromTokenAccount.Owner, toTokenAccount.Owner)
-						default:
+						fromAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), fromAccount, &rpc.GetAccountInfoOpts{
+							Encoding: solana.EncodingBase64,
+						})
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							break
 						}
-					}
-				}
 
-				if len(matchArray) == 0 {
-					continue
-				}
-
-				matchArray = utils.RemoveDuplicatesForSolanaPublicKey(matchArray)
-
-			outerCurrentTxLoop:
-				for i := 0; i < len(*publicKey); i++ {
-					targetAddress := solana.MustPublicKeyFromBase58((*publicKey)[i])
-					for _, j := range matchArray {
-						if targetAddress.Equals(j) {
-							isMonitorTx = true
-							continue outerCurrentTxLoop
-						}
-					}
-				}
-
-				if isMonitorTx {
-					redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						return err
-					}
-
-					sign := parsedTx.Signatures[0].String()
-
-					for _, redisTx := range redisTxs {
-						if redisTx == sign {
+						fromDecoder := bin.NewBinDecoder(fromAccountInfo.Value.Data.GetBinary())
+						err = fromTokenAccount.UnmarshalWithDecoder(fromDecoder)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							break
 						}
-					}
 
-					_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingTransaction, sign).Result()
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						return err
+						toAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), toAccount, &rpc.GetAccountInfoOpts{
+							Encoding: solana.EncodingBase64,
+						})
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							break
+						}
+
+						toDecoder := bin.NewBinDecoder(toAccountInfo.Value.Data.GetBinary())
+						err = toTokenAccount.UnmarshalWithDecoder(toDecoder)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							break
+						}
+
+						if !fromTokenAccount.Mint.Equals(toTokenAccount.Mint) {
+							break
+						}
+
+						isSupportContract, _, _, _ := sweepUtils.GetContractInfo(chainId, fromTokenAccount.Mint.String())
+						if !isSupportContract {
+							break
+						}
+
+						matchArray = append(matchArray, fromTokenAccount.Owner, toTokenAccount.Owner)
+
+					case 12:
+
+						fromAccount = parsedTx.Message.AccountKeys[inst.Accounts[0]]
+						mintAccount = parsedTx.Message.AccountKeys[inst.Accounts[1]]
+						toAccount = parsedTx.Message.AccountKeys[inst.Accounts[2]]
+
+						fromAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), fromAccount, &rpc.GetAccountInfoOpts{
+							Encoding: solana.EncodingBase64,
+						})
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							break
+						}
+
+						fromDecoder := bin.NewBinDecoder(fromAccountInfo.Value.Data.GetBinary())
+						err = fromTokenAccount.UnmarshalWithDecoder(fromDecoder)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							break
+						}
+
+						toAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), toAccount, &rpc.GetAccountInfoOpts{
+							Encoding: solana.EncodingBase64,
+						})
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							break
+						}
+
+						toDecoder := bin.NewBinDecoder(toAccountInfo.Value.Data.GetBinary())
+						err = toTokenAccount.UnmarshalWithDecoder(toDecoder)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							break
+						}
+
+						isSupportContract, _, _, _ := sweepUtils.GetContractInfo(chainId, mintAccount.String())
+						if !isSupportContract {
+							break
+						}
+
+						matchArray = append(matchArray, fromTokenAccount.Owner, toTokenAccount.Owner)
+					default:
+						break
 					}
 				}
 			}
-		}
 
-		return nil
-	} else {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", sweepBlockHeight, int64(blockResult.ParentSlot+1))))
-		return errors.New("not the same height of block")
+			if len(matchArray) == 0 {
+				continue
+			}
+
+			matchArray = utils.RemoveDuplicatesForSolanaPublicKey(matchArray)
+
+		outerCurrentTxLoop:
+			for i := 0; i < len(*publicKey); i++ {
+				targetAddress := solana.MustPublicKeyFromBase58((*publicKey)[i])
+				for _, j := range matchArray {
+					if targetAddress.Equals(j) {
+						isMonitorTx = true
+						continue outerCurrentTxLoop
+					}
+				}
+			}
+
+			if isMonitorTx {
+				redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return err
+				}
+
+				sign := parsedTx.Signatures[0].String()
+
+				for _, redisTx := range redisTxs {
+					if redisTx == sign {
+						break
+					}
+				}
+
+				_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingTransaction, sign).Result()
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return err
+				}
+			}
+		}
 	}
+
+	return nil
 }
 
 func SweepSolBlockchainTransactionDetails(
@@ -614,68 +609,64 @@ func SweepSolBlockchainPendingBlock(
 		return
 	}
 
-	if blockHeightInt == int64(blockResult.ParentSlot+1) {
-		if len(blockResult.Transactions) > 0 {
-			for _, transaction := range blockResult.Transactions {
+	if len(blockResult.Transactions) > 0 {
+		for _, transaction := range blockResult.Transactions {
 
-				isMonitorTx := false
-				matchArray := make([]solana.PublicKey, 0)
+			isMonitorTx := false
+			matchArray := make([]solana.PublicKey, 0)
 
-				parsedTx, err := transaction.GetTransaction()
-				if err != nil {
-					return
-				}
+			parsedTx, err := transaction.GetTransaction()
+			if err != nil {
+				return
+			}
 
-				for _, key := range parsedTx.Message.AccountKeys {
-					matchArray = append(matchArray, key)
-				}
+			for _, key := range parsedTx.Message.AccountKeys {
+				matchArray = append(matchArray, key)
+			}
 
-				if len(matchArray) == 0 {
-					continue
-				}
+			if len(matchArray) == 0 {
+				continue
+			}
 
-				matchArray = utils.RemoveDuplicatesForSolanaPublicKey(matchArray)
+			matchArray = utils.RemoveDuplicatesForSolanaPublicKey(matchArray)
 
-			outerCurrentTxLoop:
-				for i := 0; i < len(*publicKey); i++ {
-					targetAddress := solana.MustPublicKeyFromBase58((*publicKey)[i])
-					for _, j := range matchArray {
-						if targetAddress.Equals(j) {
-							isMonitorTx = true
-							continue outerCurrentTxLoop
-						}
-					}
-				}
-
-				if isMonitorTx {
-					redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						return
-					}
-
-					sign := parsedTx.Signatures[0].String()
-
-					for _, redisTx := range redisTxs {
-						if redisTx == sign {
-							break
-						}
-					}
-
-					_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingTransaction, sign).Result()
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						return
+		outerCurrentTxLoop:
+			for i := 0; i < len(*publicKey); i++ {
+				targetAddress := solana.MustPublicKeyFromBase58((*publicKey)[i])
+				for _, j := range matchArray {
+					if targetAddress.Equals(j) {
+						isMonitorTx = true
+						continue outerCurrentTxLoop
 					}
 				}
 			}
-		}
 
-		_, err = global.NODE_REDIS.LPop(context.Background(), constantPendingBlock).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+			if isMonitorTx {
+				redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return
+				}
+
+				sign := parsedTx.Signatures[0].String()
+
+				for _, redisTx := range redisTxs {
+					if redisTx == sign {
+						break
+					}
+				}
+
+				_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingTransaction, sign).Result()
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return
+				}
+			}
 		}
-	} else {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", blockHeightInt, int64(blockResult.ParentSlot+1))))
+	}
+
+	_, err = global.NODE_REDIS.LPop(context.Background(), constantPendingBlock).Result()
+	if err != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 	}
 }
