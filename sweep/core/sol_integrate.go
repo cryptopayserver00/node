@@ -66,7 +66,7 @@ func SweepSolBlockchainTransaction(
 	mutex := sync.Mutex{}
 
 	var (
-		numWorkers = 1
+		numWorkers = 10
 	)
 
 	if *sweepBlockHeight < *cacheBlockHeight {
@@ -125,6 +125,7 @@ func SweepSolBlockchainTransactionCore(
 		Rewards:                        &includeRewards,
 		MaxSupportedTransactionVersion: &rpc.MaxSupportedTransactionVersion0,
 	})
+
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 
