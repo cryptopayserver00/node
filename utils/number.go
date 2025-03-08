@@ -98,24 +98,6 @@ func FormatToEtherValue(value float64) int64 {
 	return int64(formattedBalance)
 }
 
-// func FormatToOriginalValue(value string, decimals int) (*big.Int, error) {
-// 	bigValue, _, err := new(big.Float).Parse(value, 10)
-// 	if err != nil {
-// 		return &big.Int{}, errors.New("error parsing value")
-// 	}
-
-// 	tenPower := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
-
-// 	tenPowerFloat := new(big.Float).SetInt(tenPower)
-
-// 	result := new(big.Float).Mul(bigValue, tenPowerFloat)
-
-// 	resultInt := new(big.Int)
-// 	result.Int(resultInt)
-
-// 	return resultInt, nil
-// }
-
 func FormatToOriginalValue(value string, decimals int) (*big.Int, error) {
 	parts := strings.Split(value, ".")
 	if len(parts) > 2 {

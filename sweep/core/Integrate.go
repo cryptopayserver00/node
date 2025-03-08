@@ -134,7 +134,6 @@ func SweepBlockchainTransaction(
 			return
 		}
 	}
-
 }
 
 func SweepBlockchainTransactionCore(client NODE_Client.Client,

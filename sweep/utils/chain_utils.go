@@ -42,11 +42,17 @@ func GetContractInfo(chainId uint, contractAddress string) (bool, string, string
 				constant.OP_SEPOLIA,
 				constant.ARBITRUM_ONE,
 				constant.ARBITRUM_NOVA,
-				constant.ARBITRUM_SEPOLIA:
+				constant.ARBITRUM_SEPOLIA,
+				constant.POL_MAINNET,
+				constant.POL_TESTNET,
+				constant.AVAX_MAINNET,
+				constant.AVAX_TESTNET,
+				constant.BASE_MAINNET,
+				constant.BASE_SEPOLIA:
 				if utils.HexToAddress(coin.Contract) == utils.HexToAddress(contractAddress) {
 					return true, coin.Symbol, coin.Contract, coin.Decimals
 				}
-			case constant.TRON_NILE, constant.TRON_MAINNET:
+			case constant.TRON_NILE, constant.TRON_MAINNET, constant.SOL_MAINNET, constant.SOL_DEVNET:
 				if strings.EqualFold(coin.Contract, contractAddress) {
 					return true, coin.Symbol, coin.Contract, coin.Decimals
 				}

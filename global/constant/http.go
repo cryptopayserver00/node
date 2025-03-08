@@ -1,10 +1,9 @@
 package constant
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"node/global"
 	"strings"
-	"time"
 )
 
 var (
@@ -33,9 +32,9 @@ func GetBscscanUrlByNetwork(network uint) string {
 		return BscscanMainnetAPI
 	case BSC_TESTNET:
 		return BscscanTestnetAPI
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func GetHttpUrlByNetwork(network uint) string {
@@ -48,9 +47,9 @@ func GetHttpUrlByNetwork(network uint) string {
 		return TonMainnetAPI
 	case TON_TESTNET:
 		return TonTestnetAPI
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func GetBlcokStreamHttpUrlByNetwork(network uint) string {
@@ -59,9 +58,9 @@ func GetBlcokStreamHttpUrlByNetwork(network uint) string {
 		return BlockStreamMainnetAPI
 	case BTC_TESTNET:
 		return BlockStreamTestnetAPI
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func GetBlockStreamWebsiteTxUrlByNetwork(network uint) string {
@@ -70,9 +69,9 @@ func GetBlockStreamWebsiteTxUrlByNetwork(network uint) string {
 		return BlockStreamWebsiteTxMainnetUrl
 	case BTC_TESTNET:
 		return BlockStreamWebsiteTxTestnetUrl
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func GetSochainTxUrlByNetwork(network uint) string {
@@ -81,24 +80,23 @@ func GetSochainTxUrlByNetwork(network uint) string {
 		return LtcSochainMainnetUrl
 	case LTC_TESTNET:
 		return LtcSochainTestnetUrl
+	default:
+		return ""
 	}
 
-	return ""
 }
 
 func GetRandomHTTPKeyByNetwork(network uint) string {
-	rand.Seed(time.Now().UnixNano())
-
 	switch network {
 	case TRON_MAINNET:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.TrongridMainnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.TrongridMainnetKey, ",")))
 		return strings.Split(global.NODE_CONFIG.Key.TrongridMainnetKey, ",")[index]
 	case TRON_NILE:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.TrongridNileKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.TrongridNileKey, ",")))
 		return strings.Split(global.NODE_CONFIG.Key.TrongridNileKey, ",")[index]
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func GetAllHTTPKeyByNetwork(network uint) []string {
@@ -107,9 +105,9 @@ func GetAllHTTPKeyByNetwork(network uint) []string {
 		return strings.Split(global.NODE_CONFIG.Key.TrongridMainnetKey, ",")
 	case TRON_NILE:
 		return strings.Split(global.NODE_CONFIG.Key.TrongridNileKey, ",")
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 func TronGetBlockByNetwork(network uint) string {
@@ -118,9 +116,9 @@ func TronGetBlockByNetwork(network uint) string {
 		return TrongridMainnetAPI + "/walletsolidity/getblock"
 	case TRON_NILE:
 		return TrongridNileAPI + "/walletsolidity/getblock"
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func TronGetBlockByNumByNetwork(network uint) string {
@@ -129,9 +127,9 @@ func TronGetBlockByNumByNetwork(network uint) string {
 		return TrongridMainnetAPI + "/walletsolidity/getblockbynum"
 	case TRON_NILE:
 		return TrongridNileAPI + "/walletsolidity/getblockbynum"
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func TronGetTxByIdByNetwork(network uint) string {
@@ -140,9 +138,9 @@ func TronGetTxByIdByNetwork(network uint) string {
 		return TrongridMainnetAPI + "/walletsolidity/gettransactionbyid"
 	case TRON_NILE:
 		return TrongridNileAPI + "/walletsolidity/gettransactionbyid"
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func TronValidateAddressByNetwork(network uint) string {
@@ -151,9 +149,9 @@ func TronValidateAddressByNetwork(network uint) string {
 		return TrongridMainnetAPI + "/wallet/validateaddress"
 	case TRON_NILE:
 		return TrongridNileAPI + "/wallet/validateaddress"
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func TronValidateContractAddressByNetwork(network uint) string {
@@ -162,7 +160,7 @@ func TronValidateContractAddressByNetwork(network uint) string {
 		return TrongridMainnetAPI + "/wallet/getcontract"
 	case TRON_NILE:
 		return TrongridNileAPI + "/wallet/getcontract"
+	default:
+		return ""
 	}
-
-	return ""
 }

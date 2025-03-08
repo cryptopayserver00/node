@@ -1,10 +1,9 @@
 package constant
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"node/global"
 	"strings"
-	"time"
 )
 
 var (
@@ -53,18 +52,16 @@ func IsNetworkSupportTatum(id uint) bool {
 }
 
 func GetTatumRandomKeyByNetwork(id uint) string {
-	rand.Seed(time.Now().UnixNano())
-
 	switch id {
 	case BTC_MAINNET, ETH_MAINNET, LTC_MAINNET, BSC_MAINNET, TRON_MAINNET:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.TatumMainnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.TatumMainnetKey, ",")))
 		return strings.Split(global.NODE_CONFIG.Key.TatumMainnetKey, ",")[index]
 	case BTC_TESTNET, ETH_SEPOLIA, LTC_TESTNET, BSC_TESTNET:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.TatumTestnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.TatumTestnetKey, ",")))
 		return strings.Split(global.NODE_CONFIG.Key.TatumTestnetKey, ",")[index]
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func GetAllTatumAPiKey(id uint) []string {
@@ -73,7 +70,7 @@ func GetAllTatumAPiKey(id uint) []string {
 		return strings.Split(global.NODE_CONFIG.Key.TatumMainnetKey, ",")
 	case BTC_TESTNET, ETH_SEPOLIA, LTC_TESTNET, BSC_TESTNET:
 		return strings.Split(global.NODE_CONFIG.Key.TatumTestnetKey, ",")
-
+	default:
+		return nil
 	}
-	return nil
 }

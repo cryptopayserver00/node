@@ -1,13 +1,12 @@
 package constant
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"node/global"
 	"node/model/node/request"
 	"node/model/node/response"
 	"node/utils"
 	"strings"
-	"time"
 )
 
 var (
@@ -109,6 +108,16 @@ var (
 		"https://sepolia-rollup.arbitrum.io/rpc",
 	}
 
+	SolanaMainnetRPC = []string{
+		"https://api.mainnet-beta.solana.com",
+		"https://rpc.ankr.com/solana",
+	}
+
+	SolanaDevnetRpc = []string{
+		// "https://api.devnet.solana.com",
+		"https://rpc.ankr.com/solana_devnet",
+	}
+
 	PolMainnetRPC = []string{
 		"https://polygon-bor-rpc.publicnode.com",
 		"https://polygon-pokt.nodies.app",
@@ -185,46 +194,43 @@ func GetAllRPCUrlByNetwork(chainId uint) []string {
 		return BaseMainnetRPC
 	case BASE_SEPOLIA:
 		return BaseSepoliaRPC
-
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 func GetGeneralRPCUrlByNetwork(chainId uint) string {
-	rand.Seed(time.Now().UnixNano())
-
 	switch chainId {
 	case ETH_MAINNET:
-		index := rand.Intn(len(ETHGeneralMainnetRPC))
+		index := rand.IntN(len(ETHGeneralMainnetRPC))
 		return ETHGeneralMainnetRPC[index]
 	case ETH_SEPOLIA:
-		index := rand.Intn(len(ETHGeneralSepoliaRPC))
+		index := rand.IntN(len(ETHGeneralSepoliaRPC))
 		return ETHGeneralSepoliaRPC[index]
+	default:
+		return ""
 	}
 
-	return ""
 }
 
 func GetAlchemyRPCUrlByNetwork(chainId uint) string {
-	rand.Seed(time.Now().UnixNano())
-
 	switch chainId {
 	case ETH_MAINNET:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
 		return "https://eth-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
 	case ETH_SEPOLIA:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
 		return "https://eth-sepolia.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
 	case BSC_MAINNET:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
 		return "https://bnb-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
 	case BSC_TESTNET:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
 		return "https://bnb-testnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+	default:
+		return ""
 	}
 
-	return ""
 }
 
 func GetRealRpcByArray(rpcs []string) string {
@@ -256,20 +262,26 @@ func GetRPCUrlByNetwork(chainId uint) string {
 		return GetRealRpcByArray(ETHMainnetRPC)
 	case ETH_SEPOLIA:
 		return GetRealRpcByArray(ETHSepoliaRPC)
-	case OP_MAINNET:
-		return GetRealRpcByArray(OPMainnetRPC)
-	case OP_SEPOLIA:
-		return GetRealRpcByArray(OPSepoliaRPC)
 	case BSC_MAINNET:
 		return GetRealRpcByArray(BSCMainnetRPC)
 	case BSC_TESTNET:
 		return GetRealRpcByArray(BSCTestnetRPC)
+	case OP_MAINNET:
+		return GetRealRpcByArray(OPMainnetRPC)
+	case OP_SEPOLIA:
+		return GetRealRpcByArray(OPSepoliaRPC)
 	case ARBITRUM_ONE:
 		return GetRealRpcByArray(ArbitrumOneRPC)
 	case ARBITRUM_NOVA:
 		return GetRealRpcByArray(ArbitrumNovaRPC)
 	case ARBITRUM_SEPOLIA:
 		return GetRealRpcByArray(ArbitrumSepoliaRPC)
+	case SOL_MAINNET:
+		index := rand.IntN(len(SolanaMainnetRPC))
+		return SolanaMainnetRPC[index]
+	case SOL_DEVNET:
+		index := rand.IntN(len(SolanaDevnetRpc))
+		return SolanaDevnetRpc[index]
 	case POL_MAINNET:
 		return GetRealRpcByArray(PolMainnetRPC)
 	case POL_TESTNET:
@@ -282,41 +294,39 @@ func GetRPCUrlByNetwork(chainId uint) string {
 		return GetRealRpcByArray(BaseMainnetRPC)
 	case BASE_SEPOLIA:
 		return GetRealRpcByArray(BaseSepoliaRPC)
+	default:
+		return ""
 	}
 
-	return ""
 }
 
 // get real inner tx(trace_debug) rpc url
 func GetInnerTxRPCUrlByNetwork(chainId uint) string {
-	rand.Seed(time.Now().UnixNano())
-
 	switch chainId {
 	case ETH_MAINNET:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
 		return "https://eth-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")[index]
 	case ETH_SEPOLIA:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
 		return "https://eth-sepolia.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")[index]
 	case BSC_MAINNET:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
 		return "https://bnb-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")[index]
 	case BSC_TESTNET:
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
 		return "https://bnb-testnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")[index]
+	default:
+		return ""
 	}
 
-	return ""
 }
 
 func GetRandomInnertxAlchemyKey(isMainnet bool) string {
-	rand.Seed(time.Now().UnixNano())
-
 	if isMainnet {
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
 		return strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")[index]
 	} else {
-		index := rand.Intn(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
 		return strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")[index]
 	}
 }

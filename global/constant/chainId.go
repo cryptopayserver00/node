@@ -1,18 +1,16 @@
 package constant
 
 import (
-	"context"
 	"node/global"
 	"node/model/node/request"
 	"node/model/node/response"
 	NODE_Client "node/utils/http"
 	"strings"
 
-	solanaCommon "github.com/blocto/solana-go-sdk/common"
-	solanaRpc "github.com/blocto/solana-go-sdk/rpc"
 	"github.com/btcsuite/btcd/btcutil"
 	btcCfg "github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gagliardetto/solana-go"
 	ltcCfg "github.com/ltcsuite/ltcd/chaincfg"
 	"github.com/ltcsuite/ltcd/ltcutil"
 	"github.com/xrpscan/xrpl-go"
@@ -417,18 +415,13 @@ func IsAddressSupport(chainId uint, address string) bool {
 	case TRON_MAINNET, TRON_NILE:
 		resultVal, _ := TronValidateAddress(chainId, address)
 		return resultVal
-	case SOL_MAINNET:
-		resultVal, t := SolanaValidateAddress(solanaRpc.MainnetRPCEndpoint, address)
-		if resultVal && t == "address" {
-			return true
+	case SOL_MAINNET, SOL_DEVNET:
+		_, err := solana.PublicKeyFromBase58(address)
+		if err != nil {
+			return false
 		}
-		return false
-	case SOL_DEVNET:
-		resultVal, t := SolanaValidateAddress(solanaRpc.DevnetRPCEndpoint, address)
-		if resultVal && t == "address" {
-			return true
-		}
-		return false
+
+		return true
 	case TON_MAINNET, TON_TESTNET:
 		resultVal, err := tonAddress.ParseAddr(address)
 		if err != nil {
@@ -494,18 +487,13 @@ func IsAddressContractSupport(chainId uint, address string) bool {
 	case TRON_MAINNET, TRON_NILE:
 		resultVal, _ := TronValidateContratAddress(chainId, address)
 		return resultVal
-	case SOL_MAINNET:
-		resultVal, t := SolanaValidateAddress(solanaRpc.MainnetRPCEndpoint, address)
-		if resultVal && t == "contract" {
-			return true
+	case SOL_MAINNET, SOL_DEVNET:
+		_, err := solana.PublicKeyFromBase58(address)
+		if err != nil {
+			return false
 		}
-		return false
-	case SOL_DEVNET:
-		resultVal, t := SolanaValidateAddress(solanaRpc.DevnetRPCEndpoint, address)
-		if resultVal && t == "contract" {
-			return true
-		}
-		return false
+
+		return true
 	case TON_MAINNET, TON_TESTNET:
 		resultVal, err := tonAddress.ParseAddr(address)
 		if err != nil {
@@ -593,23 +581,23 @@ func TronValidateContratAddress(chainId uint, address string) (bool, string) {
 	return false, ""
 }
 
-func SolanaValidateAddress(rpc, address string) (bool, string) {
-	client := solanaRpc.NewRpcClient(rpc)
+// func SolanaValidateAddress(rpc, address string) (bool, string) {
+// 	client := solanaRpc.NewRpcClient(rpc)
 
-	pubKey := solanaCommon.PublicKeyFromString(address)
+// 	pubKey := solanaCommon.PublicKeyFromString(address)
 
-	accountInfo, err := client.GetAccountInfo(context.Background(), pubKey.ToBase58())
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return false, ""
-	}
+// 	accountInfo, err := client.GetAccountInfo(context.Background(), pubKey.ToBase58())
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return false, ""
+// 	}
 
-	if accountInfo.GetResult().Value.Owner == "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" {
-		return true, "contract"
-	} else {
-		return true, "address"
-	}
-}
+// 	if accountInfo.GetResult().Value.Owner == "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" {
+// 		return true, "contract"
+// 	} else {
+// 		return true, "address"
+// 	}
+// }
 
 func XrpValidateAddress(address string) bool {
 	config := xrpl.ClientConfig{

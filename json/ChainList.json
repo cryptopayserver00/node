@@ -602,7 +602,6 @@
       {
         "symbol": "SOL",
         "decimals": 9,
-        "contract": "So11111111111111111111111111111111111111112",
         "isMainCoin": true
       },
       {
@@ -616,6 +615,12 @@
         "decimals": 6,
         "contract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
         "isMainCoin": false
+      },
+      {
+        "symbol": "WSOL",
+        "decimals": 9,
+        "contract": "So11111111111111111111111111111111111111112",
+        "isMainCoin": false
       }
     ]
   },
@@ -628,13 +633,18 @@
       {
         "symbol": "SOL",
         "decimals": 9,
-        "contract": "So11111111111111111111111111111111111111112",
         "isMainCoin": true
       },
       {
         "symbol": "USDC",
         "decimals": 6,
         "contract": "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "WSOL",
+        "decimals": 9,
+        "contract": "So11111111111111111111111111111111111111112",
         "isMainCoin": false
       }
     ]

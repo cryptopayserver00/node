@@ -5,13 +5,10 @@ import (
 	"node/global/constant"
 	"node/sweep/core"
 	"node/sweep/setup"
-	NODE_Client "node/utils/http"
 )
 
 var (
 	solDevnetSweepCount = make(map[int64]int)
-
-	solDevnetClient NODE_Client.Client
 )
 
 func SweepSolDevnetBlockchain() {
@@ -37,7 +34,7 @@ func SweepSolDevnetBlockchain() {
 }
 
 func initSolDevnet() {
-	core.SetupLatestBlockHeight(solDevnetClient, constant.SOL_DEVNET)
+	core.SetupSolLatestBlockHeight(constant.SOL_DEVNET)
 
 	setup.SetupCacheBlockHeight(context.Background(), constant.SOL_DEVNET)
 
@@ -47,7 +44,6 @@ func initSolDevnet() {
 func SweepSolDevnetBlockchainTransaction() {
 
 	core.SweepSolBlockchainTransaction(
-		solDevnetClient,
 		constant.SOL_DEVNET,
 		&setup.SolDevnetPublicKey,
 		&solDevnetSweepCount,
@@ -61,7 +57,6 @@ func SweepSolDevnetBlockchainTransaction() {
 func SweepSolDevnetBlockchainTransactionDetails() {
 
 	core.SweepSolBlockchainTransactionDetails(
-		solDevnetClient,
 		constant.SOL_DEVNET,
 		&setup.SolDevnetPublicKey,
 		constant.SOL_DEVNET_PENDING_TRANSACTION)
@@ -69,7 +64,6 @@ func SweepSolDevnetBlockchainTransactionDetails() {
 
 func SweepSolDevnetBlockchainPendingBlock() {
 	core.SweepSolBlockchainPendingBlock(
-		solDevnetClient,
 		constant.SOL_DEVNET,
 		&setup.SolDevnetPublicKey,
 		constant.SOL_DEVNET_PENDING_BLOCK,
