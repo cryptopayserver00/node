@@ -130,7 +130,6 @@ func SweepSolBlockchainTransactionCore(
 
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-
 		return err
 	}
 
@@ -146,8 +145,123 @@ func SweepSolBlockchainTransactionCore(
 					return err
 				}
 
-				for _, key := range parsedTx.Message.AccountKeys {
-					matchArray = append(matchArray, key)
+				for _, inst := range parsedTx.Message.Instructions {
+					programID := parsedTx.Message.AccountKeys[inst.ProgramIDIndex]
+
+					switch programID {
+					case solana.SystemProgramID:
+						if len(inst.Data) >= 12 && binary.LittleEndian.Uint32(inst.Data[0:4]) == 2 {
+							from := parsedTx.Message.AccountKeys[inst.Accounts[0]]
+							to := parsedTx.Message.AccountKeys[inst.Accounts[1]]
+
+							matchArray = append(matchArray, from, to)
+						}
+
+					case solana.TokenProgramID:
+						if len(inst.Data) < 1 {
+							break
+						}
+
+						var fromAccount, toAccount, mintAccount solana.PublicKey
+						var fromTokenAccount, toTokenAccount token.Account
+
+						switch inst.Data[0] {
+						case 3:
+
+							if len(inst.Data) < 9 || len(inst.Accounts) < 3 {
+								break
+							}
+
+							fromAccount = parsedTx.Message.AccountKeys[inst.Accounts[0]]
+							toAccount = parsedTx.Message.AccountKeys[inst.Accounts[1]]
+
+							fromAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), fromAccount, &rpc.GetAccountInfoOpts{
+								Encoding: solana.EncodingBase64,
+							})
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								break
+							}
+
+							fromDecoder := bin.NewBinDecoder(fromAccountInfo.Value.Data.GetBinary())
+							err = fromTokenAccount.UnmarshalWithDecoder(fromDecoder)
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								break
+							}
+
+							toAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), toAccount, &rpc.GetAccountInfoOpts{
+								Encoding: solana.EncodingBase64,
+							})
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								break
+							}
+
+							toDecoder := bin.NewBinDecoder(toAccountInfo.Value.Data.GetBinary())
+							err = toTokenAccount.UnmarshalWithDecoder(toDecoder)
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								break
+							}
+
+							if !fromTokenAccount.Mint.Equals(toTokenAccount.Mint) {
+								break
+							}
+
+							isSupportContract, _, _, _ := sweepUtils.GetContractInfo(chainId, fromTokenAccount.Mint.String())
+							if !isSupportContract {
+								break
+							}
+
+							matchArray = append(matchArray, fromTokenAccount.Owner, toTokenAccount.Owner)
+
+						case 12:
+
+							fromAccount = parsedTx.Message.AccountKeys[inst.Accounts[0]]
+							mintAccount = parsedTx.Message.AccountKeys[inst.Accounts[1]]
+							toAccount = parsedTx.Message.AccountKeys[inst.Accounts[2]]
+
+							fromAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), fromAccount, &rpc.GetAccountInfoOpts{
+								Encoding: solana.EncodingBase64,
+							})
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								break
+							}
+
+							fromDecoder := bin.NewBinDecoder(fromAccountInfo.Value.Data.GetBinary())
+							err = fromTokenAccount.UnmarshalWithDecoder(fromDecoder)
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								break
+							}
+
+							toAccountInfo, err := client.GetAccountInfoWithOpts(context.Background(), toAccount, &rpc.GetAccountInfoOpts{
+								Encoding: solana.EncodingBase64,
+							})
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								break
+							}
+
+							toDecoder := bin.NewBinDecoder(toAccountInfo.Value.Data.GetBinary())
+							err = toTokenAccount.UnmarshalWithDecoder(toDecoder)
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								break
+							}
+
+							isSupportContract, _, _, _ := sweepUtils.GetContractInfo(chainId, mintAccount.String())
+							if !isSupportContract {
+								break
+							}
+
+							matchArray = append(matchArray, fromTokenAccount.Owner, toTokenAccount.Owner)
+						default:
+							break
+						}
+					}
 				}
 
 				if len(matchArray) == 0 {
@@ -485,12 +599,18 @@ func SweepSolBlockchainPendingBlock(
 
 	blockResult, err := client.GetBlockWithOpts(context.Background(), uint64(blockHeightInt), &rpc.GetBlockOpts{
 		Encoding:                       solana.EncodingBase64,
-		Commitment:                     rpc.CommitmentFinalized,
+		Commitment:                     rpc.CommitmentConfirmed,
 		Rewards:                        &includeRewards,
 		MaxSupportedTransactionVersion: &rpc.MaxSupportedTransactionVersion0,
 	})
+
 	if err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		// https://www.quicknode.com/docs/solana/error-references
+		// 32007 Slot xxxxxx was skipped, or missing due to ledger jump to recent snapshot
+		_, err = global.NODE_REDIS.LPop(context.Background(), constantPendingBlock).Result()
+		if err != nil {
+			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		}
 		return
 	}
 
