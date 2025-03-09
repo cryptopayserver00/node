@@ -295,11 +295,13 @@ func SweepBlockchainTransactionDetails(
 	notifyRequest.Chain = chainId
 	notifyRequest.BlockTimestamp = int(blockTimeStamp) * 1000
 
+	var isProcess = false
+
 	if chainId == constant.ETH_MAINNET {
-		err = handleEthereumTx(client, chainId, publicKey, notifyRequest, rpcDetail)
+		isProcess, err = handleEthereumTx(client, chainId, publicKey, notifyRequest, rpcDetail)
 	} else {
 		if rpcDetail.Result.Input == "0x" {
-			_, err = handleERC20(chainId, publicKey, notifyRequest, rpcDetail.Result.From, rpcDetail.Result.To, rpcDetail.Result.Hash, rpcDetail.Result.Input, rpcDetail.Result.Value)
+			isProcess, err = handleERC20(chainId, publicKey, notifyRequest, rpcDetail.Result.From, rpcDetail.Result.To, rpcDetail.Result.Hash, rpcDetail.Result.Input, rpcDetail.Result.Value)
 		} else {
 			_, contractName, _, _ := sweepUtils.GetContractInfo(chainId, rpcDetail.Result.To)
 
@@ -307,12 +309,12 @@ func SweepBlockchainTransactionDetails(
 			case constant.SWAP:
 				break
 			default:
-				_, err = handleERC20(chainId, publicKey, notifyRequest, rpcDetail.Result.From, rpcDetail.Result.To, rpcDetail.Result.Hash, rpcDetail.Result.Input, rpcDetail.Result.Value)
+				isProcess, err = handleERC20(chainId, publicKey, notifyRequest, rpcDetail.Result.From, rpcDetail.Result.To, rpcDetail.Result.Hash, rpcDetail.Result.Input, rpcDetail.Result.Value)
 			}
 		}
 	}
 
-	if err != nil {
+	if !isProcess || err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("Can not handle the tx: %s, Retry | %s -> %s", rpcDetail.Result.Hash, constant.GetChainName(chainId), err.Error()))
 		return
 	}
@@ -332,12 +334,6 @@ func handleERC20(chainId uint, publicKey *[]string, notifyRequest request.Notifi
 		decimals          int
 	)
 
-	// defer func() {
-	// 	if err != nil {
-	// 		global.NODE_LOG.Error(fmt.Sprintf("complete %s -> %s", constant.GetChainName(chainId), err.Error()))
-	// 	}
-	// }()
-
 	if input == "0x" {
 		isSupportContract, contractName, _, decimals = sweepUtils.GetContractInfo(chainId, "0x0000000000000000000000000000000000000000")
 	} else {
@@ -346,7 +342,6 @@ func handleERC20(chainId uint, publicKey *[]string, notifyRequest request.Notifi
 
 	if !isSupportContract {
 		err = errors.New("can not find the contract: " + to)
-		// global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 		isProcess = false
 		return
 	}
@@ -364,7 +359,6 @@ func handleERC20(chainId uint, publicKey *[]string, notifyRequest request.Notifi
 	if !(input == "0x") {
 		methodName, decodeFromAddress, decodeToAddress, transactionValue, err := erc20.DecodeERC20TransactionInputData(chainId, hash, input)
 		if err != nil {
-			// global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 			isProcess = false
 			return isProcess, err
 		}
@@ -754,7 +748,7 @@ func SweepBlockchainTransactionCoreForEthereum(client NODE_Client.Client,
 	return nil
 }
 
-func handleEthereumTx(client NODE_Client.Client, chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, rpcDetail response.RPCTransactionDetail) error {
+func handleEthereumTx(client NODE_Client.Client, chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, rpcDetail response.RPCTransactionDetail) (isProcess bool, err error) {
 
 	var infos response.RPCInnerTxInfo
 	client.URL = constant.GetInnerTxRPCUrlByNetwork(chainId)
@@ -770,13 +764,12 @@ func handleEthereumTx(client NODE_Client.Client, chainId uint, publicKey *[]stri
 		},
 	}
 
-	err := client.HTTPPost(payload, &infos)
+	err = client.HTTPPost(payload, &infos)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s, hash: %s", constant.GetChainName(chainId), err.Error(), rpcDetail.Result.Hash))
-		return err
+		isProcess = false
+		return
 	}
-
-	var isProcess bool = false
 
 	isProcess, _ = handleERC20(chainId, publicKey, notifyRequest, infos.Result.From, infos.Result.To, rpcDetail.Result.Hash, infos.Result.Input, infos.Result.Value)
 
@@ -787,12 +780,13 @@ func handleEthereumTx(client NODE_Client.Client, chainId uint, publicKey *[]stri
 	}
 
 	if !isProcess {
-		return fmt.Errorf("can not handle the tx: %s", rpcDetail.Result.Hash)
+		err = fmt.Errorf("can not handle the tx: %s", rpcDetail.Result.Hash)
+		return
 	}
 
 	global.NODE_LOG.Info(fmt.Sprintf("successful handling, tx: %s", rpcDetail.Result.Hash))
 
-	return nil
+	return
 }
 
 func processCallsForSettle(chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, hash string, calls []response.CallResult) bool {

@@ -162,7 +162,6 @@ func SweepTronBlockchainTransaction(
 					)
 
 					if isMonitorTx {
-						// Determine duplicate transactions
 						redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
@@ -294,7 +293,12 @@ func handleTransferContractTx(chainId uint, publicKey *[]string, notifyRequest r
 	notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(txResponse.RawData.Contract[0].Parameter.Value.Amount)), decimals)
 	notifyRequest.Token = contractName
 
-	return handleNotification(chainId, publicKey, notifyRequest, fromAddress, toAddress)
+	isProcess, _ := handleNotification(chainId, publicKey, notifyRequest, fromAddress, toAddress)
+	if !isProcess {
+		return fmt.Errorf("can not handle the tx: %s", notifyRequest.Hash)
+	}
+
+	return nil
 }
 
 func handleTriggerSmartContract(chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, txResponse response.TronGetTxResponse) error {
@@ -339,7 +343,10 @@ func handleTriggerSmartContract(chainId uint, publicKey *[]string, notifyRequest
 		notifyRequest.Token = contractName
 		notifyRequest.Amount = utils.CalculateBalance(value, decimals)
 
-		return handleNotification(chainId, publicKey, notifyRequest, fromAddress, toAddress)
+		isProcess, _ := handleNotification(chainId, publicKey, notifyRequest, fromAddress, toAddress)
+		if !isProcess {
+			return fmt.Errorf("can not handle the tx: %s", notifyRequest.Hash)
+		}
 
 	case tron.TransferFrom:
 		fromAddress, err := tron.FromHexAddress("41" + contractData[32:72])
@@ -372,19 +379,22 @@ func handleTriggerSmartContract(chainId uint, publicKey *[]string, notifyRequest
 		notifyRequest.Token = contractName
 		notifyRequest.Amount = utils.CalculateBalance(value, decimals)
 
-		return handleNotification(chainId, publicKey, notifyRequest, fromAddress, toAddress)
+		isProcess, _ := handleNotification(chainId, publicKey, notifyRequest, fromAddress, toAddress)
+		if !isProcess {
+			return fmt.Errorf("can not handle the tx: %s", notifyRequest.Hash)
+		}
 	}
 
 	return nil
 }
 
-func handleNotification(chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, fromAddress, toAddress string) error {
-	var err error
+func handleNotification(chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, fromAddress, toAddress string) (isProcess bool, err error) {
 
 	if fromAddress == "" || toAddress == "" {
 		err = fmt.Errorf("can not be empty, fromAddress: %s, toAddress: %s", fromAddress, toAddress)
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return err
+		isProcess = false
+		return
 	}
 
 	notifyRequest.FromAddress = fromAddress
@@ -398,8 +408,10 @@ func handleNotification(chainId uint, publicKey *[]string, notifyRequest request
 			err = notification.NotificationRequest(notifyRequest)
 			if err != nil {
 				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-				return err
+				isProcess = false
+				return
 			}
+			isProcess = true
 		}
 
 		if strings.EqualFold(v, toAddress) {
@@ -409,12 +421,14 @@ func handleNotification(chainId uint, publicKey *[]string, notifyRequest request
 			err = notification.NotificationRequest(notifyRequest)
 			if err != nil {
 				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-				return err
+				isProcess = false
+				return
 			}
+			isProcess = true
 		}
 	}
 
-	return nil
+	return isProcess, nil
 }
 
 func SweepTronBlockchainPendingBlock(
