@@ -39,6 +39,7 @@ telegram:
   inform-bot-link:
   inform-bot-token:
   inform-channel-id:
+  tx-inform-channel-id:
 
 wss:
   sec-wss-token:

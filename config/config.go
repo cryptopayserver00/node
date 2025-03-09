@@ -89,9 +89,10 @@ type BitcoinCash struct {
 }
 
 type Telegram struct {
-	InformBotLink   string `mapstructure:"inform-bot-link" json:"inform-bot-link" yaml:"inform-bot-link"`
-	InformBotToken  string `mapstructure:"inform-bot-token" json:"inform-bot-token" yaml:"inform-bot-token"`
-	InformChannelId int64  `mapstructure:"inform-channel-id" json:"inform-channel-id" yaml:"inform-channel-id"`
+	InformBotLink     string `mapstructure:"inform-bot-link" json:"inform-bot-link" yaml:"inform-bot-link"`
+	InformBotToken    string `mapstructure:"inform-bot-token" json:"inform-bot-token" yaml:"inform-bot-token"`
+	InformChannelId   int64  `mapstructure:"inform-channel-id" json:"inform-channel-id" yaml:"inform-channel-id"`
+	TxInformChannelId int64  `mapstructure:"tx-inform-channel-id" json:"tx-inform-channel-id" yaml:"tx-inform-channel-id"`
 }
 
 type Wss struct {

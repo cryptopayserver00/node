@@ -8,6 +8,7 @@ import (
 	"node/global/constant"
 	"node/model/node/request"
 	"node/service"
+	"node/utils"
 	NODE_Client "node/utils/http"
 )
 
@@ -24,6 +25,8 @@ func NotificationRequest(request request.NotificationRequest) (err error) {
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 	}
+
+	utils.TxInformToTelegram("NotificationRequest: \n\n" + string(rd))
 
 	return nil
 }
