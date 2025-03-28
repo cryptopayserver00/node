@@ -71,6 +71,7 @@ func SweepArbitrumSepoliaBlockchainPendingBlock() {
 		arbitrumSepoliaClient,
 		constant.ARBITRUM_SEPOLIA,
 		&setup.ArbitrumSepoliaPublicKey,
+		&arbitrumSepoliaSweepCount,
 		constant.ARBITRUM_SEPOLIA_PENDING_BLOCK,
 		constant.ARBITRUM_SEPOLIA_PENDING_TRANSACTION)
 }

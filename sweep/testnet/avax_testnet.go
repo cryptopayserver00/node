@@ -72,6 +72,7 @@ func SweepAvaxTestnetBlockchainPendingBlock() {
 		avaxTestnetClient,
 		constant.AVAX_TESTNET,
 		&setup.AvaxTestnetPublicKey,
+		&avaxTestnetSweepCount,
 		constant.AVAX_TESTNET_PENDING_BLOCK,
 		constant.AVAX_TESTNET_PENDING_TRANSACTION)
 }

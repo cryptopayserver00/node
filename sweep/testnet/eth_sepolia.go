@@ -71,6 +71,7 @@ func SweepEthSepoliaBlockchainPendingBlock() {
 		ethSepoliaClient,
 		constant.ETH_SEPOLIA,
 		&setup.EthSepoliaPublicKey,
+		&ethSepoliaSweepCount,
 		constant.ETH_SEPOLIA_PENDING_BLOCK,
 		constant.ETH_SEPOLIA_PENDING_TRANSACTION)
 }

@@ -52,7 +52,7 @@ func GetContractInfo(chainId uint, contractAddress string) (bool, string, string
 				if utils.HexToAddress(coin.Contract) == utils.HexToAddress(contractAddress) {
 					return true, coin.Symbol, coin.Contract, coin.Decimals
 				}
-			case constant.TRON_NILE, constant.TRON_MAINNET, constant.SOL_MAINNET, constant.SOL_DEVNET:
+			case constant.TRON_NILE, constant.TRON_MAINNET, constant.SOL_MAINNET, constant.SOL_DEVNET, constant.XRP_MAINNET, constant.XRP_TESTNET:
 				if strings.EqualFold(coin.Contract, contractAddress) {
 					return true, coin.Symbol, coin.Contract, coin.Decimals
 				}

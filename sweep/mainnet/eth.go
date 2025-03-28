@@ -72,6 +72,7 @@ func SweepEthBlockchainPendingBlock() {
 		ethClient,
 		constant.ETH_MAINNET,
 		&setup.EthPublicKey,
+		&ethSweepCount,
 		constant.ETH_PENDING_BLOCK,
 		constant.ETH_PENDING_TRANSACTION)
 }

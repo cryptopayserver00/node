@@ -37,7 +37,7 @@ func SweepXrpTestnetBlockchain() {
 }
 
 func initXrpTestnet() {
-	core.SetupLatestBlockHeight(xrpTestnetClient, constant.XRP_TESTNET)
+	core.SetupXrpLatestBlockHeight(constant.XRP_TESTNET)
 
 	setup.SetupCacheBlockHeight(context.Background(), constant.XRP_TESTNET)
 

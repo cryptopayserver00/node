@@ -71,6 +71,7 @@ func SweepArbitrumOneBlockchainPendingBlock() {
 		arbitrumOneClient,
 		constant.ARBITRUM_ONE,
 		&setup.ArbitrumOnePublicKey,
+		&arbitrumOneSweepCount,
 		constant.ARBITRUM_ONE_PENDING_BLOCK,
 		constant.ARBITRUM_ONE_PENDING_TRANSACTION)
 }

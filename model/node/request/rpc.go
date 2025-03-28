@@ -25,3 +25,8 @@ type JsonRpcRequest struct {
 // 	ExcludeZeroValue bool     `json:"excludeZeroValue"`
 // 	MaxCount         string   `json:"maxCount"`
 // }
+
+type XrpJsonRpcRequest struct {
+	Method string                   `json:"method"`
+	Params []map[string]interface{} `json:"params"`
+}

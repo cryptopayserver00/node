@@ -70,6 +70,7 @@ func SweepBscBlockchainPendingBlock() {
 		bscClient,
 		constant.BSC_MAINNET,
 		&setup.BscPublicKey,
+		&bscSweepCount,
 		constant.BSC_PENDING_BLOCK,
 		constant.BSC_PENDING_TRANSACTION)
 }

@@ -72,6 +72,7 @@ func SweepBaseSepoliaBlockchainPendingBlock() {
 		baseSepoliaClient,
 		constant.BASE_SEPOLIA,
 		&setup.BaseSepoliaPublicKey,
+		&baseSepoliaSweepCount,
 		constant.BASE_SEPOLIA_PENDING_BLOCK,
 		constant.BASE_SEPOLIA_PENDING_TRANSACTION)
 }

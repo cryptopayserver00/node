@@ -72,6 +72,7 @@ func SweepBaseBlockchainPendingBlock() {
 		baseClient,
 		constant.BASE_MAINNET,
 		&setup.BasePublicKey,
+		&baseSweepCount,
 		constant.BASE_PENDING_BLOCK,
 		constant.BASE_PENDING_TRANSACTION)
 }

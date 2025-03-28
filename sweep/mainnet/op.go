@@ -71,6 +71,7 @@ func SweepOpBlockchainPendingBlock() {
 		opClient,
 		constant.OP_MAINNET,
 		&setup.OpPublicKey,
+		&opSweepCount,
 		constant.OP_PENDING_BLOCK,
 		constant.OP_PENDING_TRANSACTION)
 }

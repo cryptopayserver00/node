@@ -24,6 +24,9 @@ var (
 
 	TonMainnetAPI = "https://ton.org/global.config.json"
 	TonTestnetAPI = "https://ton.org/testnet-global.config.json"
+
+	XRPWsMainnetAPI = "wss://xrplcluster.com"
+	XRPWsTestnetAPI = "wss://s.altnet.rippletest.net:51233"
 )
 
 func GetBscscanUrlByNetwork(network uint) string {
@@ -160,6 +163,17 @@ func TronValidateContractAddressByNetwork(network uint) string {
 		return TrongridMainnetAPI + "/wallet/getcontract"
 	case TRON_NILE:
 		return TrongridNileAPI + "/wallet/getcontract"
+	default:
+		return ""
+	}
+}
+
+func XrpWsByNetwork(network uint) string {
+	switch network {
+	case XRP_MAINNET:
+		return XRPWsMainnetAPI
+	case XRP_TESTNET:
+		return XRPWsTestnetAPI
 	default:
 		return ""
 	}

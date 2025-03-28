@@ -451,6 +451,7 @@ func SweepBlockchainPendingBlock(
 	client NODE_Client.Client,
 	chainId uint,
 	publicKey *[]string,
+	sweepCount *map[int64]int,
 	constantPendingBlock, constantPendingTransaction string,
 ) {
 	defer utils.HandlePanic()
@@ -490,6 +491,25 @@ func SweepBlockchainPendingBlock(
 		if err != nil {
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 			return
+		}
+
+		if len(rpcBlockDetail.Result) == 0 {
+			blockN, ok := (*sweepCount)[blockHeightInt]
+			if !ok {
+				(*sweepCount)[blockHeightInt] = 1
+
+				err = errors.New("can not get the transaction of block number: " + fmt.Sprint(blockHeightInt))
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				return
+			} else if blockN >= setup.SweepThreshold {
+				delete(*sweepCount, blockHeightInt)
+			} else {
+				(*sweepCount)[blockHeightInt]++
+
+				err = errors.New("can not get the transaction of block number: " + fmt.Sprint(blockHeightInt))
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				return
+			}
 		}
 
 		if len(rpcBlockDetail.Result) > 0 {
@@ -574,6 +594,25 @@ func SweepBlockchainPendingBlock(
 			return
 		}
 
+		if len(rpcBlockDetail.Result.Transactions) == 0 {
+			blockN, ok := (*sweepCount)[blockHeightInt]
+			if !ok {
+				(*sweepCount)[blockHeightInt] = 1
+
+				err = errors.New("can not get the transaction of block number: " + fmt.Sprint(blockHeightInt))
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				return
+			} else if blockN >= setup.SweepThreshold {
+				delete(*sweepCount, blockHeightInt)
+			} else {
+				(*sweepCount)[blockHeightInt]++
+
+				err = errors.New("can not get the transaction of block number: " + fmt.Sprint(blockHeightInt))
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				return
+			}
+		}
+
 		if rpcBlockDetail.Result.Number == "" {
 			err = fmt.Errorf("can not get the number: %s, %s", blockHeight, client.URL)
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
@@ -652,6 +691,8 @@ func SweepBlockchainPendingBlock(
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", blockHeightInt, height)))
 		}
 	}
+
+	*sweepCount = make(map[int64]int)
 }
 
 func SweepBlockchainTransactionCoreForEthereum(client NODE_Client.Client,

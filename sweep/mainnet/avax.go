@@ -72,6 +72,7 @@ func SweepAvaxBlockchainPendingBlock() {
 		avaxClient,
 		constant.AVAX_MAINNET,
 		&setup.AvaxPublicKey,
+		&avaxSweepCount,
 		constant.AVAX_PENDING_BLOCK,
 		constant.AVAX_PENDING_TRANSACTION)
 }

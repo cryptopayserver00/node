@@ -692,8 +692,19 @@
       {
         "symbol": "XRP",
         "decimals": 6,
-        "contract": "",
         "isMainCoin": true
+      },
+      {
+        "symbol": "BTC",
+        "decimals": 6,
+        "contract": "rchGBxcD1A1C2tdxF6papQYZ8kjRKMYcL",
+        "isMainCoin": false
+      },
+      {
+        "symbol": "USD",
+        "decimals": 6,
+        "contract": "rhub8VRN55s94qWKDv6jmDy1pUykJzF3wq",
+        "isMainCoin": false
       }
     ]
   },
@@ -706,8 +717,13 @@
       {
         "symbol": "XRP",
         "decimals": 6,
-        "contract": "",
         "isMainCoin": true
+      },
+      {
+        "symbol": "USDT",
+        "decimals": 6,
+        "contract": "rLRinWiaLFyZ9dr53h6JsVJg6LxUAxjLjP",
+        "isMainCoin": false
       }
     ]
   },

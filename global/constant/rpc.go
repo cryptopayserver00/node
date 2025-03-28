@@ -160,6 +160,15 @@ var (
 		"https://sepolia.base.org",
 		"https://base-sepolia.gateway.tenderly.co",
 	}
+
+	XRPMainnetRPC = []string{
+		"https://s1.ripple.com:51234",
+		"https://xrplcluster.com",
+	}
+
+	XRPTestnetRPC = []string{
+		"https://s.altnet.rippletest.net:51234",
+	}
 )
 
 func GetAllRPCUrlByNetwork(chainId uint) []string {
@@ -294,6 +303,12 @@ func GetRPCUrlByNetwork(chainId uint) string {
 		return GetRealRpcByArray(BaseMainnetRPC)
 	case BASE_SEPOLIA:
 		return GetRealRpcByArray(BaseSepoliaRPC)
+	case XRP_MAINNET:
+		index := rand.IntN(len(XRPMainnetRPC))
+		return XRPMainnetRPC[index]
+	case XRP_TESTNET:
+		index := rand.IntN(len(XRPTestnetRPC))
+		return XRPTestnetRPC[index]
 	default:
 		return ""
 	}

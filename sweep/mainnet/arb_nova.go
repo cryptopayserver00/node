@@ -70,6 +70,7 @@ func SweepArbitrumNovaBlockchainPendingBlock() {
 		arbitrumNovaClient,
 		constant.ARBITRUM_NOVA,
 		&setup.ArbitrumNovaPublicKey,
+		&arbitrumNovaSweepCount,
 		constant.ARBITRUM_NOVA_PENDING_BLOCK,
 		constant.ARBITRUM_NOVA_PENDING_TRANSACTION)
 }

@@ -72,6 +72,7 @@ func SweepPolBlockchainPendingBlock() {
 		polClient,
 		constant.POL_MAINNET,
 		&setup.PolPublicKey,
+		&polSweepCount,
 		constant.POL_PENDING_BLOCK,
 		constant.POL_PENDING_TRANSACTION)
 }

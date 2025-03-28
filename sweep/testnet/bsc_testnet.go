@@ -70,6 +70,7 @@ func SweepBscTestnetBlockchainPendingBlock() {
 		bscTestnetClient,
 		constant.BSC_TESTNET,
 		&setup.BscTestnetPublicKey,
+		&bscTestnetSweepCount,
 		constant.BSC_TESTNET_PENDING_BLOCK,
 		constant.BSC_TESTNET_PENDING_TRANSACTION)
 }

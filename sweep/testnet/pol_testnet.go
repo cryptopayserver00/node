@@ -72,6 +72,7 @@ func SweepPolTestnetBlockchainPendingBlock() {
 		polTestnetClient,
 		constant.POL_TESTNET,
 		&setup.PolTestnetPublicKey,
+		&polTestnetSweepCount,
 		constant.POL_TESTNET_PENDING_BLOCK,
 		constant.POL_TESTNET_PENDING_TRANSACTION)
 }
