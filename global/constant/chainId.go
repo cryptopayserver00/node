@@ -11,6 +11,8 @@ import (
 	btcCfg "github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gagliardetto/solana-go"
+	bchCfg "github.com/gcash/bchd/chaincfg"
+	"github.com/gcash/bchutil"
 	ltcCfg "github.com/ltcsuite/ltcd/chaincfg"
 	"github.com/ltcsuite/ltcd/ltcutil"
 	"github.com/xrpscan/xrpl-go"
@@ -434,9 +436,17 @@ func IsAddressSupport(chainId uint, address string) bool {
 	case XRP_MAINNET, XRP_TESTNET:
 		return XrpValidateAddress(address)
 	case BCH_MAINNET:
-		return BchValidateAddress(address)
+		_, err := bchutil.DecodeAddress(address, &bchCfg.MainNetParams)
+		if err != nil {
+			return false
+		}
+		return true
 	case BCH_TESTNET:
-		return BchValidateAddress(address)
+		_, err := bchutil.DecodeAddress(address, &bchCfg.TestNet3Params)
+		if err != nil {
+			return false
+		}
+		return true
 	}
 
 	return false
@@ -620,9 +630,5 @@ func XrpValidateAddress(address string) bool {
 		return true
 	}
 
-	return false
-}
-
-func BchValidateAddress(address string) bool {
 	return false
 }

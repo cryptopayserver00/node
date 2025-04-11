@@ -8,6 +8,8 @@ func MempoolGetBlockHeightByNetwork(network uint) string {
 		return "https://mempool.space/testnet/api/blocks/tip/height"
 	case LTC_MAINNET:
 		return "https://litecoinspace.org/api/blocks/tip/height"
+	case BCH_MAINNET:
+		return "https://explorer.melroy.org/api/blocks/tip/height"
 	}
 
 	return ""
@@ -21,6 +23,8 @@ func MempoolGetBlockTransactionByNetwork(network uint) string {
 		return "https://mempool.space/testnet/api/block/%s/txs/%d"
 	case LTC_MAINNET:
 		return "https://litecoinspace.org/api/block/%s/txs/%d"
+	case BCH_MAINNET:
+		return "https://explorer.melroy.org/api/block/%s/txs/%d"
 	}
 
 	return ""
@@ -34,6 +38,8 @@ func MempoolGetBlockHashByNetwork(network uint) string {
 		return "https://mempool.space/testnet/api/block-height/%d"
 	case LTC_MAINNET:
 		return "https://litecoinspace.org/api/block-height/%d"
+	case BCH_MAINNET:
+		return "https://explorer.melroy.org/api/block-height/%d"
 	}
 
 	return ""
@@ -47,6 +53,8 @@ func MempoolGetBlockByNetwork(network uint) string {
 		return "https://mempool.space/testnet/api/block/%s"
 	case LTC_MAINNET:
 		return "https://litecoinspace.org/api/block/%s"
+	case BCH_MAINNET:
+		return "https://explorer.melroy.org/api/block/%s"
 	}
 
 	return ""
@@ -60,6 +68,8 @@ func MempoolGetTransctionByNetwork(network uint) string {
 		return "https://mempool.space/testnet/api/tx/%s"
 	case LTC_MAINNET:
 		return "https://litecoinspace.org/api/tx/%s"
+	case BCH_MAINNET:
+		return "https://explorer.melroy.org/api/tx/%s"
 	}
 
 	return ""
@@ -75,6 +85,8 @@ func MempoolGetUtxoByNetwork(network uint) string {
 		return "https://litecoinspace.org/api/address/%s/utxo"
 	case LTC_TESTNET:
 		return "https://litecoinspace.org/testnet/api/address/%s/utxo"
+	case BCH_MAINNET:
+		return "https://explorer.melroy.org/api/address/%s/utxo"
 	}
 
 	return ""
@@ -90,6 +102,8 @@ func MempoolGetFeesyNetwork(network uint) string {
 		return "https://litecoinspace.org/api/v1/fees/recommended"
 	case LTC_TESTNET:
 		return "https://litecoinspace.org/testnet/api/v1/fees/recommended"
+	case BCH_MAINNET:
+		return "https://explorer.melroy.org/api/v1/fees/recommended"
 	}
 
 	return ""
@@ -105,6 +119,8 @@ func MempoolBroadcastByNetwork(network uint) string {
 		return "https://litecoinspace.org/api/tx"
 	case LTC_TESTNET:
 		return "https://litecoinspace.org/testnet/api/tx"
+	case BCH_MAINNET:
+		return "https://explorer.melroy.org/api/tx"
 	}
 
 	return ""

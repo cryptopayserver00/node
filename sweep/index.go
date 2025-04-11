@@ -102,7 +102,7 @@ func RunBlockSweep() {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
 			mainnet.SweepBchBlockchain()
 		} else {
-			testnet.SweepBchTestnetBlockchain()
+			// testnet.SweepBchTestnetBlockchain()
 		}
 	}
 

@@ -735,7 +735,7 @@
     "coins": [
       {
         "symbol": "BCH",
-        "decimals": 6,
+        "decimals": 8,
         "contract": "",
         "isMainCoin": true
       }
@@ -749,7 +749,7 @@
     "coins": [
       {
         "symbol": "BCH",
-        "decimals": 6,
+        "decimals": 8,
         "contract": "",
         "isMainCoin": true
       }

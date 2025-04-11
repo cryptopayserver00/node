@@ -285,10 +285,15 @@ func HandleLtcTransactionDetailsByTatum(
 		return
 	}
 
+	_, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, "")
+	if decimals == 0 {
+		return
+	}
+
 	var notifyRequest request.NotificationRequest
 	notifyRequest.Hash = litecoinTxResponse.Hash
 	notifyRequest.Chain = chainId
-	notifyRequest.Token = "LTC"
+	notifyRequest.Token = contractName
 
 	if len(strconv.Itoa(litecoinTxResponse.Time)) == 10 {
 		litecoinTxResponse.Time *= 1000
@@ -367,19 +372,19 @@ func HandleLtcTransactionDetailsByMempool(
 		return
 	}
 
+	_, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, "")
+	if decimals == 0 {
+		return
+	}
+
 	var notifyRequest request.NotificationRequest
 
 	notifyRequest.Hash = litecoinTxResponse.TxId
 	notifyRequest.Chain = chainId
 	notifyRequest.BlockTimestamp = litecoinTxResponse.Status.BlockTime * 1000
-	notifyRequest.Token = "LTC"
+	notifyRequest.Token = contractName
 
 	if len(litecoinTxResponse.Vin) == 0 || len(litecoinTxResponse.Vout) == 0 {
-		return
-	}
-
-	_, _, _, decimals := sweepUtils.GetContractInfo(chainId, "")
-	if decimals == 0 {
 		return
 	}
 

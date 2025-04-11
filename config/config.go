@@ -120,8 +120,9 @@ type Blockchain struct {
 }
 
 type BlockchainPlugin struct {
-	Bitcoin  string `mapstructure:"bitcoin" json:"bitcoin" yaml:"bitcoin"`
-	Litecoin string `mapstructure:"litecoin" json:"litecoin" yaml:"litecoin"`
+	Bitcoin     string `mapstructure:"bitcoin" json:"bitcoin" yaml:"bitcoin"`
+	Litecoin    string `mapstructure:"litecoin" json:"litecoin" yaml:"litecoin"`
+	BitcoinCash string `mapstructure:"bitcoincash" json:"bitcoincash" yaml:"bitcoincash"`
 }
 
 type System struct {

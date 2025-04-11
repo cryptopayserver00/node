@@ -56,11 +56,7 @@ func GetContractInfo(chainId uint, contractAddress string) (bool, string, string
 				if strings.EqualFold(coin.Contract, contractAddress) {
 					return true, coin.Symbol, coin.Contract, coin.Decimals
 				}
-			case constant.BTC_MAINNET, constant.BTC_TESTNET:
-				if coin.IsMainCoin {
-					return true, coin.Symbol, coin.Contract, coin.Decimals
-				}
-			case constant.LTC_MAINNET, constant.LTC_TESTNET:
+			case constant.BTC_MAINNET, constant.BTC_TESTNET, constant.LTC_MAINNET, constant.LTC_TESTNET, constant.BCH_MAINNET, constant.BCH_TESTNET:
 				if coin.IsMainCoin {
 					return true, coin.Symbol, coin.Contract, coin.Decimals
 				}

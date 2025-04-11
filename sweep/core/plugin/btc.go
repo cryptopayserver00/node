@@ -293,7 +293,7 @@ func HandleBtcTransactionDetailsByTatum(
 		return
 	}
 
-	_, _, _, decimals := sweepUtils.GetContractInfo(chainId, "")
+	_, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, "")
 	if decimals == 0 {
 		return
 	}
@@ -356,8 +356,7 @@ func HandleBtcTransactionDetailsByTatum(
 		}
 
 	} else {
-		// btc
-		notifyRequest.Token = "BTC"
+		notifyRequest.Token = contractName
 		for _, output := range bitcoinTxResponse.Outputs {
 			if strings.EqualFold(output.Address, notifyRequest.FromAddress) {
 				continue
@@ -435,7 +434,7 @@ func HandleBtcTransactionDetailsByMempool(
 		return
 	}
 
-	_, _, _, decimals := sweepUtils.GetContractInfo(chainId, "")
+	_, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, "")
 	if decimals == 0 {
 		return
 	}
@@ -498,8 +497,7 @@ func HandleBtcTransactionDetailsByMempool(
 		}
 
 	} else {
-		// btc
-		notifyRequest.Token = "BTC"
+		notifyRequest.Token = contractName
 		for _, output := range bitcoinTxResponse.Vout {
 			if strings.EqualFold(output.Scriptpubkey_address, notifyRequest.FromAddress) {
 				continue

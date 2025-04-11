@@ -34,6 +34,7 @@ blockchain:
 blockchain-plugin:
   bitcoin: "tatum" # tatum | mempool
   litecoin: "tatum" # tatum | mempool
+  bitcoincash: "mempool" # tatum | mempool
 
 telegram:
   inform-bot-link:

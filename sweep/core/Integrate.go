@@ -85,7 +85,7 @@ func SweepBlockchainTransaction(
 		numWorkers = 10
 	)
 
-	if chainId == constant.BSC_MAINNET || chainId == constant.BSC_TESTNET {
+	if chainId == constant.BSC_TESTNET {
 		numWorkers = 3
 	}
 
@@ -104,7 +104,7 @@ func SweepBlockchainTransaction(
 				*sweepBlockHeight++
 				mutex.Unlock()
 
-				if chainId == constant.ETH_MAINNET {
+				if chainId == constant.ETH_MAINNET || chainId == constant.BSC_MAINNET || chainId == constant.ARBITRUM_ONE {
 					err := SweepBlockchainTransactionCoreForEthereum(client, chainId, publicKey, sweepCount, currentHeight, constantSweepBlock, constantPendingBlock, constantPendingTransaction)
 					if err != nil {
 
@@ -208,6 +208,23 @@ func SweepBlockchainTransactionCore(client NODE_Client.Client,
 				}
 
 				if isMonitorTx {
+					// status of receipt
+					var rpcReceipt response.RPCReceiptTransactionDetail
+					jsonRpcRequest.Id = 1
+					jsonRpcRequest.Jsonrpc = "2.0"
+					jsonRpcRequest.Method = "eth_getTransactionReceipt"
+					jsonRpcRequest.Params = []interface{}{transaction.Hash}
+
+					err = client.HTTPPost(jsonRpcRequest, &rpcReceipt)
+					if err != nil {
+						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+						return err
+					}
+
+					if rpcReceipt.Result.Status == "0x0" {
+						continue
+					}
+
 					redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
 					if err != nil {
 						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
@@ -225,7 +242,6 @@ func SweepBlockchainTransactionCore(client NODE_Client.Client,
 						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 						return err
 					}
-					break
 				}
 			}
 		}
@@ -283,6 +299,17 @@ func SweepBlockchainTransactionDetails(
 		return
 	}
 
+	// handle drop tx
+	if rpcBlockInfo.Result.Timestamp == "" {
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), "Can not handle the drop tx: "+txHash))
+
+		_, err = global.NODE_REDIS.LPop(context.Background(), constantPendingTransaction).Result()
+		if err != nil {
+			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		}
+		return
+	}
+
 	blockTimeStamp, err := utils.HexStringToUint64(rpcBlockInfo.Result.Timestamp)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
@@ -297,7 +324,7 @@ func SweepBlockchainTransactionDetails(
 
 	var isProcess = false
 
-	if chainId == constant.ETH_MAINNET {
+	if chainId == constant.ETH_MAINNET || chainId == constant.BSC_MAINNET || chainId == constant.ARBITRUM_ONE {
 		isProcess, err = handleEthereumTx(client, chainId, publicKey, notifyRequest, rpcDetail)
 	} else {
 		if rpcDetail.Result.Input == "0x" {
@@ -306,8 +333,6 @@ func SweepBlockchainTransactionDetails(
 			_, contractName, _, _ := sweepUtils.GetContractInfo(chainId, rpcDetail.Result.To)
 
 			switch contractName {
-			case constant.SWAP:
-				break
 			default:
 				isProcess, err = handleERC20(chainId, publicKey, notifyRequest, rpcDetail.Result.From, rpcDetail.Result.To, rpcDetail.Result.Hash, rpcDetail.Result.Input, rpcDetail.Result.Value)
 			}
@@ -472,7 +497,7 @@ func SweepBlockchainPendingBlock(
 		return
 	}
 
-	if chainId == constant.ETH_MAINNET {
+	if chainId == constant.ETH_MAINNET || chainId == constant.BSC_MAINNET || chainId == constant.ARBITRUM_ONE {
 		var rpcBlockDetail response.RPCBlockInnerDetail
 		client.URL = constant.GetInnerTxRPCUrlByNetwork(chainId)
 		payload := map[string]interface{}{
@@ -520,6 +545,10 @@ func SweepBlockchainPendingBlock(
 
 				matchArray := make([]string, 0)
 
+				if transaction.Result.Error != "" {
+					continue
+				}
+
 				if transaction.Result.Type == "CALL" {
 					if transaction.Result.Input == "0x" {
 						matchArray = append(matchArray, txFrom, txTo)
@@ -553,6 +582,24 @@ func SweepBlockchainPendingBlock(
 				}
 
 				if isMonitorTx {
+					// status of receipt
+					var rpcReceipt response.RPCReceiptTransactionDetail
+					var jsonRpcRequest request.JsonRpcRequest
+					jsonRpcRequest.Id = 1
+					jsonRpcRequest.Jsonrpc = "2.0"
+					jsonRpcRequest.Method = "eth_getTransactionReceipt"
+					jsonRpcRequest.Params = []interface{}{transaction.Hash}
+
+					err = client.HTTPPost(jsonRpcRequest, &rpcReceipt)
+					if err != nil {
+						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+						return
+					}
+
+					if rpcReceipt.Result.Status == "0x0" {
+						continue
+					}
+
 					redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
 					if err != nil {
 						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
@@ -579,6 +626,8 @@ func SweepBlockchainPendingBlock(
 		if err != nil {
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 		}
+
+		*sweepCount = make(map[int64]int)
 	} else {
 		client.URL = constant.GetRPCUrlByNetwork(chainId)
 		var rpcBlockDetail response.RPCBlockDetail
@@ -592,25 +641,6 @@ func SweepBlockchainPendingBlock(
 		if err != nil {
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 			return
-		}
-
-		if len(rpcBlockDetail.Result.Transactions) == 0 {
-			blockN, ok := (*sweepCount)[blockHeightInt]
-			if !ok {
-				(*sweepCount)[blockHeightInt] = 1
-
-				err = errors.New("can not get the transaction of block number: " + fmt.Sprint(blockHeightInt))
-				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-				return
-			} else if blockN >= setup.SweepThreshold {
-				delete(*sweepCount, blockHeightInt)
-			} else {
-				(*sweepCount)[blockHeightInt]++
-
-				err = errors.New("can not get the transaction of block number: " + fmt.Sprint(blockHeightInt))
-				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-				return
-			}
 		}
 
 		if rpcBlockDetail.Result.Number == "" {
@@ -662,6 +692,23 @@ func SweepBlockchainPendingBlock(
 					}
 
 					if isMonitorTx {
+						// status of receipt
+						var rpcReceipt response.RPCReceiptTransactionDetail
+						jsonRpcRequest.Id = 1
+						jsonRpcRequest.Jsonrpc = "2.0"
+						jsonRpcRequest.Method = "eth_getTransactionReceipt"
+						jsonRpcRequest.Params = []interface{}{transaction.Hash}
+
+						err = client.HTTPPost(jsonRpcRequest, &rpcReceipt)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+
+						if rpcReceipt.Result.Status == "0x0" {
+							continue
+						}
+
 						redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
@@ -691,8 +738,6 @@ func SweepBlockchainPendingBlock(
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", blockHeightInt, height)))
 		}
 	}
-
-	*sweepCount = make(map[int64]int)
 }
 
 func SweepBlockchainTransactionCoreForEthereum(client NODE_Client.Client,
@@ -724,6 +769,12 @@ func SweepBlockchainTransactionCoreForEthereum(client NODE_Client.Client,
 		return err
 	}
 
+	if len(rpcBlockDetail.Result) == 0 {
+		err = errors.New("can not get the transaction of block number: " + fmt.Sprint(sweepBlockHeight))
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		return err
+	}
+
 	if len(rpcBlockDetail.Result) > 0 {
 		for _, transaction := range rpcBlockDetail.Result {
 			isMonitorTx := false
@@ -731,6 +782,10 @@ func SweepBlockchainTransactionCoreForEthereum(client NODE_Client.Client,
 			txTo := utils.HexToAddress(transaction.Result.To)
 
 			matchArray := make([]string, 0)
+
+			if transaction.Result.Error != "" {
+				continue
+			}
 
 			if transaction.Result.Type == "CALL" {
 				if transaction.Result.Input == "0x" {
@@ -765,6 +820,24 @@ func SweepBlockchainTransactionCoreForEthereum(client NODE_Client.Client,
 			}
 
 			if isMonitorTx {
+				// status of receipt
+				var rpcReceipt response.RPCReceiptTransactionDetail
+				var jsonRpcRequest request.JsonRpcRequest
+				jsonRpcRequest.Id = 1
+				jsonRpcRequest.Jsonrpc = "2.0"
+				jsonRpcRequest.Method = "eth_getTransactionReceipt"
+				jsonRpcRequest.Params = []interface{}{transaction.Hash}
+
+				err = client.HTTPPost(jsonRpcRequest, &rpcReceipt)
+				if err != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+					return err
+				}
+
+				if rpcReceipt.Result.Status == "0x0" {
+					continue
+				}
+
 				redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
 				if err != nil {
 					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
@@ -865,6 +938,10 @@ func processCallsForScanBlock(chainId uint, hash string, calls []response.CallRe
 	for len(stack) > 0 {
 		currentCall := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
+
+		if currentCall.Error != "" {
+			continue
+		}
 
 		if currentCall.Type == "CALL" {
 			if currentCall.Input == "0x" {
