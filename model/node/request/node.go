@@ -201,6 +201,13 @@ type GetArbTransactions struct {
 	Asset   string `json:"asset" form:"asset"`
 }
 
+// arbnova
+type GetArbNovaTransactions struct {
+	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Address string `json:"address" form:"address" binding:"required"`
+	Asset   string `json:"asset" form:"asset"`
+}
+
 // avax
 type GetAvaxTransactions struct {
 	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`

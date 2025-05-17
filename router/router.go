@@ -103,6 +103,11 @@ func (mRouter *MainRouter) InitRouter(Router *gin.RouterGroup) {
 		nodeForArb.GET("getTransactions", api.GetArbTransactions)
 	}
 
+	nodeForArbNova := node.Group("arbnova")
+	{
+		nodeForArbNova.GET("getTransactions", api.GetArbNovaTransactions)
+	}
+
 	nodeForAvax := node.Group("avax")
 	{
 		nodeForAvax.GET("getTransactions", api.GetAvaxTransactions)
