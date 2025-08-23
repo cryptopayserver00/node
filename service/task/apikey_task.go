@@ -294,7 +294,7 @@ func testLikeEthByhChain(chainId uint) (status []string, successRate float64) {
 			jsonRpcRequest.Id = 1
 			jsonRpcRequest.Jsonrpc = "2.0"
 			jsonRpcRequest.Method = "eth_getBlockByNumber"
-			jsonRpcRequest.Params = []interface{}{"latest", false}
+			jsonRpcRequest.Params = []any{"latest", false}
 			err = client.HTTPPost(jsonRpcRequest, &rpcBlockInfo)
 			if err != nil {
 				global.NODE_LOG.Error(err.Error())

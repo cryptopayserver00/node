@@ -5,10 +5,10 @@ import "github.com/gin-gonic/gin"
 type CODE_INT int
 
 type Response struct {
-	Code    CODE_INT    `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
-	Result  bool        `json:"result"`
+	Code    CODE_INT `json:"code"`
+	Message string   `json:"message"`
+	Data    any      `json:"data"`
+	Result  bool     `json:"result"`
 }
 
 const (
@@ -45,7 +45,7 @@ const (
 	Failed_Msg = "Request data failed"
 )
 
-func Result(code CODE_INT, msg string, data interface{}, result bool) Response {
+func Result(code CODE_INT, msg string, data any, result bool) Response {
 	return Response{
 		code,
 		msg,
@@ -55,29 +55,29 @@ func Result(code CODE_INT, msg string, data interface{}, result bool) Response {
 }
 
 func Ok(c *gin.Context) Response {
-	return Result(Success, Success_Msg, map[string]interface{}{}, true)
+	return Result(Success, Success_Msg, map[string]any{}, true)
 }
 
 func OkWithMessage(message string) Response {
-	return Result(Success, message, map[string]interface{}{}, true)
+	return Result(Success, message, map[string]any{}, true)
 }
 
-func OKWithData(data interface{}) Response {
+func OKWithData(data any) Response {
 	return Result(Success, Success_Msg, data, true)
 }
 
-func OkWithDetailed(code CODE_INT, message string, data interface{}) Response {
+func OkWithDetailed(code CODE_INT, message string, data any) Response {
 	return Result(code, message, data, true)
 }
 
 func Fail() Response {
-	return Result(Error, Failed_Msg, map[string]interface{}{}, false)
+	return Result(Error, Failed_Msg, map[string]any{}, false)
 }
 
 func FailWithMessage(message string) Response {
-	return Result(Error, message, map[string]interface{}{}, false)
+	return Result(Error, message, map[string]any{}, false)
 }
 
-func FailWithDetailed(code CODE_INT, message string, data interface{}) Response {
+func FailWithDetailed(code CODE_INT, message string, data any) Response {
 	return Result(code, message, data, false)
 }

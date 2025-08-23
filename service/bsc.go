@@ -63,11 +63,11 @@ func (n *NService) UpdateBscTransactionsByAlchemy(req request.GetBscTransactions
 	var fromRpcAlchemyTxs response.RPCAlchemyTransactionDetails
 	var toRpcAlchemyTxs response.RPCAlchemyTransactionDetails
 	var transfers []response.RPCAlchemyTransactionTransfer
-	fromPayload := map[string]interface{}{
+	fromPayload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",
 		"method":  "alchemy_getAssetTransfers",
-		"params": []map[string]interface{}{
+		"params": []map[string]any{
 			{
 				"fromBlock":        "0x0",
 				"toBlock":          "latest",
@@ -81,11 +81,11 @@ func (n *NService) UpdateBscTransactionsByAlchemy(req request.GetBscTransactions
 		},
 	}
 
-	toPayload := map[string]interface{}{
+	toPayload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",
 		"method":  "alchemy_getAssetTransfers",
-		"params": []map[string]interface{}{
+		"params": []map[string]any{
 			{
 				"fromBlock":        "0x0",
 				"toBlock":          "latest",

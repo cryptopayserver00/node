@@ -331,7 +331,11 @@ func SweepSolBlockchainTransactionDetails(
 
 	txSig := solana.MustSignatureFromBase58(txHash)
 
-	transactionResult, err := client.GetTransaction(context.TODO(), txSig, nil)
+	version := uint64(0)
+	transactionResult, err := client.GetTransaction(context.TODO(), txSig, &rpc.GetTransactionOpts{
+		MaxSupportedTransactionVersion: &version,
+		Encoding:                       solana.EncodingBase64,
+	})
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 		return

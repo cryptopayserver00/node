@@ -110,12 +110,10 @@ var (
 
 	SolanaMainnetRPC = []string{
 		"https://api.mainnet-beta.solana.com",
-		"https://rpc.ankr.com/solana",
 	}
 
 	SolanaDevnetRpc = []string{
 		"https://api.devnet.solana.com",
-		// "https://rpc.ankr.com/solana_devnet",
 	}
 
 	PolMainnetRPC = []string{
@@ -141,7 +139,6 @@ var (
 		"https://ava-testnet.public.blastapi.io/ext/bc/C/rpc",
 		"https://endpoints.omniatech.io/v1/avax/fuji/public",
 		"https://api.avax-test.network/ext/bc/C/rpc",
-		"https://rpc.ankr.com/avalanche_fuji",
 	}
 
 	BaseMainnetRPC = []string{
@@ -250,7 +247,7 @@ func GetRealRpcByArray(rpcs []string) string {
 		jsonRpcRequest.Id = 1
 		jsonRpcRequest.Jsonrpc = "2.0"
 		jsonRpcRequest.Method = "eth_getBlockByNumber"
-		jsonRpcRequest.Params = []interface{}{"latest", false}
+		jsonRpcRequest.Params = []any{"latest", false}
 		err := client.HTTPPost(jsonRpcRequest, &rpcBlockInfo)
 		if err != nil {
 			continue

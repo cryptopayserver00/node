@@ -6,7 +6,7 @@ type ClientBalanceResponse struct {
 
 type ClientBtcTxResponse struct {
 	Hash           string               `json:"hash"`
-	Amount         interface{}          `json:"amount"`
+	Amount         any                  `json:"amount"`
 	Status         string               `json:"status"`
 	BlockTimestamp int64                `json:"blockTimestamp"`
 	Inputs         []ClientBtcTxInputs  `json:"inputs"`

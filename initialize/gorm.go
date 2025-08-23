@@ -22,7 +22,6 @@ func RegisterTables() {
 	db := global.NODE_DB
 	if err := db.AutoMigrate(
 		model.Wallet{},
-		model.Chain{},
 		// model.Transaction{},
 		model.OwnTransaction{},
 	); err != nil {

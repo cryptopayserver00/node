@@ -150,7 +150,7 @@ func (n *NService) PostLtcBroadcast(req request.PostLtcBroadcast) (tatum.Litecoi
 	client.Headers = map[string]string{
 		"x-api-key": constant.GetTatumRandomKeyByNetwork(req.ChainId),
 	}
-	tatumPayload := map[string]interface{}{
+	tatumPayload := map[string]any{
 		"txData": req.TxData,
 	}
 	err := client.HTTPPost(tatumPayload, &broadcastResponse)
@@ -161,7 +161,7 @@ func (n *NService) PostLtcBroadcast(req request.PostLtcBroadcast) (tatum.Litecoi
 	}
 
 	client.URL = constant.MempoolBroadcastByNetwork(req.ChainId)
-	mempoolPayload := map[string]interface{}{
+	mempoolPayload := map[string]any{
 		"txHash": req.TxData,
 	}
 	mempoolErr := client.HTTPPost(mempoolPayload, &broadcastResponse)

@@ -96,7 +96,7 @@ func CallTokenTransfer(chainId uint, rpc, fromPri, fromPub, toAddress, tokenAddr
 	return hash, nil
 }
 
-func CallTokenName(rpc, tokenAddress string) (result interface{}, err error) {
+func CallTokenName(rpc, tokenAddress string) (result any, err error) {
 	result, err = CallContractCore(rpc, tokenAddress, Name)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func CallTokenName(rpc, tokenAddress string) (result interface{}, err error) {
 	return
 }
 
-func CallTokenSymbol(rpc, tokenAddress string) (result interface{}, err error) {
+func CallTokenSymbol(rpc, tokenAddress string) (result any, err error) {
 	result, err = CallContractCore(rpc, tokenAddress, Symbol)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func CallTokenSymbol(rpc, tokenAddress string) (result interface{}, err error) {
 	return
 }
 
-func CallTokenDecimals(rpc, tokenAddress string) (result interface{}, err error) {
+func CallTokenDecimals(rpc, tokenAddress string) (result any, err error) {
 	result, err = CallContractCore(rpc, tokenAddress, Decimals)
 	if err != nil {
 		return nil, err

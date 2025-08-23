@@ -30,7 +30,7 @@ func SetupLatestBlockHeight(client NODE_Client.Client, chainId uint) {
 	jsonRpcRequest.Id = 1
 	jsonRpcRequest.Jsonrpc = "2.0"
 	jsonRpcRequest.Method = "eth_getBlockByNumber"
-	jsonRpcRequest.Params = []interface{}{"latest", false}
+	jsonRpcRequest.Params = []any{"latest", false}
 
 	err = client.HTTPPost(jsonRpcRequest, &rpcBlockInfo)
 	if err != nil {
@@ -152,7 +152,7 @@ func SweepBlockchainTransactionCore(client NODE_Client.Client,
 	jsonRpcRequest.Id = 1
 	jsonRpcRequest.Jsonrpc = "2.0"
 	jsonRpcRequest.Method = "eth_getBlockByNumber"
-	jsonRpcRequest.Params = []interface{}{"0x" + strconv.FormatInt(sweepBlockHeight, 16), true}
+	jsonRpcRequest.Params = []any{"0x" + strconv.FormatInt(sweepBlockHeight, 16), true}
 
 	err = client.HTTPPost(jsonRpcRequest, &rpcBlockDetail)
 	if err != nil {
@@ -213,7 +213,7 @@ func SweepBlockchainTransactionCore(client NODE_Client.Client,
 					jsonRpcRequest.Id = 1
 					jsonRpcRequest.Jsonrpc = "2.0"
 					jsonRpcRequest.Method = "eth_getTransactionReceipt"
-					jsonRpcRequest.Params = []interface{}{transaction.Hash}
+					jsonRpcRequest.Params = []any{transaction.Hash}
 
 					err = client.HTTPPost(jsonRpcRequest, &rpcReceipt)
 					if err != nil {
@@ -279,7 +279,7 @@ func SweepBlockchainTransactionDetails(
 	jsonRpcRequest.Id = 1
 	jsonRpcRequest.Jsonrpc = "2.0"
 	jsonRpcRequest.Method = "eth_getTransactionByHash"
-	jsonRpcRequest.Params = []interface{}{txHash}
+	jsonRpcRequest.Params = []any{txHash}
 
 	err = client.HTTPPost(jsonRpcRequest, &rpcDetail)
 	if err != nil {
@@ -291,7 +291,7 @@ func SweepBlockchainTransactionDetails(
 	jsonRpcRequest.Id = 1
 	jsonRpcRequest.Jsonrpc = "2.0"
 	jsonRpcRequest.Method = "eth_getBlockByNumber"
-	jsonRpcRequest.Params = []interface{}{rpcDetail.Result.BlockNumber, false}
+	jsonRpcRequest.Params = []any{rpcDetail.Result.BlockNumber, false}
 
 	err = client.HTTPPost(jsonRpcRequest, &rpcBlockInfo)
 	if err != nil {
@@ -500,13 +500,13 @@ func SweepBlockchainPendingBlock(
 	if chainId == constant.ETH_MAINNET || chainId == constant.BSC_MAINNET || chainId == constant.ARBITRUM_ONE {
 		var rpcBlockDetail response.RPCBlockInnerDetail
 		client.URL = constant.GetInnerTxRPCUrlByNetwork(chainId)
-		payload := map[string]interface{}{
+		payload := map[string]any{
 			"id":      1,
 			"jsonrpc": "2.0",
 			"method":  "debug_traceBlockByNumber",
-			"params": []interface{}{
+			"params": []any{
 				"0x" + strconv.FormatInt(blockHeightInt, 16),
-				map[string]interface{}{
+				map[string]any{
 					"tracer": "callTracer",
 				},
 			},
@@ -588,7 +588,7 @@ func SweepBlockchainPendingBlock(
 					jsonRpcRequest.Id = 1
 					jsonRpcRequest.Jsonrpc = "2.0"
 					jsonRpcRequest.Method = "eth_getTransactionReceipt"
-					jsonRpcRequest.Params = []interface{}{transaction.Hash}
+					jsonRpcRequest.Params = []any{transaction.Hash}
 
 					err = client.HTTPPost(jsonRpcRequest, &rpcReceipt)
 					if err != nil {
@@ -635,7 +635,7 @@ func SweepBlockchainPendingBlock(
 		jsonRpcRequest.Id = 1
 		jsonRpcRequest.Jsonrpc = "2.0"
 		jsonRpcRequest.Method = "eth_getBlockByNumber"
-		jsonRpcRequest.Params = []interface{}{"0x" + strconv.FormatInt(blockHeightInt, 16), true}
+		jsonRpcRequest.Params = []any{"0x" + strconv.FormatInt(blockHeightInt, 16), true}
 
 		err = client.HTTPPost(jsonRpcRequest, &rpcBlockDetail)
 		if err != nil {
@@ -697,7 +697,7 @@ func SweepBlockchainPendingBlock(
 						jsonRpcRequest.Id = 1
 						jsonRpcRequest.Jsonrpc = "2.0"
 						jsonRpcRequest.Method = "eth_getTransactionReceipt"
-						jsonRpcRequest.Params = []interface{}{transaction.Hash}
+						jsonRpcRequest.Params = []any{transaction.Hash}
 
 						err = client.HTTPPost(jsonRpcRequest, &rpcReceipt)
 						if err != nil {
@@ -751,13 +751,13 @@ func SweepBlockchainTransactionCoreForEthereum(client NODE_Client.Client,
 	var err error
 	var rpcBlockDetail response.RPCBlockInnerDetail
 	client.URL = constant.GetInnerTxRPCUrlByNetwork(chainId)
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",
 		"method":  "debug_traceBlockByNumber",
-		"params": []interface{}{
+		"params": []any{
 			"0x" + strconv.FormatInt(sweepBlockHeight, 16),
-			map[string]interface{}{
+			map[string]any{
 				"tracer": "callTracer",
 			},
 		},
@@ -826,7 +826,7 @@ func SweepBlockchainTransactionCoreForEthereum(client NODE_Client.Client,
 				jsonRpcRequest.Id = 1
 				jsonRpcRequest.Jsonrpc = "2.0"
 				jsonRpcRequest.Method = "eth_getTransactionReceipt"
-				jsonRpcRequest.Params = []interface{}{transaction.Hash}
+				jsonRpcRequest.Params = []any{transaction.Hash}
 
 				err = client.HTTPPost(jsonRpcRequest, &rpcReceipt)
 				if err != nil {
@@ -866,13 +866,13 @@ func handleEthereumTx(client NODE_Client.Client, chainId uint, publicKey *[]stri
 
 	var infos response.RPCInnerTxInfo
 	client.URL = constant.GetInnerTxRPCUrlByNetwork(chainId)
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",
 		"method":  "debug_traceTransaction",
-		"params": []interface{}{
+		"params": []any{
 			rpcDetail.Result.Hash,
-			map[string]interface{}{
+			map[string]any{
 				"tracer": "callTracer",
 			},
 		},

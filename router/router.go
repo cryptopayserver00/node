@@ -16,12 +16,7 @@ func (mRouter *MainRouter) InitRouter(Router *gin.RouterGroup) {
 		router.GET("networkInfo", api.GetNetworkInfo)
 		router.POST("storeWalletAddress", api.StoreWalletAddress)
 		router.POST("bulkStoreUserWallet", api.BulkStoreUserWallet)
-		// router.POST("storeChainContract", api.StoreChainContract)
-		// router.POST("bulkStoreChainContract", api.BulkStoreChainContract)
-
-		// router.GET("getTransactionByChainAndHash", api.GetTransactionByChainAndHash)
 		router.GET("getTransactionsByChainAndAddress", api.GetTransactionsByChainAndAddress)
-
 		router.GET("coinFree", api.GetFreeCoin)
 	}
 

@@ -1,10 +1,10 @@
 package request
 
 type JsonRpcRequest struct {
-	Id      int           `json:"id"`
-	Jsonrpc string        `json:"jsonrpc"`
-	Method  string        `json:"method"`
-	Params  []interface{} `json:"params"`
+	Id      int    `json:"id"`
+	Jsonrpc string `json:"jsonrpc"`
+	Method  string `json:"method"`
+	Params  []any  `json:"params"`
 }
 
 // type JsonRpcAlchemyRequest struct {
@@ -27,6 +27,6 @@ type JsonRpcRequest struct {
 // }
 
 type XrpJsonRpcRequest struct {
-	Method string                   `json:"method"`
-	Params []map[string]interface{} `json:"params"`
+	Method string           `json:"method"`
+	Params []map[string]any `json:"params"`
 }

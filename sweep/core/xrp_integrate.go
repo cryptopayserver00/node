@@ -42,7 +42,7 @@ func SetupXrpLatestBlockHeight(chainId uint) {
 
 	xrpResponse, err := client.Request(request)
 	if err == nil && xrpResponse["status"] == "success" {
-		result, ok := xrpResponse["result"].(map[string]interface{})
+		result, ok := xrpResponse["result"].(map[string]any)
 		if !ok {
 			return
 		}
@@ -140,7 +140,7 @@ func SweepXrpBlockchainTransactionCore(
 	var rpcBlockDetail response.XrpscanBlockResponse
 	var jsonRpcRequest request.XrpJsonRpcRequest
 	jsonRpcRequest.Method = "ledger"
-	jsonRpcRequest.Params = []map[string]interface{}{
+	jsonRpcRequest.Params = []map[string]any{
 		{
 			"ledger_index": sweepBlockHeight,
 			"transactions": true,
@@ -172,7 +172,7 @@ func SweepXrpBlockchainTransactionCore(
 				}
 
 				// token
-				tokenResult, ok := transaction.TxJson.DeliverMax.(map[string]interface{})
+				tokenResult, ok := transaction.TxJson.DeliverMax.(map[string]any)
 				if ok {
 					if isSupportContract, _, _, _ := sweepUtils.GetContractInfo(chainId, tokenResult["issuer"].(string)); isSupportContract {
 						matchArray = append(matchArray, txFrom, txTo)
@@ -249,7 +249,7 @@ func SweepXrpBlockchainTransactionDetails(
 	var rpcTransactionDetail response.XrpscanTransactionResponse
 	var jsonRpcRequest request.XrpJsonRpcRequest
 	jsonRpcRequest.Method = "tx"
-	jsonRpcRequest.Params = []map[string]interface{}{
+	jsonRpcRequest.Params = []map[string]any{
 		{
 			"transaction": txHash,
 			"binary":      false,
@@ -296,7 +296,7 @@ func SweepXrpBlockchainTransactionDetails(
 	}
 
 	// token
-	tokenResult, ok := rpcTransactionDetail.Result.TxJson.DeliverMax.(map[string]interface{})
+	tokenResult, ok := rpcTransactionDetail.Result.TxJson.DeliverMax.(map[string]any)
 	if ok {
 		if isSupportContract, contractName, _, _ := sweepUtils.GetContractInfo(chainId, tokenResult["issuer"].(string)); isSupportContract {
 			notifyRequest.Token = contractName
@@ -370,7 +370,7 @@ func SweepXrpBlockchainPendingBlock(
 	var rpcBlockDetail response.XrpscanBlockResponse
 	var jsonRpcRequest request.XrpJsonRpcRequest
 	jsonRpcRequest.Method = "ledger"
-	jsonRpcRequest.Params = []map[string]interface{}{
+	jsonRpcRequest.Params = []map[string]any{
 		{
 			"ledger_index": blockHeightInt,
 			"transactions": true,
@@ -402,7 +402,7 @@ func SweepXrpBlockchainPendingBlock(
 				}
 
 				// token
-				tokenResult, ok := transaction.TxJson.DeliverMax.(map[string]interface{})
+				tokenResult, ok := transaction.TxJson.DeliverMax.(map[string]any)
 				if ok {
 					if isSupportContract, _, _, _ := sweepUtils.GetContractInfo(chainId, tokenResult["issuer"].(string)); isSupportContract {
 						matchArray = append(matchArray, txFrom, txTo)

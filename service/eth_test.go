@@ -10,13 +10,13 @@ func TestInnerTxForEth(t *testing.T) {
 	var infos response.RPCInnerTxInfo
 	client.URL = ""
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",
 		"method":  "debug_traceTransaction",
-		"params": []interface{}{
+		"params": []any{
 			"0xc4138d43102c50dd41fa323e44d30ac983271c943c6b0a7e03d67eeb5475cc9a",
-			map[string]interface{}{
+			map[string]any{
 				"tracer": "callTracer",
 			},
 		},

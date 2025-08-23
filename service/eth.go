@@ -34,7 +34,7 @@ func (n *NService) GetEthPendingTransactions(req request.GetEthTransactions) ([]
 	var pendings []response.ClientTransaction
 
 	client.URL = constant.GetGeneralRPCUrlByNetwork(req.ChainId)
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",
 		"method":  "txpool_contentFrom",
@@ -140,11 +140,11 @@ func (n *NService) UpdateEthTransactionsByAlchemy(req request.GetEthTransactions
 	var fromRpcAlchemyTxs response.RPCAlchemyTransactionDetails
 	var toRpcAlchemyTxs response.RPCAlchemyTransactionDetails
 	var transfers []response.RPCAlchemyTransactionTransfer
-	fromPayload := map[string]interface{}{
+	fromPayload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",
 		"method":  "alchemy_getAssetTransfers",
-		"params": []map[string]interface{}{
+		"params": []map[string]any{
 			{
 				"fromBlock":        "0x0",
 				"toBlock":          "latest",
@@ -158,11 +158,11 @@ func (n *NService) UpdateEthTransactionsByAlchemy(req request.GetEthTransactions
 		},
 	}
 
-	toPayload := map[string]interface{}{
+	toPayload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",
 		"method":  "alchemy_getAssetTransfers",
-		"params": []map[string]interface{}{
+		"params": []map[string]any{
 			{
 				"fromBlock":        "0x0",
 				"toBlock":          "latest",

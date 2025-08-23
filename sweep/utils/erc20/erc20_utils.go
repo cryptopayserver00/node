@@ -155,7 +155,7 @@ func DecodeERC20TransactionInputData(chainId uint, hash, data string) (methodNam
 		return
 	}
 
-	inputsMap := make(map[string]interface{})
+	inputsMap := make(map[string]any)
 
 	if err = method.Inputs.UnpackIntoMap(inputsMap, decodedData); err != nil {
 		err = errors.New("can not decode: Unpack Into Map")

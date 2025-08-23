@@ -131,7 +131,7 @@ type RPCGeneralTxpool struct {
 
 type TxPoolResult struct {
 	Pending map[string]*RPCTransaction `json:"pending"`
-	Queued  map[string]interface{}     `json:"queued"`
+	Queued  map[string]any             `json:"queued"`
 }
 
 type RPCGeneral struct {

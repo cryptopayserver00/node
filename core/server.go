@@ -20,8 +20,7 @@ type Server interface {
 
 func RunWindowsServer() {
 	if global.NODE_CONFIG.System.UseInit {
-		err := service.NodeService.InitChainList()
-		if err != nil {
+		if err := service.NodeService.InitChainList(); err != nil {
 			global.NODE_LOG.Error(err.Error())
 			return
 		}

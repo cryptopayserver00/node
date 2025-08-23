@@ -46,24 +46,24 @@ type XrpscanTransaction struct {
 
 type XrpscanTransactionMeta struct {
 	// AffectedNodes
-	TransactionIndex  int         `json:"TransactionIndex"`
-	TransactionResult string      `json:"TransactionResult"`
-	DeliveredAmount   interface{} `json:"delivered_amount"`
+	TransactionIndex  int    `json:"TransactionIndex"`
+	TransactionResult string `json:"TransactionResult"`
+	DeliveredAmount   any    `json:"delivered_amount"`
 }
 
 type XrpscanTransactionTxJson struct {
-	Account            string      `json:"Account"`
-	DeliverMax         interface{} `json:"DeliverMax"`
-	Destination        string      `json:"Destination"`
-	DestinationTag     int         `json:"DestinationTag"`
-	Fee                string      `json:"Fee"`
-	Flags              int         `json:"Flags"`
-	LastLedgerSequence int         `json:"LastLedgerSequence"`
-	Sequence           int         `json:"Sequence"`
-	SigningPubKey      string      `json:"SigningPubKey"`
-	TicketSequence     int         `json:"TicketSequence"`
-	TransactionType    string      `json:"TransactionType"`
-	TxnSignature       string      `json:"TxnSignature"`
-	Date               int         `json:"date"`
-	LedgerIndex        int         `json:"ledgerIndex"`
+	Account            string `json:"Account"`
+	DeliverMax         any    `json:"DeliverMax"`
+	Destination        string `json:"Destination"`
+	DestinationTag     int    `json:"DestinationTag"`
+	Fee                string `json:"Fee"`
+	Flags              int    `json:"Flags"`
+	LastLedgerSequence int    `json:"LastLedgerSequence"`
+	Sequence           int    `json:"Sequence"`
+	SigningPubKey      string `json:"SigningPubKey"`
+	TicketSequence     int    `json:"TicketSequence"`
+	TransactionType    string `json:"TransactionType"`
+	TxnSignature       string `json:"TxnSignature"`
+	Date               int    `json:"date"`
+	LedgerIndex        int    `json:"ledgerIndex"`
 }

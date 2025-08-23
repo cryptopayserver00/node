@@ -483,7 +483,7 @@ func IsAddressContractSupport(chainId uint, address string) bool {
 		jsonRpcRequest.Id = 1
 		jsonRpcRequest.Jsonrpc = "2.0"
 		jsonRpcRequest.Method = "eth_getCode"
-		jsonRpcRequest.Params = []interface{}{address, "latest"}
+		jsonRpcRequest.Params = []any{address, "latest"}
 
 		err := client.HTTPPost(jsonRpcRequest, &rpcGeneral)
 		if err != nil {

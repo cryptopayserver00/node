@@ -122,7 +122,7 @@ func (n *NService) GetBtcAddressUtxo(req request.GetBtcAddressUtxo) ([]blockstre
 	return utxoResponse, nil
 }
 
-func (n *NService) PostBtcBroadcast(req request.PostBtcBroadcast) (interface{}, error) {
+func (n *NService) PostBtcBroadcast(req request.PostBtcBroadcast) (any, error) {
 	var err error
 
 	// tatum
@@ -132,7 +132,7 @@ func (n *NService) PostBtcBroadcast(req request.PostBtcBroadcast) (interface{}, 
 	}
 
 	var tatumBroadcastResponse tatum.BitcoinBroadcast
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"txData": req.TxData,
 	}
 	err = client.HTTPPost(payload, &tatumBroadcastResponse)
@@ -143,7 +143,7 @@ func (n *NService) PostBtcBroadcast(req request.PostBtcBroadcast) (interface{}, 
 	}
 
 	client.URL = fmt.Sprintf("%s/tx", constant.GetBlcokStreamHttpUrlByNetwork(req.ChainId))
-	payload = map[string]interface{}{
+	payload = map[string]any{
 		"hexTransaction": req.TxData,
 	}
 

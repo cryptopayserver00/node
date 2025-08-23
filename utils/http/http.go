@@ -17,7 +17,7 @@ type Client struct {
 	Timeout time.Duration
 }
 
-func (c *Client) HTTPGetUnique(dest interface{}) (err error) {
+func (c *Client) HTTPGetUnique(dest any) (err error) {
 	req, err := http.NewRequest("GET", c.URL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create get request: %v", err.Error())
@@ -72,7 +72,7 @@ func (c *Client) HTTPGetUnique(dest interface{}) (err error) {
 	return nil
 }
 
-func (c *Client) HTTPGet(dest interface{}) (err error) {
+func (c *Client) HTTPGet(dest any) (err error) {
 	req, err := http.NewRequest("GET", c.URL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create get request: %v", err.Error())
@@ -117,7 +117,7 @@ func (c *Client) HTTPGet(dest interface{}) (err error) {
 	return nil
 }
 
-func (c *Client) HTTPPost(source interface{}, dest interface{}) (err error) {
+func (c *Client) HTTPPost(source any, dest any) (err error) {
 	body, err := json.Marshal(source)
 	if err != nil {
 		return fmt.Errorf("failed to encode source: %s", err.Error())
