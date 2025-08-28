@@ -9,7 +9,6 @@ import (
 	"node/global/constant"
 	"node/model/node/request"
 	"node/model/node/response"
-	chainUtils "node/sweep/utils"
 	sweepUtils "node/sweep/utils"
 	"node/sweep/utils/erc20"
 	"node/utils"
@@ -264,7 +263,7 @@ func (n *NService) DecodeEthTransactionForRpc(chainId uint, address string, tx *
 		model.Category = "erc20"
 	}
 
-	_, contractName, _, _ := chainUtils.GetContractInfo(chainId, tx.To)
+	_, contractName, _, _ := sweepUtils.GetContractInfo(chainId, tx.To)
 
 	if strings.EqualFold(tx.From, address) && contractName == constant.SWAP {
 		model.Type = "Swap"
@@ -295,7 +294,7 @@ func (n *NService) DecodeEthTransactionForAlchemy(chainId uint, address string, 
 		model.Amount = utils.CalculateBalance(bigIntValue, 18)
 
 	} else if tx.Category == "erc20" {
-		isSupportContract, contractName, contractAddress, decimals := chainUtils.GetContractInfo(chainId, tx.RawContract.Address)
+		isSupportContract, contractName, contractAddress, decimals := sweepUtils.GetContractInfo(chainId, tx.RawContract.Address)
 		if !isSupportContract {
 			return
 		}
@@ -310,7 +309,7 @@ func (n *NService) DecodeEthTransactionForAlchemy(chainId uint, address string, 
 		return
 	}
 
-	_, contractName, _, _ := chainUtils.GetContractInfo(chainId, tx.To)
+	_, contractName, _, _ := sweepUtils.GetContractInfo(chainId, tx.To)
 
 	if strings.EqualFold(tx.From, address) && contractName == constant.SWAP {
 		model.Type = "Swap"

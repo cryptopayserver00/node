@@ -13,8 +13,9 @@ import (
 	"github.com/gagliardetto/solana-go"
 	bchCfg "github.com/gcash/bchd/chaincfg"
 	"github.com/gcash/bchutil"
-	ltcCfg "github.com/ltcsuite/ltcd/chaincfg"
-	"github.com/ltcsuite/ltcd/ltcutil"
+
+	// ltcCfg "github.com/ltcsuite/ltcd/chaincfg"
+	// "github.com/ltcsuite/ltcd/ltcutil"
 	"github.com/xrpscan/xrpl-go"
 	tonAddress "github.com/xssnick/tonutils-go/address"
 )
@@ -402,18 +403,18 @@ func IsAddressSupport(chainId uint, address string) bool {
 			return false
 		}
 		return true
-	case LTC_MAINNET:
-		_, err := ltcutil.DecodeAddress(address, &ltcCfg.MainNetParams)
-		if err != nil {
-			return false
-		}
-		return true
-	case LTC_TESTNET:
-		_, err := ltcutil.DecodeAddress(address, &ltcCfg.TestNet4Params)
-		if err != nil {
-			return false
-		}
-		return true
+	// case LTC_MAINNET:
+	// 	_, err := ltcutil.DecodeAddress(address, &ltcCfg.MainNetParams)
+	// 	if err != nil {
+	// 		return false
+	// 	}
+	// 	return true
+	// case LTC_TESTNET:
+	// 	_, err := ltcutil.DecodeAddress(address, &ltcCfg.TestNet4Params)
+	// 	if err != nil {
+	// 		return false
+	// 	}
+	// 	return true
 	case TRON_MAINNET, TRON_NILE:
 		resultVal, _ := TronValidateAddress(chainId, address)
 		return resultVal

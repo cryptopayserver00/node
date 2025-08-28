@@ -24,13 +24,10 @@ func Viper(path ...string) *viper.Viper {
 				switch gin.Mode() {
 				case gin.DebugMode:
 					config = internal.ConfigDebugFile
-					break
 				case gin.ReleaseMode:
 					config = internal.ConfigReleaseFile
-					break
 				case gin.TestMode:
 					config = internal.ConfigTestFile
-					break
 				}
 			} else {
 				config = configEnv
@@ -45,7 +42,7 @@ func Viper(path ...string) *viper.Viper {
 	v.SetConfigType("yaml")
 	err := v.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		panic(fmt.Errorf("fatal error config file: %s", err))
 	}
 	v.WatchConfig()
 	v.OnConfigChange(func(e fsnotify.Event) {

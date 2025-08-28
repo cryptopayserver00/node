@@ -102,11 +102,12 @@ func (n *NService) GetLtcAddressUtxo(req request.GetLtcAddressUtxo) ([]mempool.M
 	var chainString string
 
 	// tatum
-	if req.ChainId == constant.LTC_MAINNET {
+	switch req.ChainId {
+	case constant.LTC_MAINNET:
 		chainString = "litecoin"
-	} else if req.ChainId == constant.LTC_TESTNET {
+	case constant.LTC_TESTNET:
 		chainString = "litecoin-testnet"
-	} else {
+	default:
 		return nil, errors.New("the network does not support")
 	}
 
