@@ -10,7 +10,10 @@ require (
 	github.com/ethereum/go-ethereum v1.14.13
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6
+	github.com/gagliardetto/binary v0.8.0
 	github.com/gagliardetto/solana-go v1.12.0
+	github.com/gcash/bchd v0.20.0
+	github.com/gcash/bchutil v0.0.0-20250115071209-216bd54f0d4d
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gorilla/websocket v1.5.3
@@ -53,11 +56,8 @@ require (
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
-	github.com/gagliardetto/binary v0.8.0 // indirect
 	github.com/gagliardetto/treeout v0.1.4 // indirect
-	github.com/gcash/bchd v0.20.0 // indirect
 	github.com/gcash/bchlog v0.0.0-20180913005452-b4f036f92fa6 // indirect
-	github.com/gcash/bchutil v0.0.0-20250115071209-216bd54f0d4d // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
