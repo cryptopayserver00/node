@@ -2,6 +2,7 @@ package router
 
 import (
 	"node/api"
+	"node/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,11 +21,11 @@ func (mRouter *MainRouter) InitRouter(Router *gin.RouterGroup) {
 		router.GET("coinFree", api.GetFreeCoin)
 	}
 
-	// router.Use(middleware.Wss())
-	// {
-	// 	// websocket
-	// 	router.GET("ws", api.WsForTxInfo)
-	// }
+	router.Use(middleware.DeshopWss())
+	{
+		// websocket
+		router.GET("deshopWs", api.WsForTxInfo)
+	}
 
 	node := Router.Group("node")
 	{

@@ -18,3 +18,15 @@ func Wss() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func DeshopWss() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.Request.Header.Get("Sec-WSS-Token")
+		if token == "" || token != global.NODE_CONFIG.Wss.SecWssToken {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		c.Next()
+	}
+}
