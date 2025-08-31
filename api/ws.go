@@ -43,7 +43,6 @@ func (n *NodeApi) WsForTxInfo(c *gin.Context) {
 		for {
 			messageType, message, err := conn.ReadMessage()
 			if err != nil {
-				global.NODE_LOG.Error(err.Error())
 				return
 			}
 
