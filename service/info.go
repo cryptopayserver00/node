@@ -5,23 +5,28 @@ import (
 	"node/global/constant"
 	"node/model/node/request"
 	"node/model/node/response"
+	"node/sweep/setup"
+
+	"github.com/gin-gonic/gin"
 )
 
-func (n *NService) GetInfo(info request.GetNetworkInfo) (networkInfo response.NetworkInfo, err error) {
-	if !constant.IsNetworkSupport(info.ChainId) {
-		return networkInfo, errors.New("do not support the network")
+func (n *NService) GetInfo(c *gin.Context, req request.GetNetworkInfo) (result response.NetworkInfo, err error) {
+	var networkResponse response.NetworkInfo
+
+	if !constant.IsNetworkSupport(req.ChainId) {
+		return networkResponse, errors.New("do not support the network")
 	}
 
-	networkInfo.ChainId = info.ChainId
+	networkResponse.ChainId = req.ChainId
 
-	if constant.IsNetworkSupportTatum(info.ChainId) {
-		networkInfo.TatumUrl = constant.TatumAPI
-		networkInfo.TatumKey = constant.GetTatumRandomKeyByNetwork(info.ChainId)
+	latest, cache, sweep, err := setup.GetBlockHeight(c, req.ChainId)
+	if err != nil {
+		return networkResponse, err
 	}
 
-	networkInfo.RPCUrl = constant.GetRPCUrlByNetwork((info.ChainId))
-	networkInfo.HTTPUrl = constant.GetHttpUrlByNetwork(info.ChainId)
-	networkInfo.HTTPKey = constant.GetRandomHTTPKeyByNetwork(info.ChainId)
+	networkResponse.LatestBlock = latest
+	networkResponse.CacheBlock = cache
+	networkResponse.SweepBlock = sweep
 
-	return
+	return networkResponse, nil
 }

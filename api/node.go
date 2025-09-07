@@ -28,7 +28,7 @@ func (n *NodeApi) GetNetworkInfo(c *gin.Context) {
 	rd, _ := json.Marshal(info)
 	global.NODE_LOG.Info("GetNetworkInfo: " + string(rd))
 
-	result, err := service.NodeService.GetInfo(info)
+	result, err := service.NodeService.GetInfo(c, info)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())

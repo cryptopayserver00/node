@@ -1314,3 +1314,138 @@ func SavePublicKeyToRedis(ctx context.Context, chainId uint, address string) (er
 
 	return nil
 }
+
+func GetBlockHeight(ctx context.Context, chainId uint) (string, string, string, error) {
+	if !utils.IsChainJoinSweep(chainId) {
+		return "", "", "", errors.New("not support")
+	}
+
+	var latestBlockKey, cacheBlockKey, sweepBlockKey string
+
+	switch chainId {
+	case constant.ETH_MAINNET:
+		latestBlockKey = constant.ETH_LATEST_BLOCK
+		cacheBlockKey = constant.ETH_CACHE_BLOCK
+		sweepBlockKey = constant.ETH_SWEEP_BLOCK
+	case constant.ETH_SEPOLIA:
+		latestBlockKey = constant.ETH_SEPOLIA_LATEST_BLOCK
+		cacheBlockKey = constant.ETH_SEPOLIA_CACHE_BLOCK
+		sweepBlockKey = constant.ETH_SEPOLIA_SWEEP_BLOCK
+	case constant.BTC_MAINNET:
+		latestBlockKey = constant.BTC_LATEST_BLOCK
+		cacheBlockKey = constant.BTC_CACHE_BLOCK
+		sweepBlockKey = constant.BTC_SWEEP_BLOCK
+	case constant.BTC_TESTNET:
+		latestBlockKey = constant.BTC_TESTNET_LATEST_BLOCK
+		cacheBlockKey = constant.BTC_TESTNET_CACHE_BLOCK
+		sweepBlockKey = constant.BTC_TESTNET_SWEEP_BLOCK
+	case constant.BSC_MAINNET:
+		latestBlockKey = constant.BSC_LATEST_BLOCK
+		cacheBlockKey = constant.BSC_CACHE_BLOCK
+		sweepBlockKey = constant.BSC_SWEEP_BLOCK
+	case constant.BSC_TESTNET:
+		latestBlockKey = constant.BSC_TESTNET_LATEST_BLOCK
+		cacheBlockKey = constant.BSC_TESTNET_CACHE_BLOCK
+		sweepBlockKey = constant.BSC_TESTNET_SWEEP_BLOCK
+	case constant.ARBITRUM_ONE:
+		latestBlockKey = constant.ARBITRUM_ONE_LATEST_BLOCK
+		cacheBlockKey = constant.ARBITRUM_ONE_CACHE_BLOCK
+		sweepBlockKey = constant.ARBITRUM_ONE_SWEEP_BLOCK
+	case constant.ARBITRUM_NOVA:
+		latestBlockKey = constant.ARBITRUM_NOVA_LATEST_BLOCK
+		cacheBlockKey = constant.ARBITRUM_NOVA_CACHE_BLOCK
+		sweepBlockKey = constant.ARBITRUM_NOVA_SWEEP_BLOCK
+	case constant.ARBITRUM_SEPOLIA:
+		latestBlockKey = constant.ARBITRUM_SEPOLIA_LATEST_BLOCK
+		cacheBlockKey = constant.ARBITRUM_SEPOLIA_CACHE_BLOCK
+		sweepBlockKey = constant.ARBITRUM_SEPOLIA_SWEEP_BLOCK
+	case constant.TRON_MAINNET:
+		latestBlockKey = constant.TRON_LATEST_BLOCK
+		cacheBlockKey = constant.TRON_CACHE_BLOCK
+		sweepBlockKey = constant.TRON_SWEEP_BLOCK
+	case constant.TRON_NILE:
+		latestBlockKey = constant.TRON_NILE_LATEST_BLOCK
+		cacheBlockKey = constant.TRON_NILE_CACHE_BLOCK
+		sweepBlockKey = constant.TRON_NILE_SWEEP_BLOCK
+	case constant.LTC_MAINNET:
+		latestBlockKey = constant.LTC_LATEST_BLOCK
+		cacheBlockKey = constant.LTC_CACHE_BLOCK
+		sweepBlockKey = constant.LTC_SWEEP_BLOCK
+	case constant.LTC_TESTNET:
+		latestBlockKey = constant.LTC_TESTNET_LATEST_BLOCK
+		cacheBlockKey = constant.LTC_TESTNET_CACHE_BLOCK
+		sweepBlockKey = constant.LTC_TESTNET_SWEEP_BLOCK
+	case constant.OP_MAINNET:
+		latestBlockKey = constant.OP_LATEST_BLOCK
+		cacheBlockKey = constant.OP_CACHE_BLOCK
+		sweepBlockKey = constant.OP_SWEEP_BLOCK
+	case constant.OP_SEPOLIA:
+		latestBlockKey = constant.OP_SEPOLIA_LATEST_BLOCK
+		cacheBlockKey = constant.OP_SEPOLIA_CACHE_BLOCK
+		sweepBlockKey = constant.OP_SEPOLIA_SWEEP_BLOCK
+	case constant.SOL_MAINNET:
+		latestBlockKey = constant.SOL_LATEST_BLOCK
+		cacheBlockKey = constant.SOL_CACHE_BLOCK
+		sweepBlockKey = constant.SOL_SWEEP_BLOCK
+	case constant.SOL_DEVNET:
+		latestBlockKey = constant.SOL_DEVNET_LATEST_BLOCK
+		cacheBlockKey = constant.SOL_DEVNET_CACHE_BLOCK
+		sweepBlockKey = constant.SOL_DEVNET_SWEEP_BLOCK
+	case constant.TON_MAINNET:
+		latestBlockKey = constant.TON_LATEST_BLOCK
+		cacheBlockKey = constant.TON_CACHE_BLOCK
+		sweepBlockKey = constant.TON_SWEEP_BLOCK
+	case constant.TON_TESTNET:
+		latestBlockKey = constant.TON_TESTNET_LATEST_BLOCK
+		cacheBlockKey = constant.TON_TESTNET_CACHE_BLOCK
+		sweepBlockKey = constant.TON_TESTNET_SWEEP_BLOCK
+	case constant.XRP_MAINNET:
+		latestBlockKey = constant.XRP_LATEST_BLOCK
+		cacheBlockKey = constant.XRP_CACHE_BLOCK
+		sweepBlockKey = constant.XRP_SWEEP_BLOCK
+	case constant.XRP_TESTNET:
+		latestBlockKey = constant.XRP_TESTNET_LATEST_BLOCK
+		cacheBlockKey = constant.XRP_TESTNET_CACHE_BLOCK
+		sweepBlockKey = constant.XRP_TESTNET_SWEEP_BLOCK
+	case constant.BCH_MAINNET:
+		latestBlockKey = constant.BCH_LATEST_BLOCK
+		cacheBlockKey = constant.BCH_CACHE_BLOCK
+		sweepBlockKey = constant.BCH_SWEEP_BLOCK
+	case constant.BCH_TESTNET:
+		latestBlockKey = constant.BCH_TESTNET_LATEST_BLOCK
+		cacheBlockKey = constant.BCH_TESTNET_CACHE_BLOCK
+		sweepBlockKey = constant.BCH_TESTNET_SWEEP_BLOCK
+	case constant.POL_MAINNET:
+		latestBlockKey = constant.POL_LATEST_BLOCK
+		cacheBlockKey = constant.POL_CACHE_BLOCK
+		sweepBlockKey = constant.POL_SWEEP_BLOCK
+	case constant.POL_TESTNET:
+		latestBlockKey = constant.POL_TESTNET_LATEST_BLOCK
+		cacheBlockKey = constant.POL_TESTNET_CACHE_BLOCK
+		sweepBlockKey = constant.POL_TESTNET_SWEEP_BLOCK
+	case constant.AVAX_MAINNET:
+		latestBlockKey = constant.AVAX_LATEST_BLOCK
+		cacheBlockKey = constant.AVAX_CACHE_BLOCK
+		sweepBlockKey = constant.AVAX_SWEEP_BLOCK
+	case constant.AVAX_TESTNET:
+		latestBlockKey = constant.AVAX_TESTNET_LATEST_BLOCK
+		cacheBlockKey = constant.AVAX_TESTNET_CACHE_BLOCK
+		sweepBlockKey = constant.AVAX_TESTNET_SWEEP_BLOCK
+	case constant.BASE_MAINNET:
+		latestBlockKey = constant.BASE_LATEST_BLOCK
+		cacheBlockKey = constant.BASE_CACHE_BLOCK
+		sweepBlockKey = constant.BASE_SWEEP_BLOCK
+	case constant.BASE_SEPOLIA:
+		latestBlockKey = constant.BASE_SEPOLIA_LATEST_BLOCK
+		cacheBlockKey = constant.BASE_SEPOLIA_CACHE_BLOCK
+		sweepBlockKey = constant.BASE_SEPOLIA_SWEEP_BLOCK
+	default:
+		return "", "", "", errors.New("not support")
+	}
+
+	latestBlockHeightString, _ := global.NODE_REDIS.Get(ctx, latestBlockKey).Result()
+	cacheBlockHeightString, _ := global.NODE_REDIS.Get(ctx, cacheBlockKey).Result()
+	sweepBlockHeightString, _ := global.NODE_REDIS.Get(ctx, sweepBlockKey).Result()
+
+	return latestBlockHeightString, cacheBlockHeightString, sweepBlockHeightString, nil
+}

@@ -2,13 +2,20 @@ package response
 
 import "node/model"
 
+// type NetworkInfo struct {
+// 	TatumUrl    string `json:"tatum_url"`
+// 	TatumKey    string `json:"tatum_key"`
+// 	ChainId     uint   `json:"chain_id"`
+// 	RPCUrl      string `json:"rpc_url"`
+// 	HTTPUrl     string `json:"http_url"`
+// 	HTTPKey     string `json:"http_key"`
+// }
+
 type NetworkInfo struct {
-	TatumUrl string `json:"tatum_url"`
-	TatumKey string `json:"tatum_key"`
-	ChainId  uint   `json:"chain_id"`
-	RPCUrl   string `json:"rpc_url"`
-	HTTPUrl  string `json:"http_url"`
-	HTTPKey  string `json:"http_key"`
+	ChainId     uint   `json:"chain_id"`
+	LatestBlock string `json:"latest_block"`
+	CacheBlock  string `json:"cache_block"`
+	SweepBlock  string `json:"sweep_block"`
 }
 
 type StoreUserWallet struct {
