@@ -42,8 +42,7 @@ var (
 	}
 
 	ETHMainnetRPC = []string{
-		"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
-		// "https://ethereum-rpc.publicnode.com",
+		"https://ethereum-rpc.publicnode.com",
 	}
 
 	ETHSepoliaRPC = []string{
@@ -266,7 +265,7 @@ func GetRealRpcByArray(rpcs []string) string {
 func GetRPCUrlByNetwork(chainId uint) string {
 	switch chainId {
 	case ETH_MAINNET:
-		return GetRealRpcByArray(ETHMainnetRPC)
+		return GetAlchemyRPCUrlByNetwork(chainId)
 	case ETH_SEPOLIA:
 		return GetRealRpcByArray(ETHSepoliaRPC)
 	case BSC_MAINNET:
