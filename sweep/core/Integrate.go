@@ -104,7 +104,8 @@ func SweepBlockchainTransaction(
 				*sweepBlockHeight++
 				mutex.Unlock()
 
-				if chainId == constant.ETH_MAINNET || chainId == constant.BSC_MAINNET || chainId == constant.ARBITRUM_ONE {
+				// if chainId == constant.ETH_MAINNET || chainId == constant.BSC_MAINNET || chainId == constant.ARBITRUM_ONE {
+				if chainId == 999999 {
 					err := SweepBlockchainTransactionCoreForEthereum(client, chainId, publicKey, sweepCount, currentHeight, constantSweepBlock, constantPendingBlock, constantPendingTransaction)
 					if err != nil {
 
@@ -324,7 +325,8 @@ func SweepBlockchainTransactionDetails(
 
 	var isProcess = false
 
-	if chainId == constant.ETH_MAINNET || chainId == constant.BSC_MAINNET || chainId == constant.ARBITRUM_ONE {
+	// if chainId == constant.ETH_MAINNET || chainId == constant.BSC_MAINNET || chainId == constant.ARBITRUM_ONE {
+	if chainId == 999999 {
 		isProcess, err = handleEthereumTx(client, chainId, publicKey, notifyRequest, rpcDetail)
 	} else {
 		if rpcDetail.Result.Input == "0x" {
@@ -497,7 +499,8 @@ func SweepBlockchainPendingBlock(
 		return
 	}
 
-	if chainId == constant.ETH_MAINNET || chainId == constant.BSC_MAINNET || chainId == constant.ARBITRUM_ONE {
+	// if chainId == constant.ETH_MAINNET || chainId == constant.BSC_MAINNET || chainId == constant.ARBITRUM_ONE {
+	if chainId == 999999 {
 		var rpcBlockDetail response.RPCBlockInnerDetail
 		client.URL = constant.GetInnerTxRPCUrlByNetwork(chainId)
 		payload := map[string]any{
