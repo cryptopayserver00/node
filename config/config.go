@@ -24,9 +24,9 @@ type Key struct {
 	TrongridMainnetKey       string `mapstructure:"trongrid_mainnet_key" json:"trongrid_mainnet_key" yaml:"trongrid_mainnet_key"`
 	TrongridNileKey          string `mapstructure:"trongrid_nile_key" json:"trongrid_nile_key" yaml:"trongrid_nile_key"`
 	AlchemyMainnetKey        string `mapstructure:"alchemy_mainnet_key" json:"alchemy_mainnet_key" yaml:"alchemy_mainnet_key"`
+	AlchemyTestnetKey        string `mapstructure:"alchemy_testnet_key" json:"alchemy_testnet_key" yaml:"alchemy_testnet_key"`
 	AlchemyInnerTxMainnetKey string `mapstructure:"alchemy_inner_tx_mainnet_key" json:"alchemy_inner_tx_mainnet_key" yaml:"alchemy_inner_tx_mainnet_key"`
 	AlchemyInnerTxTestnetKey string `mapstructure:"alchemy_inner_tx_testnet_key" json:"alchemy_inner_tx_testnet_key" yaml:"alchemy_inner_tx_testnet_key"`
-	AlchemyTestnetKey        string `mapstructure:"alchemy_testnet_key" json:"alchemy_testnet_key" yaml:"alchemy_testnet_key"`
 	TatumMainnetKey          string `mapstructure:"tatum_mainnet_key" json:"tatum_mainnet_key" yaml:"tatum_mainnet_key"`
 	TatumTestnetKey          string `mapstructure:"tatum_testnet_key" json:"tatum_testnet_key" yaml:"tatum_testnet_key"`
 }

@@ -10,6 +10,7 @@ import (
 )
 
 var (
+
 	// ETHAlchemyMainnetRPC = []string{
 	// 	"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
 	// }
@@ -41,8 +42,8 @@ var (
 	}
 
 	ETHMainnetRPC = []string{
-		// 	"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
-		"https://ethereum-rpc.publicnode.com",
+		"https://eth-mainnet.g.alchemy.com/v2/" + GetRandomAlchemyKey(true),
+		// "https://ethereum-rpc.publicnode.com",
 	}
 
 	ETHSepoliaRPC = []string{
@@ -309,7 +310,6 @@ func GetRPCUrlByNetwork(chainId uint) string {
 	default:
 		return ""
 	}
-
 }
 
 // get real inner tx(trace_debug) rpc url
@@ -330,7 +330,16 @@ func GetInnerTxRPCUrlByNetwork(chainId uint) string {
 	default:
 		return ""
 	}
+}
 
+func GetRandomAlchemyKey(isMainnet bool) string {
+	if isMainnet {
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
+		return strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
+	} else {
+		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
+		return strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+	}
 }
 
 func GetRandomInnertxAlchemyKey(isMainnet bool) string {
