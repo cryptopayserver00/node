@@ -82,12 +82,8 @@ func SweepBlockchainTransaction(
 	mutex := sync.Mutex{}
 
 	var (
-		numWorkers = 10
+		numWorkers = 2
 	)
-
-	if chainId == constant.BSC_TESTNET {
-		numWorkers = 3
-	}
 
 	if *sweepBlockHeight <= *cacheBlockHeight {
 		for i := 0; i < numWorkers; i++ {
