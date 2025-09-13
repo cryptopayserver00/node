@@ -69,7 +69,7 @@ func SweepSolBlockchainTransaction(
 	mutex := sync.Mutex{}
 
 	var (
-		numWorkers = 1
+		numWorkers = 2
 	)
 
 	if *sweepBlockHeight < *cacheBlockHeight {

@@ -87,7 +87,7 @@ func SweepXrpBlockchainTransaction(
 	mutex := sync.Mutex{}
 
 	var (
-		numWorkers = 10
+		numWorkers = 2
 	)
 
 	if *sweepBlockHeight < *cacheBlockHeight {
