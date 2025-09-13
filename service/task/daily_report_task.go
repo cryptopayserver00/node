@@ -28,6 +28,8 @@ func RunDailyReportTask() {
 }
 
 func RunDailyReportCore() {
+	defer utils.HandlePanic()
+
 	global.NODE_LOG.Info("---------- Run Daily Report Task ----------")
 
 	count, err := global.NODE_REDIS.Get(context.Background(), constant.DAILY_REPORT_ERROR).Result()

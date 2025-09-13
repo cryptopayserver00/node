@@ -29,6 +29,8 @@ func RunGetPendingTxNumberTask() {
 }
 
 func RunPendingTxNumberCore() {
+	defer utils.HandlePanic()
+
 	global.NODE_LOG.Info("---------- Run Get Pending Transaction Number Task ----------")
 
 	// pending transaction and block

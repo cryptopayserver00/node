@@ -31,10 +31,6 @@ var (
 		"https://bsc-dataseed2.binance.org",
 		"https://bsc-dataseed3.binance.org",
 		"https://bsc-dataseed4.binance.org",
-		"https://bsc-dataseed1.defibit.io",
-		"https://bsc-dataseed2.defibit.io",
-		"https://bsc-dataseed3.defibit.io",
-		"https://bsc-dataseed4.defibit.io",
 		"https://bsc-dataseed1.ninicoin.io",
 		"https://bsc-dataseed2.ninicoin.io",
 		"https://bsc-dataseed3.ninicoin.io",
@@ -59,15 +55,11 @@ var (
 
 	OPSepoliaRPC = []string{
 		"https://sepolia.optimism.io",
-		"https://optimism-sepolia.drpc.org",
 		"https://endpoints.omniatech.io/v1/op/sepolia/public",
 	}
 
 	ArbitrumOneRPC = []string{
 		"https://arb1.arbitrum.io/rpc",
-		"https://arbitrum.llamarpc.com",
-		"https://arbitrum.meowrpc.com",
-		"https://arbitrum.drpc.org",
 		"https://arbitrum-one.publicnode.com",
 		"https://arbitrum-one-rpc.publicnode.com",
 		"https://1rpc.io/arb",
@@ -98,13 +90,10 @@ var (
 	PolTestnetRPC = []string{
 		"https://polygon-amoy-bor-rpc.publicnode.com",
 		"https://rpc-amoy.polygon.technology",
-		"https://polygon-amoy.drpc.org",
 	}
 
 	AvaxMainnetRPC = []string{
 		"https://avalanche-c-chain-rpc.publicnode.com",
-		"https://avalanche.drpc.org",
-		"https://avax.meowrpc.com",
 		"https://1rpc.io/avax/c",
 	}
 
@@ -115,14 +104,11 @@ var (
 	}
 
 	BaseMainnetRPC = []string{
-		"https://base.llamarpc.com",
 		"https://mainnet.base.org",
 		"https://developer-access-mainnet.base.org",
 		"https://1rpc.io/base",
 		"https://base-pokt.nodies.app",
-		"https://base.meowrpc.com",
 		"https://base-rpc.publicnode.com",
-		"https://base.drpc.org",
 	}
 
 	BaseSepoliaRPC = []string{
@@ -173,6 +159,14 @@ func GetAllRPCUrlByNetwork(chainId uint) []string {
 		return BaseMainnetRPC
 	case BASE_SEPOLIA:
 		return BaseSepoliaRPC
+	case SOL_MAINNET:
+		return SolanaMainnetRPC
+	case SOL_DEVNET:
+		return SolanaDevnetRpc
+	case XRP_MAINNET:
+		return XRPMainnetRPC
+	case XRP_TESTNET:
+		return XRPTestnetRPC
 	default:
 		return nil
 	}

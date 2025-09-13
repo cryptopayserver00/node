@@ -191,7 +191,7 @@ var (
 		BASE_SEPOLIA,
 	}
 
-	LikeMainnetEthChain = []uint{
+	MainnetEthChain = []uint{
 		ETH_MAINNET,
 		BSC_MAINNET,
 		ARBITRUM_ONE,
@@ -202,7 +202,7 @@ var (
 		BASE_MAINNET,
 	}
 
-	LikeTestnetEthChain = []uint{
+	TestnetEthChain = []uint{
 		ETH_SEPOLIA,
 		BSC_TESTNET,
 		ARBITRUM_SEPOLIA,
@@ -212,61 +212,60 @@ var (
 		BASE_SEPOLIA,
 	}
 
-	LikeEthChain = []uint{
-		ETH_MAINNET,
-		ETH_SEPOLIA,
-		BSC_MAINNET,
-		BSC_TESTNET,
-		ARBITRUM_ONE,
-		ARBITRUM_NOVA,
-		ARBITRUM_SEPOLIA,
-		OP_MAINNET,
-		OP_SEPOLIA,
-		POL_MAINNET,
-		POL_TESTNET,
-		AVAX_MAINNET,
-		AVAX_TESTNET,
-		BASE_MAINNET,
-		BASE_SEPOLIA,
-	}
-
-	LikeMainnetTronChain = []uint{
+	MainnetTronChain = []uint{
 		TRON_MAINNET,
 	}
 
-	LikeTestnetTronChain = []uint{
+	TestnetTronChain = []uint{
 		TRON_NILE,
 	}
 
-	LikeTronChain = []uint{
-		TRON_MAINNET,
-		TRON_NILE,
-	}
-
-	LikeMainnetBtcChain = []uint{
+	MainnetBtcChain = []uint{
 		BTC_MAINNET,
 	}
 
-	LikeTestnetBtcChain = []uint{
+	TestnetBtcChain = []uint{
 		BTC_TESTNET,
 	}
 
-	LikeBtcChain = []uint{
-		BTC_MAINNET,
-		BTC_TESTNET,
-	}
-
-	LikeMainnetLtcChain = []uint{
+	MainnetLtcChain = []uint{
 		LTC_MAINNET,
 	}
 
-	LikeTestnetLtcChain = []uint{
+	TestnetLtcChain = []uint{
 		LTC_TESTNET,
 	}
 
-	LikeLtcChain = []uint{
-		LTC_MAINNET,
-		LTC_TESTNET,
+	MainnetSolChain = []uint{
+		SOL_MAINNET,
+	}
+
+	TestnetSolChain = []uint{
+		SOL_DEVNET,
+	}
+
+	MainnetTonChain = []uint{
+		TON_MAINNET,
+	}
+
+	TestnetTonChain = []uint{
+		TON_TESTNET,
+	}
+
+	MainnetXrpChain = []uint{
+		XRP_MAINNET,
+	}
+
+	TestnetXrpChain = []uint{
+		XRP_TESTNET,
+	}
+
+	MainnetBchChain = []uint{
+		BCH_MAINNET,
+	}
+
+	TestnetBchChain = []uint{
+		BCH_TESTNET,
 	}
 
 	MainnetChain = []uint{
@@ -321,46 +320,6 @@ func IsMainnetSupport(chainId uint) bool {
 
 func IsTestnetSupport(chainId uint) bool {
 	for _, v := range TestnetChain {
-		if chainId == v {
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsNetworkLikeEth(chainId uint) bool {
-	for _, v := range LikeEthChain {
-		if chainId == v {
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsNetworkLikeTron(chainId uint) bool {
-	for _, v := range LikeTronChain {
-		if chainId == v {
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsNetworkLikeBtc(chainId uint) bool {
-	for _, v := range LikeBtcChain {
-		if chainId == v {
-			return true
-		}
-	}
-
-	return false
-}
-
-func IsNetworkLikeLtc(chainId uint) bool {
-	for _, v := range LikeLtcChain {
 		if chainId == v {
 			return true
 		}
