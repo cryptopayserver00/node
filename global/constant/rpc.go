@@ -270,7 +270,16 @@ func GetRealRpcByArray(rpcs []string) string {
 
 func GetRPCUrlByNetwork(chainId uint) string {
 	switch chainId {
-	case ETH_MAINNET, ETH_SEPOLIA, BSC_MAINNET, BSC_TESTNET, OP_MAINNET, OP_SEPOLIA, ARBITRUM_ONE, ARBITRUM_NOVA, ARBITRUM_SEPOLIA, SOL_MAINNET, SOL_DEVNET, POL_MAINNET, POL_TESTNET, AVAX_MAINNET, AVAX_TESTNET, BASE_MAINNET, BASE_SEPOLIA:
+	case ETH_MAINNET:
+		index := rand.IntN(len(ETHMainnetRPC))
+		return ETHMainnetRPC[index]
+	case POL_MAINNET:
+		index := rand.IntN(len(PolMainnetRPC))
+		return PolMainnetRPC[index]
+	case BSC_MAINNET:
+		index := rand.IntN(len(BSCMainnetRPC))
+		return BSCMainnetRPC[index]
+	case ETH_SEPOLIA, BSC_TESTNET, OP_MAINNET, OP_SEPOLIA, ARBITRUM_ONE, ARBITRUM_NOVA, ARBITRUM_SEPOLIA, SOL_MAINNET, SOL_DEVNET, POL_TESTNET, AVAX_MAINNET, AVAX_TESTNET, BASE_MAINNET, BASE_SEPOLIA:
 		return GetAlchemyRPCUrlByNetwork(chainId)
 	case XRP_MAINNET:
 		index := rand.IntN(len(XRPMainnetRPC))
