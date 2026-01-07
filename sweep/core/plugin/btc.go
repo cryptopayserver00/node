@@ -298,13 +298,6 @@ func HandleBtcTransactionDetailsByTatum(
 		return
 	}
 
-	for _, input := range bitcoinTxResponse.Inputs {
-		if input.Coin.Address != "" {
-			notifyRequest.FromAddress = input.Coin.Address
-			continue
-		}
-	}
-
 	var isOnmiUSDT bool
 	var onmiData map[string]int
 
@@ -317,76 +310,82 @@ func HandleBtcTransactionDetailsByTatum(
 		}
 	}
 
-	if isOnmiUSDT {
-		// omni
-		notifyRequest.Token = "USDT"
-		notifyRequest.Amount = strconv.Itoa(onmiData["token_amount"])
+	for _, input := range bitcoinTxResponse.Inputs {
+		if input.Coin.Address != "" {
+			notifyRequest.FromAddress = input.Coin.Address
 
-		for _, omniOutput := range bitcoinTxResponse.Outputs {
-			if strings.EqualFold(omniOutput.Address, notifyRequest.FromAddress) || omniOutput.Value == 0 || omniOutput.Address == "" {
-				continue
-			}
-			notifyRequest.ToAddress = omniOutput.Address
-		}
+			if isOnmiUSDT {
+				// omni
+				notifyRequest.Token = "USDT"
+				notifyRequest.Amount = strconv.Itoa(onmiData["token_amount"])
 
-		for _, v := range *publicKey {
-			notifyRequest.Address = v
-
-			if strings.EqualFold(notifyRequest.FromAddress, v) {
-				notifyRequest.TransactType = "send"
-
-				err = notification.NotificationRequest(notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return
-				}
-				isProcess = true
-			}
-
-			if strings.EqualFold(notifyRequest.ToAddress, v) {
-				notifyRequest.TransactType = "receive"
-
-				err = notification.NotificationRequest(notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return
-				}
-				isProcess = true
-			}
-		}
-
-	} else {
-		notifyRequest.Token = contractName
-		for _, output := range bitcoinTxResponse.Outputs {
-			if strings.EqualFold(output.Address, notifyRequest.FromAddress) {
-				continue
-			}
-
-			notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
-			for _, v := range *publicKey {
-				notifyRequest.Address = v
-				notifyRequest.ToAddress = output.Address
-
-				if strings.EqualFold(notifyRequest.FromAddress, v) {
-					notifyRequest.TransactType = "send"
-
-					err = notification.NotificationRequest(notifyRequest)
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						return
+				for _, omniOutput := range bitcoinTxResponse.Outputs {
+					if strings.EqualFold(omniOutput.Address, notifyRequest.FromAddress) || omniOutput.Value == 0 || omniOutput.Address == "" {
+						continue
 					}
-					isProcess = true
+					notifyRequest.ToAddress = omniOutput.Address
 				}
 
-				if strings.EqualFold(output.Address, v) {
-					notifyRequest.TransactType = "receive"
+				for _, v := range *publicKey {
+					notifyRequest.Address = v
 
-					err = notification.NotificationRequest(notifyRequest)
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						return
+					if strings.EqualFold(notifyRequest.FromAddress, v) {
+						notifyRequest.TransactType = "send"
+
+						err = notification.NotificationRequest(notifyRequest)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+						isProcess = true
 					}
-					isProcess = true
+
+					if strings.EqualFold(notifyRequest.ToAddress, v) {
+						notifyRequest.TransactType = "receive"
+
+						err = notification.NotificationRequest(notifyRequest)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+						isProcess = true
+					}
+				}
+
+			} else {
+				notifyRequest.Token = contractName
+				for _, output := range bitcoinTxResponse.Outputs {
+					if strings.EqualFold(output.Address, notifyRequest.FromAddress) {
+						continue
+					}
+
+					notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
+					for _, v := range *publicKey {
+						notifyRequest.Address = v
+						notifyRequest.ToAddress = output.Address
+
+						if strings.EqualFold(notifyRequest.FromAddress, v) {
+							notifyRequest.TransactType = "send"
+
+							err = notification.NotificationRequest(notifyRequest)
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								return
+							}
+							isProcess = true
+						}
+
+						if strings.EqualFold(output.Address, v) {
+							notifyRequest.TransactType = "receive"
+
+							err = notification.NotificationRequest(notifyRequest)
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								return
+							}
+							isProcess = true
+						}
+					}
 				}
 			}
 		}
@@ -439,13 +438,6 @@ func HandleBtcTransactionDetailsByMempool(
 		return
 	}
 
-	for _, input := range bitcoinTxResponse.Vin {
-		if input.Prevout.Scriptpubkey_address != "" {
-			notifyRequest.FromAddress = input.Prevout.Scriptpubkey_address
-			continue
-		}
-	}
-
 	var isOnmiUSDT bool
 	var onmiData map[string]int
 
@@ -458,76 +450,82 @@ func HandleBtcTransactionDetailsByMempool(
 		}
 	}
 
-	if isOnmiUSDT {
-		// omni
-		notifyRequest.Token = "USDT"
-		notifyRequest.Amount = strconv.Itoa(onmiData["token_amount"])
+	for _, input := range bitcoinTxResponse.Vin {
+		if input.Prevout.Scriptpubkey_address != "" {
+			notifyRequest.FromAddress = input.Prevout.Scriptpubkey_address
 
-		for _, omniOutput := range bitcoinTxResponse.Vout {
-			if strings.EqualFold(omniOutput.Scriptpubkey_address, notifyRequest.FromAddress) || omniOutput.Value == 0 || omniOutput.Scriptpubkey_address == "" {
-				continue
-			}
-			notifyRequest.ToAddress = omniOutput.Scriptpubkey_address
-		}
+			if isOnmiUSDT {
+				// omni
+				notifyRequest.Token = "USDT"
+				notifyRequest.Amount = strconv.Itoa(onmiData["token_amount"])
 
-		for _, v := range *publicKey {
-			notifyRequest.Address = v
-
-			if strings.EqualFold(notifyRequest.FromAddress, v) {
-				notifyRequest.TransactType = "send"
-
-				err = notification.NotificationRequest(notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return
-				}
-				isProcess = true
-			}
-
-			if strings.EqualFold(notifyRequest.ToAddress, v) {
-				notifyRequest.TransactType = "receive"
-
-				err = notification.NotificationRequest(notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return
-				}
-				isProcess = true
-			}
-		}
-
-	} else {
-		notifyRequest.Token = contractName
-		for _, output := range bitcoinTxResponse.Vout {
-			if strings.EqualFold(output.Scriptpubkey_address, notifyRequest.FromAddress) {
-				continue
-			}
-
-			notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
-			for _, v := range *publicKey {
-				notifyRequest.Address = v
-				notifyRequest.ToAddress = output.Scriptpubkey_address
-
-				if strings.EqualFold(notifyRequest.FromAddress, v) {
-					notifyRequest.TransactType = "send"
-
-					err = notification.NotificationRequest(notifyRequest)
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						return
+				for _, omniOutput := range bitcoinTxResponse.Vout {
+					if strings.EqualFold(omniOutput.Scriptpubkey_address, notifyRequest.FromAddress) || omniOutput.Value == 0 || omniOutput.Scriptpubkey_address == "" {
+						continue
 					}
-					isProcess = true
+					notifyRequest.ToAddress = omniOutput.Scriptpubkey_address
 				}
 
-				if strings.EqualFold(output.Scriptpubkey_address, v) {
-					notifyRequest.TransactType = "receive"
+				for _, v := range *publicKey {
+					notifyRequest.Address = v
 
-					err = notification.NotificationRequest(notifyRequest)
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						return
+					if strings.EqualFold(notifyRequest.FromAddress, v) {
+						notifyRequest.TransactType = "send"
+
+						err = notification.NotificationRequest(notifyRequest)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+						isProcess = true
 					}
-					isProcess = true
+
+					if strings.EqualFold(notifyRequest.ToAddress, v) {
+						notifyRequest.TransactType = "receive"
+
+						err = notification.NotificationRequest(notifyRequest)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+						isProcess = true
+					}
+				}
+
+			} else {
+				notifyRequest.Token = contractName
+				for _, output := range bitcoinTxResponse.Vout {
+					if strings.EqualFold(output.Scriptpubkey_address, notifyRequest.FromAddress) {
+						continue
+					}
+
+					notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
+					for _, v := range *publicKey {
+						notifyRequest.Address = v
+						notifyRequest.ToAddress = output.Scriptpubkey_address
+
+						if strings.EqualFold(notifyRequest.FromAddress, v) {
+							notifyRequest.TransactType = "send"
+
+							err = notification.NotificationRequest(notifyRequest)
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								return
+							}
+							isProcess = true
+						}
+
+						if strings.EqualFold(output.Scriptpubkey_address, v) {
+							notifyRequest.TransactType = "receive"
+
+							err = notification.NotificationRequest(notifyRequest)
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								return
+							}
+							isProcess = true
+						}
+					}
 				}
 			}
 		}

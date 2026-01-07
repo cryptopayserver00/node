@@ -303,40 +303,39 @@ func HandleLtcTransactionDetailsByTatum(
 	for _, input := range litecoinTxResponse.Inputs {
 		if input.Coin.Address != "" {
 			notifyRequest.FromAddress = input.Coin.Address
-			continue
-		}
-	}
 
-	for _, output := range litecoinTxResponse.Outputs {
-		if strings.EqualFold(output.Address, notifyRequest.FromAddress) {
-			continue
-		}
-
-		notifyRequest.Amount = output.Value
-		for _, v := range *publicKey {
-			notifyRequest.Address = v
-			notifyRequest.ToAddress = output.Address
-
-			if strings.EqualFold(notifyRequest.FromAddress, v) {
-				notifyRequest.TransactType = "send"
-
-				err = notification.NotificationRequest(notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return
+			for _, output := range litecoinTxResponse.Outputs {
+				if strings.EqualFold(output.Address, notifyRequest.FromAddress) {
+					continue
 				}
-				isProcess = true
-			}
 
-			if strings.EqualFold(output.Address, v) {
-				notifyRequest.TransactType = "receive"
+				notifyRequest.Amount = output.Value
+				for _, v := range *publicKey {
+					notifyRequest.Address = v
+					notifyRequest.ToAddress = output.Address
 
-				err = notification.NotificationRequest(notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return
+					if strings.EqualFold(notifyRequest.FromAddress, v) {
+						notifyRequest.TransactType = "send"
+
+						err = notification.NotificationRequest(notifyRequest)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+						isProcess = true
+					}
+
+					if strings.EqualFold(output.Address, v) {
+						notifyRequest.TransactType = "receive"
+
+						err = notification.NotificationRequest(notifyRequest)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+						isProcess = true
+					}
 				}
-				isProcess = true
 			}
 		}
 	}
@@ -391,43 +390,42 @@ func HandleLtcTransactionDetailsByMempool(
 	for _, input := range litecoinTxResponse.Vin {
 		if input.Prevout.Scriptpubkey_address != "" {
 			notifyRequest.FromAddress = input.Prevout.Scriptpubkey_address
-			continue
-		}
-	}
 
-	for _, output := range litecoinTxResponse.Vout {
-		if strings.EqualFold(output.Scriptpubkey_address, notifyRequest.FromAddress) {
-			continue
-		}
-
-		notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
-		for _, v := range *publicKey {
-			notifyRequest.Address = v
-			notifyRequest.ToAddress = output.Scriptpubkey_address
-
-			if strings.EqualFold(notifyRequest.FromAddress, v) {
-				notifyRequest.TransactType = "send"
-
-				err = notification.NotificationRequest(notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return
+			for _, output := range litecoinTxResponse.Vout {
+				if strings.EqualFold(output.Scriptpubkey_address, notifyRequest.FromAddress) {
+					continue
 				}
-				isProcess = true
-			}
 
-			if strings.EqualFold(output.Scriptpubkey_address, v) {
-				notifyRequest.TransactType = "receive"
+				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
+				for _, v := range *publicKey {
+					notifyRequest.Address = v
+					notifyRequest.ToAddress = output.Scriptpubkey_address
 
-				err = notification.NotificationRequest(notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return
+					if strings.EqualFold(notifyRequest.FromAddress, v) {
+						notifyRequest.TransactType = "send"
+
+						err = notification.NotificationRequest(notifyRequest)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+						isProcess = true
+					}
+
+					if strings.EqualFold(output.Scriptpubkey_address, v) {
+						notifyRequest.TransactType = "receive"
+
+						err = notification.NotificationRequest(notifyRequest)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+						isProcess = true
+					}
 				}
-				isProcess = true
+
 			}
 		}
-
 	}
 
 	if isProcess {

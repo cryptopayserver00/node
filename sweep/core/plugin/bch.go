@@ -183,13 +183,6 @@ func HandleBchTransactionDetailsByMempool(
 		return
 	}
 
-	for _, input := range bitcoincashTxResponse.Vin {
-		if input.Prevout.Scriptpubkey_address != "" {
-			notifyRequest.FromAddress = input.Prevout.Scriptpubkey_address
-			continue
-		}
-	}
-
 	var isOnmiUSDT bool
 	var onmiData map[string]int
 
@@ -202,76 +195,82 @@ func HandleBchTransactionDetailsByMempool(
 		}
 	}
 
-	if isOnmiUSDT {
-		// omni
-		notifyRequest.Token = "USDT"
-		notifyRequest.Amount = strconv.Itoa(onmiData["token_amount"])
+	for _, input := range bitcoincashTxResponse.Vin {
+		if input.Prevout.Scriptpubkey_address != "" {
+			notifyRequest.FromAddress = input.Prevout.Scriptpubkey_address
 
-		for _, omniOutput := range bitcoincashTxResponse.Vout {
-			if strings.EqualFold(omniOutput.Scriptpubkey_address, notifyRequest.FromAddress) || omniOutput.Value == 0 || omniOutput.Scriptpubkey_address == "" {
-				continue
-			}
-			notifyRequest.ToAddress = omniOutput.Scriptpubkey_address
-		}
+			if isOnmiUSDT {
+				// omni
+				notifyRequest.Token = "USDT"
+				notifyRequest.Amount = strconv.Itoa(onmiData["token_amount"])
 
-		for _, v := range *publicKey {
-			notifyRequest.Address = v
-
-			if strings.EqualFold(notifyRequest.FromAddress, v) {
-				notifyRequest.TransactType = "send"
-
-				err = notification.NotificationRequest(notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return
-				}
-				isProcess = true
-			}
-
-			if strings.EqualFold(notifyRequest.ToAddress, v) {
-				notifyRequest.TransactType = "receive"
-
-				err = notification.NotificationRequest(notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return
-				}
-				isProcess = true
-			}
-		}
-
-	} else {
-		notifyRequest.Token = contractName
-		for _, output := range bitcoincashTxResponse.Vout {
-			if strings.EqualFold(output.Scriptpubkey_address, notifyRequest.FromAddress) {
-				continue
-			}
-
-			notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
-			for _, v := range *publicKey {
-				notifyRequest.Address = v
-				notifyRequest.ToAddress = output.Scriptpubkey_address
-
-				if strings.EqualFold(notifyRequest.FromAddress, v) {
-					notifyRequest.TransactType = "send"
-
-					err = notification.NotificationRequest(notifyRequest)
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						return
+				for _, omniOutput := range bitcoincashTxResponse.Vout {
+					if strings.EqualFold(omniOutput.Scriptpubkey_address, notifyRequest.FromAddress) || omniOutput.Value == 0 || omniOutput.Scriptpubkey_address == "" {
+						continue
 					}
-					isProcess = true
+					notifyRequest.ToAddress = omniOutput.Scriptpubkey_address
 				}
 
-				if strings.EqualFold(output.Scriptpubkey_address, v) {
-					notifyRequest.TransactType = "receive"
+				for _, v := range *publicKey {
+					notifyRequest.Address = v
 
-					err = notification.NotificationRequest(notifyRequest)
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						return
+					if strings.EqualFold(notifyRequest.FromAddress, v) {
+						notifyRequest.TransactType = "send"
+
+						err = notification.NotificationRequest(notifyRequest)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+						isProcess = true
 					}
-					isProcess = true
+
+					if strings.EqualFold(notifyRequest.ToAddress, v) {
+						notifyRequest.TransactType = "receive"
+
+						err = notification.NotificationRequest(notifyRequest)
+						if err != nil {
+							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+							return
+						}
+						isProcess = true
+					}
+				}
+
+			} else {
+				notifyRequest.Token = contractName
+				for _, output := range bitcoincashTxResponse.Vout {
+					if strings.EqualFold(output.Scriptpubkey_address, notifyRequest.FromAddress) {
+						continue
+					}
+
+					notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
+					for _, v := range *publicKey {
+						notifyRequest.Address = v
+						notifyRequest.ToAddress = output.Scriptpubkey_address
+
+						if strings.EqualFold(notifyRequest.FromAddress, v) {
+							notifyRequest.TransactType = "send"
+
+							err = notification.NotificationRequest(notifyRequest)
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								return
+							}
+							isProcess = true
+						}
+
+						if strings.EqualFold(output.Scriptpubkey_address, v) {
+							notifyRequest.TransactType = "receive"
+
+							err = notification.NotificationRequest(notifyRequest)
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								return
+							}
+							isProcess = true
+						}
+					}
 				}
 			}
 		}
