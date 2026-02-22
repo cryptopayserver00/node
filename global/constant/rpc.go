@@ -83,7 +83,7 @@ var (
 
 	PolMainnetRPC = []string{
 		"https://polygon-bor-rpc.publicnode.com",
-		"https://polygon-pokt.nodies.app",
+		// "https://polygon-pokt.nodies.app",
 		// "https://1rpc.io/matic",
 	}
 
