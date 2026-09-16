@@ -7,8 +7,6 @@ services:
     volumes:
       - ./config.yaml:/app/config.yaml:ro
     depends_on:
-      mysql:
-        condition: service_healthy
       redis:
         condition: service_started
       memcached:
@@ -41,7 +39,6 @@ services:
       retries: 5
 
 volumes:
-  mysql_data:
   redis_data:
 
 networks:
