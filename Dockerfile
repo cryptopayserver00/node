@@ -1,25 +1,38 @@
-FROM golang:1.25.7-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
-WORKDIR /app
+WORKDIR /build
 
-# 下载依赖
 COPY go.mod go.sum ./
 RUN go mod download
 
-# 复制源码构建
 COPY . .
-RUN go build -o main .
 
-# 运行阶段
-FROM alpine:latest AS runner
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -ldflags="-s -w" -o /build/app ./main.go
+
+FROM alpine:3.20 AS runner
+
+RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
 
-# 从构建阶段复制二进制
-COPY --from=builder /app/main .
+COPY --from=builder /build/app /app/app
 
-# 复制配置文件
-COPY config.yaml .
+COPY json /app/json
+
+RUN mkdir -p /app/log
+
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup && \
+    chown -R appuser:appgroup /app
+
+USER appuser
 
 EXPOSE 8080
-CMD ["./main"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
+
+ENTRYPOINT ["/app/app"]
