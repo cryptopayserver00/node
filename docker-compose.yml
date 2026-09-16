@@ -14,7 +14,7 @@ services:
       memcached:
         condition: service_started
     networks:
-      - app-network
+      - shared-network
 
   mysql:
     image: mysql:8.0
@@ -33,7 +33,7 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - app-network
+      - shared-network
 
   redis:
     image: redis:7-alpine
@@ -46,13 +46,13 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - app-network
+      - shared-network
   
   memcached:
     image: memcached:1.6-alpine
     restart: always
     networks:
-      - app-network
+      - shared-network
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "11211"]
       interval: 10s
@@ -64,5 +64,5 @@ volumes:
   redis_data:
 
 networks:
-  app-network:
-    driver: bridge
+  shared-network:
+    external: true
