@@ -20,8 +20,6 @@ WORKDIR /app
 
 COPY --from=builder /build/app /app/app
 
-COPY json /app/json
-
 RUN mkdir -p /app/log
 
 RUN addgroup -g 1001 -S appgroup && \
