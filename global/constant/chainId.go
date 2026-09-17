@@ -7,16 +7,18 @@ import (
 	NODE_Client "node/utils/http"
 	"strings"
 
+	"golang.org/x/crypto/sha3"
+
+	xrpCodec "github.com/Peersyst/xrpl-go/address-codec"
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/base58"
+	"github.com/btcsuite/btcd/btcutil/bech32"
 	btcCfg "github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gagliardetto/solana-go"
 	bchCfg "github.com/gcash/bchd/chaincfg"
 	"github.com/gcash/bchutil"
 
-	// ltcCfg "github.com/ltcsuite/ltcd/chaincfg"
-	// "github.com/ltcsuite/ltcd/ltcutil"
-	"github.com/xrpscan/xrpl-go"
 	tonAddress "github.com/xssnick/tonutils-go/address"
 )
 
@@ -349,41 +351,25 @@ func IsAddressSupport(chainId uint, address string) bool {
 		AVAX_TESTNET,
 		BASE_MAINNET,
 		BASE_SEPOLIA:
-		return common.IsHexAddress(address)
+		return IsValidEIP55Address(address)
 	case BTC_MAINNET:
-		_, err := btcutil.DecodeAddress(address, &btcCfg.MainNetParams)
+		addr, err := btcutil.DecodeAddress(address, &btcCfg.MainNetParams)
 		if err != nil {
 			return false
 		}
-		return true
+		return addr.IsForNet(&btcCfg.MainNetParams)
 	case BTC_TESTNET:
-		_, err := btcutil.DecodeAddress(address, &btcCfg.TestNet3Params)
+		addr, err := btcutil.DecodeAddress(address, &btcCfg.TestNet3Params)
 		if err != nil {
 			return false
 		}
-		return true
-	// case LTC_MAINNET:
-	// 	_, err := ltcutil.DecodeAddress(address, &ltcCfg.MainNetParams)
-	// 	if err != nil {
-	// 		return false
-	// 	}
-	// 	return true
-	// case LTC_TESTNET:
-	// 	_, err := ltcutil.DecodeAddress(address, &ltcCfg.TestNet4Params)
-	// 	if err != nil {
-	// 		return false
-	// 	}
-	// 	return true
+		return addr.IsForNet(&btcCfg.TestNet3Params)
+	case LTC_MAINNET, LTC_TESTNET:
+		return LtcValidateAddress(chainId, address)
 	case TRON_MAINNET, TRON_NILE:
-		resultVal, _ := TronValidateAddress(chainId, address)
-		return resultVal
+		return TronValidateAddress(address)
 	case SOL_MAINNET, SOL_DEVNET:
-		_, err := solana.PublicKeyFromBase58(address)
-		if err != nil {
-			return false
-		}
-
-		return true
+		return SolValidateAddress(address)
 	case TON_MAINNET, TON_TESTNET:
 		resultVal, err := tonAddress.ParseAddr(address)
 		if err != nil {
@@ -394,19 +380,9 @@ func IsAddressSupport(chainId uint, address string) bool {
 		}
 		return false
 	case XRP_MAINNET, XRP_TESTNET:
-		return XrpValidateAddress(address)
-	case BCH_MAINNET:
-		_, err := bchutil.DecodeAddress(address, &bchCfg.MainNetParams)
-		if err != nil {
-			return false
-		}
-		return true
-	case BCH_TESTNET:
-		_, err := bchutil.DecodeAddress(address, &bchCfg.TestNet3Params)
-		if err != nil {
-			return false
-		}
-		return true
+		return xrpCodec.IsValidAddress(address)
+	case BCH_MAINNET, BCH_TESTNET:
+		return BchValidateAddress(chainId, address)
 	}
 
 	return false
@@ -482,50 +458,40 @@ func GetChainName(chainId uint) string {
 	return ChainId[chainId]
 }
 
-func AddressToLower(chainId uint, address string) string {
-	if !IsNetworkSupport(chainId) {
-		return ""
+// func TronValidateAddress(chainId uint, address string) (bool, string) {
+// 	client.URL = TronValidateAddressByNetwork(chainId)
+// 	client.Headers = map[string]string{
+// 		"TRON-PRO-API-KEY": GetRandomHTTPKeyByNetwork(chainId),
+// 	}
+
+// 	var addressRequest request.TronValidateAddressRequest
+// 	addressRequest.Address = address
+// 	addressRequest.Visible = true
+// 	var addressResponse response.TronValidateAddressResponse
+// 	err := client.HTTPPost(addressRequest, &addressResponse)
+// 	if err != nil {
+// 		global.NODE_LOG.Error(err.Error())
+// 		return false, ""
+// 	}
+
+// 	return addressResponse.Result, addressResponse.Message
+// }
+
+// TronValidateAddress 校验波场地址(Base58Check，版本前缀 0x41）
+func TronValidateAddress(address string) bool {
+	if len(address) != 34 || address[0] != 'T' {
+		return false
 	}
 
-	switch chainId {
-	case ETH_MAINNET,
-		ETH_SEPOLIA,
-		BSC_MAINNET,
-		BSC_TESTNET,
-		ARBITRUM_ONE,
-		ARBITRUM_NOVA,
-		ARBITRUM_SEPOLIA,
-		OP_MAINNET,
-		OP_SEPOLIA,
-		POL_MAINNET,
-		POL_TESTNET,
-		AVAX_MAINNET,
-		AVAX_TESTNET,
-		BASE_MAINNET,
-		BASE_SEPOLIA:
-		return strings.ToLower(address)
-	}
-
-	return address
-}
-
-func TronValidateAddress(chainId uint, address string) (bool, string) {
-	client.URL = TronValidateAddressByNetwork(chainId)
-	client.Headers = map[string]string{
-		"TRON-PRO-API-KEY": GetRandomHTTPKeyByNetwork(chainId),
-	}
-
-	var addressRequest request.TronValidateAddressRequest
-	addressRequest.Address = address
-	addressRequest.Visible = true
-	var addressResponse response.TronValidateAddressResponse
-	err := client.HTTPPost(addressRequest, &addressResponse)
+	decoded, version, err := base58.CheckDecode(address)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return false, ""
+		return false
 	}
-
-	return addressResponse.Result, addressResponse.Message
+	// payload 应为 20 字节地址体，version 应为 0x41
+	if version != 0x41 || len(decoded) != 20 {
+		return false
+	}
+	return true
 }
 
 func TronValidateContratAddress(chainId uint, address string) (bool, string) {
@@ -569,26 +535,99 @@ func TronValidateContratAddress(chainId uint, address string) (bool, string) {
 // 	}
 // }
 
-func XrpValidateAddress(address string) bool {
-	config := xrpl.ClientConfig{
-		URL: "wss://s.altnet.rippletest.net:51233",
+// LtcValidateAddress 校验莱特币地址（Legacy P2PKH/P2SH + Bech32）
+func LtcValidateAddress(chainId uint, address string) bool {
+	if address == "" {
+		return false
 	}
-	client := xrpl.NewClient(config)
-	err := client.Ping([]byte("PING"))
+
+	// 1. 优先尝试 Bech32（原生隔离见证地址，ltc1.../tltc1...）
+	hrp, _, err := bech32.Decode(address)
+	if err == nil {
+		if chainId == LTC_TESTNET {
+			return hrp == "tltc"
+		}
+		return hrp == "ltc"
+	}
+
+	// 2. 回退到 Base58Check（Legacy 地址）
+	decoded, version, err := base58.CheckDecode(address)
 	if err != nil {
 		return false
 	}
 
-	request := xrpl.BaseRequest{
-		"command":      "account_info",
-		"account":      address,
-		"ledger_index": "validated",
+	// P2PKH/P2SH payload 应为 20 字节（RIPEMD160 长度）
+	if len(decoded) != 20 {
+		return false
 	}
 
-	response, err := client.Request(request)
-	if err == nil && response["status"] == "success" {
-		return true
+	if chainId == LTC_TESTNET {
+		return version == 0x6f || version == 0xc4
+	}
+	return version == 0x30 || version == 0x32 || version == 0x05
+}
+
+// IsValidEIP55Address 在格式合法的基础上，如果地址包含大小写混合，则额外校验 EIP-55 校验和；
+// 全小写或全大写地址被视为“未使用校验和”，直接放行（这是行业惯例，兼容旧钱包/交易所导出的地址）。
+func IsValidEIP55Address(address string) bool {
+	if !common.IsHexAddress(address) {
+		return false
 	}
 
-	return false
+	addr := address[2:] // 去掉 0x
+	if addr == strings.ToLower(addr) || addr == strings.ToUpper(addr) {
+		return true // 全小写/全大写，不强制要求校验和
+	}
+
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write([]byte(strings.ToLower(addr)))
+	hashBytes := hash.Sum(nil)
+
+	for i := 0; i < len(addr); i++ {
+		c := addr[i]
+		hashByte := hashBytes[i/2]
+		var hashBit byte
+		if i%2 == 0 {
+			hashBit = hashByte >> 4
+		} else {
+			hashBit = hashByte & 0x0f
+		}
+
+		// hashBit >= 8 时该位应为大写；hashBit < 8 时该位应为小写
+		if c >= 'a' && c <= 'f' && hashBit >= 8 {
+			return false // hash位要求大写，但地址里是小写
+		}
+		if c >= 'A' && c <= 'F' && hashBit < 8 {
+			return false // hash位要求小写，但地址里是大写
+		}
+	}
+	return true
+}
+
+func SolValidateAddress(address string) bool {
+	pubkey, err := solana.PublicKeyFromBase58(address)
+	if err != nil {
+		return false
+	}
+	// Solana 公钥固定 32 字节，双重保险
+	return len(pubkey.Bytes()) == 32
+}
+
+func BchValidateAddress(chainId uint, address string) bool {
+	params := &bchCfg.MainNetParams
+	if chainId == BCH_TESTNET {
+		params = &bchCfg.TestNet3Params
+	}
+
+	// 去掉可能带的 "bitcoincash:" / "bchtest:" 前缀，交给库内部统一解析
+	addr := address
+	if idx := strings.Index(address, ":"); idx != -1 {
+		addr = address[idx+1:]
+	}
+
+	decodeAddr, err := bchutil.DecodeAddress(addr, params)
+	if err != nil {
+		return false
+	}
+	return decodeAddr.IsForNet(params)
 }

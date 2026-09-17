@@ -18,43 +18,30 @@ import (
 	"sync"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-	"github.com/xrpscan/xrpl-go"
-
 	sweepUtils "node/sweep/utils"
+
+	"github.com/Peersyst/xrpl-go/xrpl/rpc"
+	"github.com/redis/go-redis/v9"
 )
 
 func SetupXrpLatestBlockHeight(chainId uint) {
-	config := xrpl.ClientConfig{
-		URL: constant.XrpWsByNetwork(chainId),
-	}
-	client := xrpl.NewClient(config)
-	err := client.Ping([]byte("PING"))
+	config, err := rpc.NewClientConfig(
+		constant.XrpWsByNetwork(chainId),
+	)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 		return
 	}
 
-	request := xrpl.BaseRequest{
-		"id":      2,
-		"command": "ledger_current",
+	client := rpc.NewClient(config)
+	ledgerIndex, err := client.GetLedgerIndex()
+	if err != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		return
 	}
 
-	xrpResponse, err := client.Request(request)
-	if err == nil && xrpResponse["status"] == "success" {
-		result, ok := xrpResponse["result"].(map[string]any)
-		if !ok {
-			return
-		}
-
-		ledgerIndex, ok := result["ledger_current_index"].(float64)
-		if !ok {
-			return
-		}
-
-		if ledgerIndex > 0 {
-			setup.SetupLatestBlockHeight(context.Background(), chainId, int64(ledgerIndex))
-		}
+	if int64(ledgerIndex) > 0 {
+		setup.SetupLatestBlockHeight(context.Background(), chainId, int64(ledgerIndex))
 	}
 }
 

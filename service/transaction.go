@@ -7,8 +7,6 @@ import (
 	"node/model"
 	"node/model/node/request"
 	"strings"
-
-	"gorm.io/gorm"
 )
 
 func (n *NService) SaveOwnTx(request request.NotificationRequest) (id uint, err error) {
@@ -45,22 +43,15 @@ func (n *NService) SaveOwnTx(request request.NotificationRequest) (id uint, err 
 }
 
 func (n *NService) HasOwnTxByNotificationObj(request request.NotificationRequest) (hasWallet bool, err error) {
-	var findOwnTx model.OwnTransaction
+	var count int64
 
-	err = global.NODE_DB.Where("chain_id = ? AND hash = ? AND address = ? AND from_address = ? AND to_address = ? AND token = ? AND transact_type = ? AND amount = ? AND block_timestamp = ?",
-		request.Chain, request.Hash, request.Address, request.FromAddress, request.ToAddress, request.Token, request.TransactType, request.Amount, request.BlockTimestamp).First(&findOwnTx).Error
+	err = global.NODE_DB.Model(&model.OwnTransaction{}).Where("chain_id = ? AND hash = ? AND address = ? AND from_address = ? AND to_address = ? AND token = ? AND transact_type = ? AND amount = ? AND block_timestamp = ?",
+		request.Chain, request.Hash, request.Address, request.FromAddress, request.ToAddress, request.Token, request.TransactType, request.Amount, request.BlockTimestamp).Count(&count).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
 		return false, err
 	}
 
-	if findOwnTx.ID > 0 {
-		return true, nil
-	}
-
-	return false, nil
+	return count > 0, nil
 }
 
 func (n *NService) GetOwnTxById(id string) (findOwnTx model.OwnTransaction, err error) {

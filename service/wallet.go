@@ -10,8 +10,6 @@ import (
 	"node/model/node/request"
 	"node/model/node/response"
 	"node/sweep/setup"
-
-	"gorm.io/gorm"
 )
 
 func (n *NService) BulkStorageUserWallets(wallets request.BulkStoreUserWallet) (errWalletResponses response.BulkStoreUserWalletResponse, err error) {
@@ -41,30 +39,21 @@ func (n *NService) StoreUserWallet(wallet request.StoreUserWallet) (err error) {
 	return n.saveWallet(wallet.ChainId, wallet.Address)
 }
 
-func (n *NService) HasWalletByChainIdAndAddress(bId uint, address string) (hasWallet bool, err error) {
-	var findWallet model.Wallet
+func (n *NService) HasWalletByChainIdAndAddress(chainId uint, address string) (hasWallet bool, err error) {
+	var count int64
 
-	err = global.NODE_DB.Where("chain_id = ? AND address = ?", bId, address).First(&findWallet).Error
+	err = global.NODE_DB.Model(&model.Wallet{}).Where("chain_id = ? AND address = ?", chainId, address).Count(&count).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
 		return false, err
 	}
 
-	if findWallet.ID > 0 {
-		return true, nil
-	}
-
-	return false, nil
+	return count > 0, nil
 }
 
 func (n *NService) saveWallet(chainId uint, address string) (err error) {
 	if !constant.IsNetworkSupport(chainId) {
 		return errors.New("do not support the network")
 	}
-
-	address = constant.AddressToLower(chainId, address)
 
 	if !constant.IsAddressSupport(chainId, address) {
 		return fmt.Errorf("do not support wallet address: id: %d, address: %s", chainId, address)
