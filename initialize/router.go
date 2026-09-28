@@ -16,12 +16,17 @@ func Routers() *gin.Engine {
 	SetGinMode(global.NODE_CONFIG.System.Env)
 
 	newRouter := gin.New()
-	newRouter.Use(middleware.Cors())
+
+	newRouter.Use(
+		middleware.Recover(),
+		middleware.TraceId(),
+		middleware.Logger(),
+		middleware.CORS([]string{}),
+	)
 
 	newRouter.MaxMultipartMemory = 1 << 20
 
 	// newRouter.GET(global.NODE_CONFIG.System.RouterPrefix+"/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	// global.NODE_LOG.Info("register swagger handler")
 
 	MainRouter := new(router.MainRouter)
 

@@ -27,7 +27,7 @@ func (n *NodeApi) GetEthTransactions(c *gin.Context) {
 	rd, _ := json.Marshal(tx)
 	global.NODE_LOG.Info("GetEthTransactions: " + string(rd))
 
-	result, err := service.NodeService.GetEthTransactions(tx)
+	result, err := service.NodeService.GetEthTransactions(c, tx)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithDetailed(common.Error, err.Error(), result)

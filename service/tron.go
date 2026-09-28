@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -16,6 +17,7 @@ import (
 	"node/utils"
 
 	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/gin-gonic/gin"
 )
 
 var (
@@ -25,7 +27,7 @@ var (
 	trc20                          = "trc20"
 )
 
-func (n *NService) GetTronTransactions(req request.GetTronTransactions) ([]response.ClientTransaction, error) {
+func (n *NService) GetTronTransactions(c *gin.Context, req request.GetTronTransactions) ([]response.ClientTransaction, error) {
 
 	var values []response.ClientTransaction
 
@@ -33,7 +35,7 @@ func (n *NService) GetTronTransactions(req request.GetTronTransactions) ([]respo
 	trx.ChainId = req.ChainId
 	trx.Address = req.Address
 	// trx
-	trxTxs, err := n.GetTrxTransactions(trx)
+	trxTxs, err := n.GetTrxTransactions(c, trx)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return nil, nil
@@ -58,7 +60,7 @@ func (n *NService) GetTronTransactions(req request.GetTronTransactions) ([]respo
 
 			var trcTxs []response.ClientTransaction
 
-			trcTxs, err = n.GetTrc20Transactions(erc20)
+			trcTxs, err = n.GetTrc20Transactions(c, erc20)
 			if err != nil {
 				global.NODE_LOG.Error(err.Error())
 				continue
@@ -81,8 +83,10 @@ func (n *NService) GetTronTransactions(req request.GetTronTransactions) ([]respo
 	return values, nil
 }
 
-func (n *NService) GetTrxTransactions(req request.GetTrxTransactions) ([]response.ClientTransaction, error) {
-	if err := n.UpdateTronTransactionsByTrongrid(req); err != nil {
+func (n *NService) GetTrxTransactions(c *gin.Context, req request.GetTrxTransactions) ([]response.ClientTransaction, error) {
+	ctx := c.Request.Context()
+
+	if err := n.UpdateTronTransactionsByTrongrid(ctx, req); err != nil {
 		global.NODE_LOG.Error(err.Error())
 	}
 
@@ -103,7 +107,7 @@ func (n *NService) GetTrxTransactions(req request.GetTrxTransactions) ([]respons
 	return allTrxs, nil
 }
 
-func (n *NService) UpdateTronTransactionsByTrongrid(req request.GetTrxTransactions) (err error) {
+func (n *NService) UpdateTronTransactionsByTrongrid(ctx context.Context, req request.GetTrxTransactions) (err error) {
 	limit := 120
 	client.URL = fmt.Sprintf("%s/v1/accounts/%s/transactions?only_from=true&limit=%d&order_by=block_timestamp,desc&search_internal=false", constant.GetHttpUrlByNetwork(req.ChainId), req.Address, limit)
 	client.Headers = map[string]string{
@@ -112,7 +116,7 @@ func (n *NService) UpdateTronTransactionsByTrongrid(req request.GetTrxTransactio
 
 	var transfers []response.TronGetTxResponse
 	var fromTrxs, toTrxs response.TronTxResponse
-	err = client.HTTPGet(&fromTrxs)
+	err = client.HTTPGet(ctx, &fromTrxs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return err
@@ -123,7 +127,7 @@ func (n *NService) UpdateTronTransactionsByTrongrid(req request.GetTrxTransactio
 	// }
 
 	client.URL = fmt.Sprintf("%s/v1/accounts/%s/transactions?only_to=true&limit=%d&order_by=block_timestamp,desc&search_internal=false", constant.GetHttpUrlByNetwork(req.ChainId), req.Address, limit)
-	err = client.HTTPGet(&toTrxs)
+	err = client.HTTPGet(ctx, &toTrxs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return err
@@ -205,8 +209,10 @@ func (n *NService) DecodeTronTransaction(chainId uint, address string, tx respon
 	return
 }
 
-func (n *NService) GetTrc20Transactions(req request.GetTrc20Transactions) ([]response.ClientTransaction, error) {
-	if err := n.UpdateTrc20TransactionsByTrongrid(req); err != nil {
+func (n *NService) GetTrc20Transactions(c *gin.Context, req request.GetTrc20Transactions) ([]response.ClientTransaction, error) {
+	ctx := c.Request.Context()
+
+	if err := n.UpdateTrc20TransactionsByTrongrid(ctx, req); err != nil {
 		global.NODE_LOG.Error(err.Error())
 	}
 
@@ -238,7 +244,7 @@ func (n *NService) GetTrc20Transactions(req request.GetTrc20Transactions) ([]res
 	return allTrxs, nil
 }
 
-func (n *NService) UpdateTrc20TransactionsByTrongrid(req request.GetTrc20Transactions) (err error) {
+func (n *NService) UpdateTrc20TransactionsByTrongrid(ctx context.Context, req request.GetTrc20Transactions) (err error) {
 	limit := 120
 	client.URL = fmt.Sprintf("%s/v1/accounts/%s/transactions/trc20?only_from=true&limit=%d&contract_address=%s&search_internal=false", constant.GetHttpUrlByNetwork(req.ChainId), req.Address, limit, req.ContractAddress)
 	client.Headers = map[string]string{
@@ -247,7 +253,7 @@ func (n *NService) UpdateTrc20TransactionsByTrongrid(req request.GetTrc20Transac
 
 	var transfers []response.TronGetTrc20Response
 	var fromTrxs, toTrxs response.TronTrc20Response
-	err = client.HTTPGet(&fromTrxs)
+	err = client.HTTPGet(ctx, &fromTrxs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return err
@@ -258,7 +264,7 @@ func (n *NService) UpdateTrc20TransactionsByTrongrid(req request.GetTrc20Transac
 	// }
 
 	client.URL = fmt.Sprintf("%s/v1/accounts/%s/transactions/trc20?only_to=true&limit=%d&contract_address=%s&search_internal=false", constant.GetHttpUrlByNetwork(req.ChainId), req.Address, limit, req.ContractAddress)
-	err = client.HTTPGet(&toTrxs)
+	err = client.HTTPGet(ctx, &toTrxs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return err

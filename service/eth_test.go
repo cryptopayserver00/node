@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"node/model/node/response"
 	"testing"
 )
@@ -21,7 +22,7 @@ func TestInnerTxForEth(t *testing.T) {
 			},
 		},
 	}
-	err := client.HTTPPost(payload, &infos)
+	err := client.HTTPPost(context.Background(), payload, &infos)
 	if err != nil {
 		t.Log(err.Error())
 	}

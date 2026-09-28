@@ -9,47 +9,63 @@ import (
 )
 
 var (
-	tronSweepCount = make(map[int64]int)
+	tronBlockRetryCount = make(map[int64]int)
+	tronTxRetryCount    = make(map[string]int)
 
 	tronClient NODE_Client.Client
 )
 
-func SweepTronBlockchain() {
-	initTron()
+func SweepTronBlockchain(ctx context.Context) {
+	initTron(ctx)
 
 	go func() {
 		for {
-			SweepTronBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepTronBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepTronBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepTronBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepTronBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepTronBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initTron() {
-	core.SetupTronLatestBlockHeight(tronClient, constant.TRON_MAINNET)
+func initTron(ctx context.Context) {
+	core.SetupTronLatestBlockHeight(ctx, tronClient, constant.TRON_MAINNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.TRON_MAINNET)
+	setup.SetupCacheBlockHeight(ctx, constant.TRON_MAINNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.TRON_MAINNET)
+	setup.SetupSweepBlockHeight(ctx, constant.TRON_MAINNET)
 }
 
-func SweepTronBlockchainTransaction() {
+func SweepTronBlockchainTransaction(ctx context.Context) {
 	core.SweepTronBlockchainTransaction(
+		ctx,
 		tronClient,
 		constant.TRON_MAINNET,
 		&setup.TronPublicKey,
-		&tronSweepCount,
 		&setup.TronSweepBlockHeight,
 		&setup.TronCacheBlockHeight,
 		constant.TRON_SWEEP_BLOCK,
@@ -57,19 +73,23 @@ func SweepTronBlockchainTransaction() {
 		constant.TRON_PENDING_TRANSACTION)
 }
 
-func SweepTronBlockchainTransactionDetails() {
+func SweepTronBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepTronBlockchainTransactionDetails(
+		ctx,
 		tronClient,
 		constant.TRON_MAINNET,
 		&setup.TronPublicKey,
+		&tronTxRetryCount,
 		constant.TRON_PENDING_TRANSACTION)
 }
 
-func SweepTronBlockchainPendingBlock() {
+func SweepTronBlockchainPendingBlock(ctx context.Context) {
 	core.SweepTronBlockchainPendingBlock(
+		ctx,
 		tronClient,
 		constant.TRON_MAINNET,
 		&setup.TronPublicKey,
+		&tronBlockRetryCount,
 		constant.TRON_PENDING_BLOCK,
 		constant.TRON_PENDING_TRANSACTION)
 }

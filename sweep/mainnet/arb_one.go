@@ -9,48 +9,64 @@ import (
 )
 
 var (
-	arbitrumOneSweepCount = make(map[int64]int)
+	arbitrumOneBlockRetryCount = make(map[int64]int)
+	arbitrumOneTxRetryCount    = make(map[string]int)
 
 	arbitrumOneClient NODE_Client.Client
 )
 
-func SweepArbitrumOneBlockchain() {
+func SweepArbitrumOneBlockchain(ctx context.Context) {
 
-	initArbitrumOne()
+	initArbitrumOne(ctx)
 
 	go func() {
 		for {
-			SweepArbitrumOneBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepArbitrumOneBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepArbitrumOneBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepArbitrumOneBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepArbitrumOneBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepArbitrumNovaBlockchainTransaction(ctx)
+			}
 		}
 	}()
 }
 
-func initArbitrumOne() {
-	core.SetupLatestBlockHeight(arbitrumOneClient, constant.ARBITRUM_ONE)
+func initArbitrumOne(ctx context.Context) {
+	core.SetupLatestBlockHeight(ctx, arbitrumOneClient, constant.ARBITRUM_ONE)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.ARBITRUM_ONE)
+	setup.SetupCacheBlockHeight(ctx, constant.ARBITRUM_ONE)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.ARBITRUM_ONE)
+	setup.SetupSweepBlockHeight(ctx, constant.ARBITRUM_ONE)
 }
 
-func SweepArbitrumOneBlockchainTransaction() {
+func SweepArbitrumOneBlockchainTransaction(ctx context.Context) {
 	core.SweepBlockchainTransaction(
+		ctx,
 		arbitrumOneClient,
 		constant.ARBITRUM_ONE,
 		&setup.ArbitrumOnePublicKey,
-		&arbitrumOneSweepCount,
 		&setup.ArbitrumOneSweepBlockHeight,
 		&setup.ArbitrumOneCacheBlockHeight,
 		constant.ARBITRUM_ONE_SWEEP_BLOCK,
@@ -58,20 +74,23 @@ func SweepArbitrumOneBlockchainTransaction() {
 		constant.ARBITRUM_ONE_PENDING_TRANSACTION)
 }
 
-func SweepArbitrumOneBlockchainTransactionDetails() {
+func SweepArbitrumOneBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepBlockchainTransactionDetails(
+		ctx,
 		arbitrumOneClient,
 		constant.ARBITRUM_ONE,
 		&setup.ArbitrumOnePublicKey,
+		&arbitrumOneTxRetryCount,
 		constant.ARBITRUM_ONE_PENDING_TRANSACTION)
 }
 
-func SweepArbitrumOneBlockchainPendingBlock() {
+func SweepArbitrumOneBlockchainPendingBlock(ctx context.Context) {
 	core.SweepBlockchainPendingBlock(
+		ctx,
 		arbitrumOneClient,
 		constant.ARBITRUM_ONE,
 		&setup.ArbitrumOnePublicKey,
-		&arbitrumOneSweepCount,
+		&arbitrumOneBlockRetryCount,
 		constant.ARBITRUM_ONE_PENDING_BLOCK,
 		constant.ARBITRUM_ONE_PENDING_TRANSACTION)
 }

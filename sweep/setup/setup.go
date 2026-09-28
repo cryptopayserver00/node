@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	SweepThreshold = 5
+	SweepThreshold = 10
 
 	SweepPublicKeyArray = []string{
 		constant.ETH_PUBLIC_KEY,
@@ -206,7 +206,7 @@ func SetupPublicKey(ctx context.Context) {
 	}
 
 	var wallets []model.Wallet
-	err = global.NODE_DB.Select("chain_id", "address").Find(&wallets).Error
+	err = global.NODE_DB.WithContext(ctx).Select("chain_id", "address").Find(&wallets).Error
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
@@ -424,6 +424,10 @@ func SetupPublicKey(ctx context.Context) {
 }
 
 func SetupLatestBlockHeight(ctx context.Context, chainId uint, blockNumber int64) {
+	if blockNumber <= 0 {
+		return
+	}
+
 	if !utils.IsChainJoinSweep(chainId) {
 		return
 	}
@@ -1086,6 +1090,10 @@ func UpdateCacheBlockHeight(ctx context.Context, chainId uint) {
 		return
 	}
 
+	if *latestBlockHeight <= 0 {
+		return
+	}
+
 	_, err = global.NODE_REDIS.Set(ctx, cacheBlockString, *latestBlockHeight, 0).Result()
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
@@ -1223,6 +1231,10 @@ func UpdateSweepBlockHeight(ctx context.Context, chainId uint) {
 		return
 	}
 
+	if *cacheBlockHeight <= 0 {
+		return
+	}
+
 	_, err = global.NODE_REDIS.Set(ctx, sweepBlockString, *cacheBlockHeight, 0).Result()
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
@@ -1305,7 +1317,7 @@ func SavePublicKeyToRedis(ctx context.Context, chainId uint, address string) (er
 		return
 	}
 
-	_, err = global.NODE_REDIS.RPush(context.Background(), publicKeyString, address).Result()
+	_, err = global.NODE_REDIS.RPush(ctx, publicKeyString, address).Result()
 	if err != nil {
 		return
 	}

@@ -19,7 +19,7 @@ import (
 	"github.com/xssnick/tonutils-go/tvm/cell"
 )
 
-func SendTonTransfer(chainId uint, mnemonic, pub, toAddress string, sendVal string) (hash string, err error) {
+func SendTonTransfer(ctx context.Context, chainId uint, mnemonic, pub, toAddress string, sendVal string) (hash string, err error) {
 
 	sendValInt, err := utils.FormatToOriginalValue(sendVal, 9)
 	if err != nil {
@@ -34,12 +34,12 @@ func SendTonTransfer(chainId uint, mnemonic, pub, toAddress string, sendVal stri
 		return
 	}
 
-	cfg, err := liteclient.GetConfigFromUrl(context.Background(), url)
+	cfg, err := liteclient.GetConfigFromUrl(ctx, url)
 	if err != nil {
 		return
 	}
 
-	err = client.AddConnectionsFromConfig(context.Background(), cfg)
+	err = client.AddConnectionsFromConfig(ctx, cfg)
 	if err != nil {
 		return
 	}
@@ -47,7 +47,7 @@ func SendTonTransfer(chainId uint, mnemonic, pub, toAddress string, sendVal stri
 	api := ton.NewAPIClient(client, ton.ProofCheckPolicyFast).WithRetry()
 	api.SetTrustedBlockFromConfig(cfg)
 
-	ctx := client.StickyContext(context.Background())
+	ctx = client.StickyContext(ctx)
 
 	words := strings.Split(mnemonic, " ")
 
@@ -59,13 +59,13 @@ func SendTonTransfer(chainId uint, mnemonic, pub, toAddress string, sendVal stri
 		return
 	}
 
-	err = client.AddConnectionsFromConfigUrl(context.Background(), url)
+	err = client.AddConnectionsFromConfigUrl(ctx, url)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
 	}
 
-	block, err := api.CurrentMasterchainInfo(context.Background())
+	block, err := api.CurrentMasterchainInfo(ctx)
 	if err != nil {
 		return
 	}
@@ -101,7 +101,7 @@ func SendTonTransfer(chainId uint, mnemonic, pub, toAddress string, sendVal stri
 	return hash, nil
 }
 
-func SendTonTokenTransfer(chainId uint, mnemonic, pub, toAddress, coin string, sendVal string) (hash string, err error) {
+func SendTonTokenTransfer(ctx context.Context, chainId uint, mnemonic, pub, toAddress, coin string, sendVal string) (hash string, err error) {
 
 	isSupport, _, contractAddress, decimals := sweepUtils.GetContractInfoByChainIdAndSymbol(chainId, coin)
 	if !isSupport {
@@ -121,12 +121,12 @@ func SendTonTokenTransfer(chainId uint, mnemonic, pub, toAddress, coin string, s
 		return
 	}
 
-	cfg, err := liteclient.GetConfigFromUrl(context.Background(), url)
+	cfg, err := liteclient.GetConfigFromUrl(ctx, url)
 	if err != nil {
 		return
 	}
 
-	err = client.AddConnectionsFromConfig(context.Background(), cfg)
+	err = client.AddConnectionsFromConfig(ctx, cfg)
 	if err != nil {
 		return
 	}
@@ -134,7 +134,7 @@ func SendTonTokenTransfer(chainId uint, mnemonic, pub, toAddress, coin string, s
 	api := ton.NewAPIClient(client, ton.ProofCheckPolicyFast).WithRetry()
 	api.SetTrustedBlockFromConfig(cfg)
 
-	ctx := client.StickyContext(context.Background())
+	ctx = client.StickyContext(ctx)
 
 	words := strings.Split(mnemonic, " ")
 
@@ -146,13 +146,13 @@ func SendTonTokenTransfer(chainId uint, mnemonic, pub, toAddress, coin string, s
 		return
 	}
 
-	err = client.AddConnectionsFromConfigUrl(context.Background(), url)
+	err = client.AddConnectionsFromConfigUrl(ctx, url)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
 	}
 
-	block, err := api.CurrentMasterchainInfo(context.Background())
+	block, err := api.CurrentMasterchainInfo(ctx)
 	if err != nil {
 		return
 	}
@@ -191,7 +191,7 @@ func SendTonTokenTransfer(chainId uint, mnemonic, pub, toAddress, coin string, s
 			})
 		*/
 
-		tx, _, innerErr := w.SendWaitTransaction(context.Background(), &wallet.Message{
+		tx, _, innerErr := w.SendWaitTransaction(ctx, &wallet.Message{
 			Mode: wallet.PayGasSeparately, // pay fees separately (from balance, not from amount)
 			InternalMessage: &tlb.InternalMessage{
 				Bounce:  true, // return amount in case of processing error

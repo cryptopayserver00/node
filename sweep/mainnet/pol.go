@@ -9,48 +9,63 @@ import (
 )
 
 var (
-	polSweepCount = make(map[int64]int)
+	polBlockRetryCount = make(map[int64]int)
+	polTxRetryCount    = make(map[string]int)
 
 	polClient NODE_Client.Client
 )
 
-func SweepPolBlockchain() {
-	initPol()
+func SweepPolBlockchain(ctx context.Context) {
+	initPol(ctx)
 
 	go func() {
 		for {
-			SweepPolBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepPolBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepPolBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepPolBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepPolBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepPolBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initPol() {
-	core.SetupLatestBlockHeight(polClient, constant.POL_MAINNET)
+func initPol(ctx context.Context) {
+	core.SetupLatestBlockHeight(ctx, polClient, constant.POL_MAINNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.POL_MAINNET)
+	setup.SetupCacheBlockHeight(ctx, constant.POL_MAINNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.POL_MAINNET)
+	setup.SetupSweepBlockHeight(ctx, constant.POL_MAINNET)
 }
 
-func SweepPolBlockchainTransaction() {
-
+func SweepPolBlockchainTransaction(ctx context.Context) {
 	core.SweepBlockchainTransaction(
+		ctx,
 		polClient,
 		constant.POL_MAINNET,
 		&setup.PolPublicKey,
-		&polSweepCount,
 		&setup.PolSweepBlockHeight,
 		&setup.PolCacheBlockHeight,
 		constant.POL_SWEEP_BLOCK,
@@ -58,21 +73,23 @@ func SweepPolBlockchainTransaction() {
 		constant.POL_PENDING_TRANSACTION)
 }
 
-func SweepPolBlockchainTransactionDetails() {
-
+func SweepPolBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepBlockchainTransactionDetails(
+		ctx,
 		polClient,
 		constant.POL_MAINNET,
 		&setup.PolPublicKey,
+		&polTxRetryCount,
 		constant.POL_PENDING_TRANSACTION)
 }
 
-func SweepPolBlockchainPendingBlock() {
+func SweepPolBlockchainPendingBlock(ctx context.Context) {
 	core.SweepBlockchainPendingBlock(
+		ctx,
 		polClient,
 		constant.POL_MAINNET,
 		&setup.PolPublicKey,
-		&polSweepCount,
+		&polBlockRetryCount,
 		constant.POL_PENDING_BLOCK,
 		constant.POL_PENDING_TRANSACTION)
 }

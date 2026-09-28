@@ -25,6 +25,8 @@ var upgrader = websocket.Upgrader{
 func (n *NodeApi) WsForTxInfo(c *gin.Context) {
 	defer utils.HandlePanic()
 
+	ctx := c.Request.Context()
+
 	c.Request.Header.Add("Connection", "upgrade")
 	c.Request.Header.Add("Upgrade", "websocket")
 
@@ -59,23 +61,23 @@ func (n *NodeApi) WsForTxInfo(c *gin.Context) {
 		case <-done:
 			return
 		default:
-			crycleTask(conn)
+			crycleTask(ctx, conn)
 		}
 	}
 }
 
-func crycleTask(conn *websocket.Conn) {
+func crycleTask(ctx context.Context, conn *websocket.Conn) {
 	global.NODE_MUTEX.Lock()
 	defer global.NODE_MUTEX.Unlock()
 
 	time.Sleep(500 * time.Millisecond)
 
-	id, err := global.NODE_REDIS.LIndex(context.Background(), constant.WS_NOTIFICATION, 0).Result()
+	id, err := global.NODE_REDIS.LIndex(ctx, constant.WS_NOTIFICATION, 0).Result()
 	if err != nil {
 		return
 	}
 
-	tx, err := service.NodeService.GetOwnTxById(id)
+	tx, err := service.NodeService.GetOwnTxById(ctx, id)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
@@ -93,7 +95,7 @@ func crycleTask(conn *websocket.Conn) {
 		return
 	}
 
-	_, err = global.NODE_REDIS.LPop(context.Background(), constant.WS_NOTIFICATION).Result()
+	_, err = global.NODE_REDIS.LPop(ctx, constant.WS_NOTIFICATION).Result()
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return

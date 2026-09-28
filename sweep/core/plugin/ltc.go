@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"node/global"
@@ -13,11 +14,13 @@ import (
 	"node/utils"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
+	"slices"
 	"strconv"
 	"strings"
+	"time"
 )
 
-func GetLtcBlockHeightByTatum(client NODE_Client.Client, chainId uint) int64 {
+func GetLtcBlockHeightByTatum(ctx context.Context, client NODE_Client.Client, chainId uint) int64 {
 	var err error
 	client.URL = constant.TatumGetLitecoinInfo
 	client.Headers = map[string]string{
@@ -25,7 +28,7 @@ func GetLtcBlockHeightByTatum(client NODE_Client.Client, chainId uint) int64 {
 	}
 
 	var litecoinInfoResponse tatum.TatumGetLitecoinInfo
-	err = client.HTTPGet(&litecoinInfoResponse)
+	err = client.HTTPGet(ctx, &litecoinInfoResponse)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 		return 0
@@ -34,11 +37,11 @@ func GetLtcBlockHeightByTatum(client NODE_Client.Client, chainId uint) int64 {
 	return int64(litecoinInfoResponse.Blocks)
 }
 
-func GetLtcBlockHeightByMempool(client NODE_Client.Client, chainId uint) int64 {
+func GetLtcBlockHeightByMempool(ctx context.Context, client NODE_Client.Client, chainId uint) int64 {
 	var err error
 	client.URL = constant.MempoolGetBlockHeightByNetwork(chainId)
 	var height int64
-	err = client.HTTPGetUnique(&height)
+	err = client.HTTPGetUnique(ctx, &height)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 		return 0
@@ -48,28 +51,28 @@ func GetLtcBlockHeightByMempool(client NODE_Client.Client, chainId uint) int64 {
 }
 
 func HandleLtcBlockTransactionsByTatum(
+	ctx context.Context,
 	client NODE_Client.Client,
 	chainId uint,
 	publicKey *[]string,
-	sweepCount *map[int64]int,
-	sweepBlockHeight *int64,
-	constantSweepBlock, constantPendingTransaction string,
-) {
+	sweepBlockHeight int64,
+	constantPendingTransaction string,
+) error {
 	var err error
-	client.URL = constant.TatumGetLitecoinBlockByHashOrHeight + fmt.Sprint(*sweepBlockHeight)
+	client.URL = constant.TatumGetLitecoinBlockByHashOrHeight + fmt.Sprint(sweepBlockHeight)
 	client.Headers = map[string]string{
 		"x-api-key": constant.GetTatumRandomKeyByNetwork(chainId),
 	}
 
 	var litecoinBlockResponse tatum.TatumGetLitecoinBlock
-	err = client.HTTPGet(&litecoinBlockResponse)
+	err = client.HTTPGet(ctx, &litecoinBlockResponse)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
+		time.Sleep(2 * time.Second)
+		return err
 	}
 
-	if *sweepBlockHeight == int64(litecoinBlockResponse.Height) {
-
+	if sweepBlockHeight == int64(litecoinBlockResponse.Height) {
 		if len(litecoinBlockResponse.Txs) > 0 {
 			for _, transaction := range litecoinBlockResponse.Txs {
 
@@ -100,70 +103,66 @@ func HandleLtcBlockTransactionsByTatum(
 					}
 
 					if isMonitorTx {
-
-						// Determine duplicate transactions
-						redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
+						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							time.Sleep(2 * time.Second)
+							return err
 						}
 
-						for _, redisTx := range redisTxs {
-							if redisTx == transaction.Hash {
-								continue outerCurrentTxLoop
+						found := slices.Contains(redisTxs, transaction.Hash)
+						if found {
+							break outerCurrentTxLoop
+
+						} else {
+							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.Hash).Result()
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								time.Sleep(2 * time.Second)
+								return err
 							}
-						}
 
-						_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingTransaction, transaction.Hash).Result()
-						if err != nil {
-							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							break
 						}
-
-						break
 					}
 				}
 			}
 		}
 
-		_, err = global.NODE_REDIS.Set(context.Background(), constantSweepBlock, *sweepBlockHeight+1, 0).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-			return
-		}
-
-		delete(*sweepCount, *sweepBlockHeight)
-
-		*sweepBlockHeight += 1
+		return nil
 	} else {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", *sweepBlockHeight, int64(litecoinBlockResponse.Height))))
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", sweepBlockHeight, int64(litecoinBlockResponse.Height))))
+		time.Sleep(2 * time.Second)
+		return errors.New("not the same height of block")
 	}
 }
 
 func HandleLtcBlockTransactionsByMempool(
+	ctx context.Context,
 	client NODE_Client.Client,
 	chainId uint,
 	publicKey *[]string,
-	sweepCount *map[int64]int,
-	sweepBlockHeight *int64,
-	constantSweepBlock, constantPendingTransaction string,
-) {
+	sweepBlockHeight int64,
+	constantPendingTransaction string,
+) error {
 	var err error
 
 	var blockHash string
-	client.URL = fmt.Sprintf(constant.MempoolGetBlockHashByNetwork(chainId), *sweepBlockHeight)
-	err = client.HTTPGetUnique(&blockHash)
+	client.URL = fmt.Sprintf(constant.MempoolGetBlockHashByNetwork(chainId), sweepBlockHeight)
+	err = client.HTTPGetUnique(ctx, &blockHash)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
+		time.Sleep(2 * time.Second)
+		return err
 	}
 
 	var block mempool.MempoolBlock
 	client.URL = fmt.Sprintf(constant.MempoolGetBlockByNetwork(chainId), blockHash)
-	err = client.HTTPGet(&block)
+	err = client.HTTPGet(ctx, &block)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
+		time.Sleep(2 * time.Second)
+		return err
 	}
 
 	var litecoinTxsResponses []mempool.MempoolTx
@@ -171,21 +170,22 @@ func HandleLtcBlockTransactionsByMempool(
 	for i := 0; i < block.TxCount; i += 25 {
 		client.URL = fmt.Sprintf(constant.MempoolGetBlockTransactionByNetwork(chainId), blockHash, i)
 		var litecoinTxsResponse []mempool.MempoolTx
-		err = client.HTTPGet(&litecoinTxsResponse)
+		err = client.HTTPGet(ctx, &litecoinTxsResponse)
 		if err != nil {
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-			return
+			time.Sleep(2 * time.Second)
+			return err
 		}
 
 		litecoinTxsResponses = append(litecoinTxsResponses, litecoinTxsResponse...)
 	}
 
 	if len(litecoinTxsResponses) == 0 {
-		return
+		time.Sleep(2 * time.Second)
+		return errors.New("not support")
 	}
 
-	if *sweepBlockHeight == int64(block.Height) {
-
+	if sweepBlockHeight == int64(block.Height) {
 		if len(litecoinTxsResponses) > 0 {
 			for _, transaction := range litecoinTxsResponses {
 
@@ -216,58 +216,49 @@ func HandleLtcBlockTransactionsByMempool(
 					}
 
 					if isMonitorTx {
-
-						// Determine duplicate transactions
-						redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
+						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							time.Sleep(2 * time.Second)
+							return err
 						}
 
-						for _, redisTx := range redisTxs {
-							if redisTx == transaction.TxId {
-								continue outerCurrentTxLoop
+						found := slices.Contains(redisTxs, transaction.TxId)
+						if found {
+							break outerCurrentTxLoop
+						} else {
+							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.TxId).Result()
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								time.Sleep(2 * time.Second)
+								return err
 							}
-						}
 
-						_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingTransaction, transaction.TxId).Result()
-						if err != nil {
-							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							break
 						}
-
-						break
 					}
 				}
 			}
 		}
-
-		_, err = global.NODE_REDIS.Set(context.Background(), constantSweepBlock, *sweepBlockHeight+1, 0).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-			return
-		}
-
-		delete(*sweepCount, *sweepBlockHeight)
-
-		*sweepBlockHeight += 1
+		return nil
 	} else {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same sweepBlockHeight and blockHeight: %d - %d", *sweepBlockHeight, int64(block.Height))))
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", sweepBlockHeight, int64(block.Height))))
+		time.Sleep(2 * time.Second)
+		return errors.New("not the same height of block")
 	}
 }
 
 func HandleLtcTransactionDetailsByTatum(
+	ctx context.Context,
 	client NODE_Client.Client,
 	chainId uint,
 	publicKey *[]string,
 	constantPendingTransaction string,
 	txHash string,
-) {
-
+) error {
 	global.NODE_LOG.Info(fmt.Sprintf("%s -> handle tatum detail: %s", constant.GetChainName(chainId), txHash))
 
 	var err error
-	var isProcess bool
 
 	client.URL = constant.TatumGetLitecoinTxByHash + txHash
 	client.Headers = map[string]string{
@@ -275,33 +266,37 @@ func HandleLtcTransactionDetailsByTatum(
 	}
 
 	var litecoinTxResponse tatum.TatumLitecoinTx
-	err = client.HTTPGet(&litecoinTxResponse)
+	err = client.HTTPGet(ctx, &litecoinTxResponse)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
-	}
-
-	if len(litecoinTxResponse.Inputs) == 0 || len(litecoinTxResponse.Outputs) == 0 {
-		return
-	}
-
-	_, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, "")
-	if decimals == 0 {
-		return
+		time.Sleep(2 * time.Second)
+		return err
 	}
 
 	var notifyRequest request.NotificationRequest
 	notifyRequest.Hash = litecoinTxResponse.Hash
 	notifyRequest.Chain = chainId
+
+	if len(litecoinTxResponse.Inputs) == 0 || len(litecoinTxResponse.Outputs) == 0 {
+		return errors.New("not support")
+	}
+
+	_, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, "")
+	if decimals == 0 {
+		return errors.New("not support")
+	}
+
 	notifyRequest.Token = contractName
 
 	if len(strconv.Itoa(litecoinTxResponse.Time)) == 10 {
 		litecoinTxResponse.Time *= 1000
 	}
-	notifyRequest.BlockTimestamp = litecoinTxResponse.Time
+
+	isProcess := false
 
 	for _, input := range litecoinTxResponse.Inputs {
 		if input.Coin.Address != "" {
+
 			notifyRequest.FromAddress = input.Coin.Address
 
 			for _, output := range litecoinTxResponse.Outputs {
@@ -317,10 +312,10 @@ func HandleLtcTransactionDetailsByTatum(
 					if strings.EqualFold(notifyRequest.FromAddress, v) {
 						notifyRequest.TransactType = "send"
 
-						err = notification.NotificationRequest(notifyRequest)
+						err = notification.NotificationRequest(ctx, notifyRequest)
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							return err
 						}
 						isProcess = true
 					}
@@ -328,10 +323,10 @@ func HandleLtcTransactionDetailsByTatum(
 					if strings.EqualFold(output.Address, v) {
 						notifyRequest.TransactType = "receive"
 
-						err = notification.NotificationRequest(notifyRequest)
+						err = notification.NotificationRequest(ctx, notifyRequest)
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							return err
 						}
 						isProcess = true
 					}
@@ -340,40 +335,33 @@ func HandleLtcTransactionDetailsByTatum(
 		}
 	}
 
-	if isProcess {
-		_, err = global.NODE_REDIS.LPop(context.Background(), constantPendingTransaction).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		}
-	} else {
-		global.NODE_LOG.Error(fmt.Sprintf("Can not handle the tx: %s, Retry | %s -> %s", txHash, constant.GetChainName(chainId), err.Error()))
+	if !isProcess {
+		return fmt.Errorf("no monitored address matched for tx: %s", notifyRequest.Hash)
 	}
+
+	return nil
 }
 
 func HandleLtcTransactionDetailsByMempool(
+	ctx context.Context,
 	client NODE_Client.Client,
 	chainId uint,
 	publicKey *[]string,
 	constantPendingTransaction string,
 	txHash string,
-) {
+) error {
 	global.NODE_LOG.Info(fmt.Sprintf("%s -> handle mempool detail: %s", constant.GetChainName(chainId), txHash))
 
 	var err error
-	var isProcess bool
 
 	client.URL = fmt.Sprintf(constant.MempoolGetTransctionByNetwork(chainId), txHash)
 
 	var litecoinTxResponse mempool.MempoolTx
-	err = client.HTTPGet(&litecoinTxResponse)
+	err = client.HTTPGet(ctx, &litecoinTxResponse)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
-	}
-
-	_, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, "")
-	if decimals == 0 {
-		return
+		time.Sleep(2 * time.Second)
+		return err
 	}
 
 	var notifyRequest request.NotificationRequest
@@ -381,14 +369,22 @@ func HandleLtcTransactionDetailsByMempool(
 	notifyRequest.Hash = litecoinTxResponse.TxId
 	notifyRequest.Chain = chainId
 	notifyRequest.BlockTimestamp = litecoinTxResponse.Status.BlockTime * 1000
-	notifyRequest.Token = contractName
 
 	if len(litecoinTxResponse.Vin) == 0 || len(litecoinTxResponse.Vout) == 0 {
-		return
+		return errors.New("not support")
 	}
+
+	_, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, "")
+	if decimals == 0 {
+		return errors.New("not support")
+	}
+	notifyRequest.Token = contractName
+
+	isProcess := false
 
 	for _, input := range litecoinTxResponse.Vin {
 		if input.Prevout.Scriptpubkey_address != "" {
+
 			notifyRequest.FromAddress = input.Prevout.Scriptpubkey_address
 
 			for _, output := range litecoinTxResponse.Vout {
@@ -404,10 +400,10 @@ func HandleLtcTransactionDetailsByMempool(
 					if strings.EqualFold(notifyRequest.FromAddress, v) {
 						notifyRequest.TransactType = "send"
 
-						err = notification.NotificationRequest(notifyRequest)
+						err = notification.NotificationRequest(ctx, notifyRequest)
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							return err
 						}
 						isProcess = true
 					}
@@ -415,10 +411,10 @@ func HandleLtcTransactionDetailsByMempool(
 					if strings.EqualFold(output.Scriptpubkey_address, v) {
 						notifyRequest.TransactType = "receive"
 
-						err = notification.NotificationRequest(notifyRequest)
+						err = notification.NotificationRequest(ctx, notifyRequest)
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							return err
 						}
 						isProcess = true
 					}
@@ -428,24 +424,22 @@ func HandleLtcTransactionDetailsByMempool(
 		}
 	}
 
-	if isProcess {
-		_, err = global.NODE_REDIS.LPop(context.Background(), constantPendingTransaction).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		}
-	} else {
-		global.NODE_LOG.Error(fmt.Sprintf("Can not handle the tx: %s, Retry | %s -> %s", txHash, constant.GetChainName(chainId), err.Error()))
+	if !isProcess {
+		return fmt.Errorf("no monitored address matched for tx: %s", notifyRequest.Hash)
 	}
+
+	return nil
 }
 
 func HandleLtcPendingBlockByTatum(
+	ctx context.Context,
 	client NODE_Client.Client,
 	chainId uint,
 	publicKey *[]string,
 	constantPendingBlock, constantPendingTransaction string,
 	blockHeight string,
 	blockHeightInt int64,
-) {
+) error {
 	var err error
 
 	client.URL = constant.TatumGetLitecoinBlockByHashOrHeight + blockHeight
@@ -454,19 +448,15 @@ func HandleLtcPendingBlockByTatum(
 	}
 
 	var litecoinBlockResponse tatum.TatumGetLitecoinBlock
-	err = client.HTTPGet(&litecoinBlockResponse)
+	err = client.HTTPGet(ctx, &litecoinBlockResponse)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
+		return err
 	}
 
 	if int(blockHeightInt) == litecoinBlockResponse.Height {
-		global.NODE_LOG.Info(fmt.Sprintf("%s -> handle tatum height pending: %s", constant.GetChainName(chainId), blockHeight))
-
 		if len(litecoinBlockResponse.Txs) > 0 {
 			for _, transaction := range litecoinBlockResponse.Txs {
-
-				global.NODE_LOG.Info(fmt.Sprintf("%s -> handle tatum tx pending: %s", constant.GetChainName(chainId), transaction.Hash))
 
 				if len(transaction.Inputs) == 0 || len(transaction.Outputs) == 0 {
 					continue
@@ -495,66 +485,67 @@ func HandleLtcPendingBlockByTatum(
 					}
 
 					if isMonitorTx {
-
-						// Determine duplicate transactions
-						redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
+						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							time.Sleep(2 * time.Second)
+							return err
 						}
 
-						for _, redisTx := range redisTxs {
-							if redisTx == transaction.Hash {
-								continue outerCurrentTxLoop
+						found := slices.Contains(redisTxs, transaction.Hash)
+						if found {
+							break outerCurrentTxLoop
+
+						} else {
+							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.Hash).Result()
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								time.Sleep(2 * time.Second)
+								return err
 							}
-						}
 
-						_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingTransaction, transaction.Hash).Result()
-						if err != nil {
-							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							break
 						}
-
-						break
 					}
 				}
 			}
 		}
 
-		_, err = global.NODE_REDIS.LPop(context.Background(), constantPendingBlock).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		}
-
+		return nil
 	} else {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", blockHeightInt, int64(litecoinBlockResponse.Height))))
+		time.Sleep(2 * time.Second)
+		return errors.New("not the same height of block")
 	}
 }
 
 func HandleLtcPendingBlockByMempool(
+	ctx context.Context,
 	client NODE_Client.Client,
 	chainId uint,
 	publicKey *[]string,
 	constantPendingBlock, constantPendingTransaction string,
 	blockHeight string,
 	blockHeightInt int64,
-) {
+) error {
 	var err error
 
 	var blockHash string
 	client.URL = fmt.Sprintf(constant.MempoolGetBlockHashByNetwork(chainId), blockHeightInt)
-	err = client.HTTPGetUnique(&blockHash)
+	err = client.HTTPGetUnique(ctx, &blockHash)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
+		time.Sleep(2 * time.Second)
+		return err
 	}
 
 	var block mempool.MempoolBlock
 	client.URL = fmt.Sprintf(constant.MempoolGetBlockByNetwork(chainId), blockHash)
-	err = client.HTTPGet(&block)
+	err = client.HTTPGet(ctx, &block)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
+		time.Sleep(2 * time.Second)
+		return err
 	}
 
 	var litecoinTxsResponses []mempool.MempoolTx
@@ -562,26 +553,24 @@ func HandleLtcPendingBlockByMempool(
 	for i := 0; i < block.TxCount; i += 25 {
 		client.URL = fmt.Sprintf(constant.MempoolGetBlockTransactionByNetwork(chainId), blockHash, i)
 		var litecoinTxsResponse []mempool.MempoolTx
-		err = client.HTTPGet(&litecoinTxsResponse)
+		err = client.HTTPGet(ctx, &litecoinTxsResponse)
 		if err != nil {
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-			return
+			time.Sleep(2 * time.Second)
+			return err
 		}
 
 		litecoinTxsResponses = append(litecoinTxsResponses, litecoinTxsResponse...)
 	}
 
 	if len(litecoinTxsResponses) == 0 {
-		return
+		time.Sleep(2 * time.Second)
+		return errors.New("not support")
 	}
 
 	if blockHeightInt == int64(block.Height) {
-		global.NODE_LOG.Info(fmt.Sprintf("%s -> handle mempool height pending: %d", constant.GetChainName(chainId), block.Height))
-
 		if len(litecoinTxsResponses) > 0 {
 			for _, transaction := range litecoinTxsResponses {
-
-				global.NODE_LOG.Info(fmt.Sprintf("%s -> handle mempool tx pending: %s", constant.GetChainName(chainId), transaction.TxId))
 
 				if len(transaction.Vin) == 0 || len(transaction.Vout) == 0 {
 					continue
@@ -610,38 +599,35 @@ func HandleLtcPendingBlockByMempool(
 					}
 
 					if isMonitorTx {
-
-						// Determine duplicate transactions
-						redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
+						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							time.Sleep(2 * time.Second)
+							return err
 						}
 
-						for _, redisTx := range redisTxs {
-							if redisTx == transaction.TxId {
-								continue outerCurrentTxLoop
+						found := slices.Contains(redisTxs, transaction.TxId)
+						if found {
+							break outerCurrentTxLoop
+						} else {
+							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.TxId).Result()
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								time.Sleep(2 * time.Second)
+								return err
 							}
-						}
 
-						_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingTransaction, transaction.TxId).Result()
-						if err != nil {
-							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							break
 						}
-
-						break
 					}
 				}
 			}
 		}
 
-		_, err = global.NODE_REDIS.LPop(context.Background(), constantPendingBlock).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		}
-
+		return nil
 	} else {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same sweepBlockHeight and blockHeight: %d - %d", blockHeightInt, int64(block.Height))))
+		time.Sleep(2 * time.Second)
+		return errors.New("not the same height of block")
 	}
 }

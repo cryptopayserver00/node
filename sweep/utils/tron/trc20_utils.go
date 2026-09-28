@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/big"
 	"node/global"
 	"strings"
@@ -146,6 +147,13 @@ func handleTriggerSmartContract(chainId uint, hash, fromAddress, toAddress, moni
 			global.NODE_LOG.Error(err.Error())
 			return false
 		}
+
+		const minLen = 72
+		if len(data) < minLen {
+			global.NODE_LOG.Error(fmt.Sprintf("insufficient data length for transfer: %d, hash: %s", len(data), hash))
+			return false
+		}
+
 		receiveAddress, err := FromHexAddress("41" + data[32:72])
 		if err != nil {
 			global.NODE_LOG.Error(err.Error())
@@ -156,11 +164,18 @@ func handleTriggerSmartContract(chainId uint, hash, fromAddress, toAddress, moni
 			return true
 		}
 	case TransferFrom:
+		const minLen = 136
+		if len(data) < minLen {
+			global.NODE_LOG.Error(fmt.Sprintf("insufficient data length for transferFrom: %d, hash: %s", len(data), hash))
+			return false
+		}
+
 		sendAddress, err := FromHexAddress("41" + data[32:72])
 		if err != nil {
 			global.NODE_LOG.Error(err.Error())
 			return false
 		}
+
 		receiveAddress, err := FromHexAddress("41" + data[96:136])
 		if err != nil {
 			global.NODE_LOG.Error(err.Error())

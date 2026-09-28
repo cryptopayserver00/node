@@ -27,7 +27,7 @@ func (n *NodeApi) GetBtcBalance(c *gin.Context) {
 	rd, _ := json.Marshal(balance)
 	global.NODE_LOG.Info("GetBtcBalance: " + string(rd))
 
-	result, err := service.NodeService.GetBtcBalance(balance)
+	result, err := service.NodeService.GetBtcBalance(c, balance)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
@@ -55,7 +55,7 @@ func (n *NodeApi) GetBtcFeeRate(c *gin.Context) {
 	rd, _ := json.Marshal(rate)
 	global.NODE_LOG.Info("GetBtcFeeRate: " + string(rd))
 
-	result, err := service.NodeService.GetBtcFeeRate(rate)
+	result, err := service.NodeService.GetBtcFeeRate(c, rate)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
@@ -83,7 +83,7 @@ func (n *NodeApi) GetBtcAddressUtxo(c *gin.Context) {
 	rd, _ := json.Marshal(utxo)
 	global.NODE_LOG.Info("GetBtcAddressUtxo: " + string(rd))
 
-	result, err := service.NodeService.GetBtcAddressUtxo(utxo)
+	result, err := service.NodeService.GetBtcAddressUtxo(c, utxo)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
@@ -111,7 +111,7 @@ func (n *NodeApi) PostBtcBroadcast(c *gin.Context) {
 	rd, _ := json.Marshal(broadcast)
 	global.NODE_LOG.Info("PostBtcBroadcast: " + string(rd))
 
-	result, err := service.NodeService.PostBtcBroadcast(broadcast)
+	result, err := service.NodeService.PostBtcBroadcast(c, broadcast)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
@@ -139,7 +139,7 @@ func (n *NodeApi) GetBtcTransactions(c *gin.Context) {
 	rd, _ := json.Marshal(txs)
 	global.NODE_LOG.Info("GetBtcTransactions: " + string(rd))
 
-	result, err := service.NodeService.GetBtcTransactions(txs)
+	result, err := service.NodeService.GetBtcTransactions(c, txs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
@@ -167,7 +167,7 @@ func (n *NodeApi) GetBtcTransactionDetail(c *gin.Context) {
 	rd, _ := json.Marshal(detail)
 	global.NODE_LOG.Info("GetBtcTransactionDetail: " + string(rd))
 
-	result, err := service.NodeService.GetBtcTransactionDetail(detail)
+	result, err := service.NodeService.GetBtcTransactionDetail(c, detail)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())

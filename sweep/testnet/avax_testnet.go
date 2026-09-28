@@ -9,48 +9,63 @@ import (
 )
 
 var (
-	avaxTestnetSweepCount = make(map[int64]int)
+	avaxTestnetBlockRetryCount = make(map[int64]int)
+	avaxTestnetTxRetryCount    = make(map[string]int)
 
 	avaxTestnetClient NODE_Client.Client
 )
 
-func SweepAvaxTestnetBlockchain() {
-	initAvaxTestnet()
+func SweepAvaxTestnetBlockchain(ctx context.Context) {
+	initAvaxTestnet(ctx)
 
 	go func() {
 		for {
-			SweepAvaxTestnetBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepAvaxTestnetBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepAvaxTestnetBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepAvaxTestnetBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepAvaxTestnetBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepAvaxTestnetBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initAvaxTestnet() {
-	core.SetupLatestBlockHeight(avaxTestnetClient, constant.AVAX_TESTNET)
+func initAvaxTestnet(ctx context.Context) {
+	core.SetupLatestBlockHeight(ctx, avaxTestnetClient, constant.AVAX_TESTNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.AVAX_TESTNET)
+	setup.SetupCacheBlockHeight(ctx, constant.AVAX_TESTNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.AVAX_TESTNET)
+	setup.SetupSweepBlockHeight(ctx, constant.AVAX_TESTNET)
 }
 
-func SweepAvaxTestnetBlockchainTransaction() {
-
+func SweepAvaxTestnetBlockchainTransaction(ctx context.Context) {
 	core.SweepBlockchainTransaction(
+		ctx,
 		avaxTestnetClient,
 		constant.AVAX_TESTNET,
 		&setup.AvaxTestnetPublicKey,
-		&avaxTestnetSweepCount,
 		&setup.AvaxTestnetSweepBlockHeight,
 		&setup.AvaxTestnetCacheBlockHeight,
 		constant.AVAX_TESTNET_SWEEP_BLOCK,
@@ -58,21 +73,23 @@ func SweepAvaxTestnetBlockchainTransaction() {
 		constant.AVAX_TESTNET_PENDING_TRANSACTION)
 }
 
-func SweepAvaxTestnetBlockchainTransactionDetails() {
-
+func SweepAvaxTestnetBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepBlockchainTransactionDetails(
+		ctx,
 		avaxTestnetClient,
 		constant.AVAX_TESTNET,
 		&setup.AvaxTestnetPublicKey,
+		&avaxTestnetTxRetryCount,
 		constant.AVAX_TESTNET_PENDING_TRANSACTION)
 }
 
-func SweepAvaxTestnetBlockchainPendingBlock() {
+func SweepAvaxTestnetBlockchainPendingBlock(ctx context.Context) {
 	core.SweepBlockchainPendingBlock(
+		ctx,
 		avaxTestnetClient,
 		constant.AVAX_TESTNET,
 		&setup.AvaxTestnetPublicKey,
-		&avaxTestnetSweepCount,
+		&avaxTestnetBlockRetryCount,
 		constant.AVAX_TESTNET_PENDING_BLOCK,
 		constant.AVAX_TESTNET_PENDING_TRANSACTION)
 }

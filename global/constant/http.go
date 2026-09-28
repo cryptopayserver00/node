@@ -25,8 +25,8 @@ var (
 	TonMainnetAPI = "https://ton.org/global.config.json"
 	TonTestnetAPI = "https://ton.org/testnet-global.config.json"
 
-	XRPWsMainnetAPI = "wss://xrplcluster.com"
-	XRPWsTestnetAPI = "wss://s.altnet.rippletest.net:51233"
+	XRPWsMainnetAPI = "https://xrplcluster.com"
+	XRPWsTestnetAPI = "https://s.altnet.rippletest.net:51234"
 )
 
 func GetBscscanUrlByNetwork(network uint) string {

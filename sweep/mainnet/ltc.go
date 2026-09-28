@@ -9,47 +9,63 @@ import (
 )
 
 var (
-	ltcSweepCount = make(map[int64]int)
+	ltcBlockRetryCount = make(map[int64]int)
+	ltcTxRetryCount    = make(map[string]int)
 
 	ltcClient NODE_Client.Client
 )
 
-func SweepLtcBlockchain() {
-	initLtc()
+func SweepLtcBlockchain(ctx context.Context) {
+	initLtc(ctx)
 
 	go func() {
 		for {
-			SweepLtcBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepLtcBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepLtcBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepLtcBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepLtcBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepLtcBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initLtc() {
-	core.SetupLtcLatestBlockHeight(ltcClient, constant.LTC_MAINNET)
+func initLtc(ctx context.Context) {
+	core.SetupLtcLatestBlockHeight(ctx, ltcClient, constant.LTC_MAINNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.LTC_MAINNET)
+	setup.SetupCacheBlockHeight(ctx, constant.LTC_MAINNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.LTC_MAINNET)
+	setup.SetupSweepBlockHeight(ctx, constant.LTC_MAINNET)
 }
 
-func SweepLtcBlockchainTransaction() {
+func SweepLtcBlockchainTransaction(ctx context.Context) {
 	core.SweepLtcBlockchainTransaction(
+		ctx,
 		ltcClient,
 		constant.LTC_MAINNET,
 		&setup.LtcPublicKey,
-		&ltcSweepCount,
 		&setup.LtcSweepBlockHeight,
 		&setup.LtcCacheBlockHeight,
 		constant.LTC_SWEEP_BLOCK,
@@ -57,19 +73,23 @@ func SweepLtcBlockchainTransaction() {
 		constant.LTC_PENDING_TRANSACTION)
 }
 
-func SweepLtcBlockchainTransactionDetails() {
+func SweepLtcBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepLtcBlockchainTransactionDetails(
+		ctx,
 		ltcClient,
 		constant.LTC_MAINNET,
 		&setup.LtcPublicKey,
+		&ltcTxRetryCount,
 		constant.LTC_PENDING_TRANSACTION)
 }
 
-func SweepLtcBlockchainPendingBlock() {
+func SweepLtcBlockchainPendingBlock(ctx context.Context) {
 	core.SweepLtcBlockchainPendingBlock(
+		ctx,
 		ltcClient,
 		constant.LTC_MAINNET,
 		&setup.LtcPublicKey,
+		&ltcBlockRetryCount,
 		constant.LTC_PENDING_BLOCK,
 		constant.LTC_PENDING_TRANSACTION)
 }

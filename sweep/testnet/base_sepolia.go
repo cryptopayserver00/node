@@ -9,48 +9,64 @@ import (
 )
 
 var (
-	baseSepoliaSweepCount = make(map[int64]int)
+	baseSepoliaBlockRetryCount = make(map[int64]int)
+	baseSepoliaTxRetryCount    = make(map[string]int)
 
 	baseSepoliaClient NODE_Client.Client
 )
 
-func SweepBaseSepoliaBlockchain() {
-	initBaseSepolia()
+func SweepBaseSepoliaBlockchain(ctx context.Context) {
+	initBaseSepolia(ctx)
 
 	go func() {
 		for {
-			SweepBaseSepoliaBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepBaseSepoliaBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepBaseSepoliaBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepBaseSepoliaBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepBaseSepoliaBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepBaseSepoliaBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initBaseSepolia() {
-	core.SetupLatestBlockHeight(baseSepoliaClient, constant.BASE_SEPOLIA)
+func initBaseSepolia(ctx context.Context) {
+	core.SetupLatestBlockHeight(ctx, baseSepoliaClient, constant.BASE_SEPOLIA)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.BASE_SEPOLIA)
+	setup.SetupCacheBlockHeight(ctx, constant.BASE_SEPOLIA)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.BASE_SEPOLIA)
+	setup.SetupSweepBlockHeight(ctx, constant.BASE_SEPOLIA)
 }
 
-func SweepBaseSepoliaBlockchainTransaction() {
+func SweepBaseSepoliaBlockchainTransaction(ctx context.Context) {
 
 	core.SweepBlockchainTransaction(
+		ctx,
 		baseSepoliaClient,
 		constant.BASE_SEPOLIA,
 		&setup.BaseSepoliaPublicKey,
-		&baseSepoliaSweepCount,
 		&setup.BaseSepoliaSweepBlockHeight,
 		&setup.BaseSepoliaCacheBlockHeight,
 		constant.BASE_SEPOLIA_SWEEP_BLOCK,
@@ -58,21 +74,24 @@ func SweepBaseSepoliaBlockchainTransaction() {
 		constant.BASE_SEPOLIA_PENDING_TRANSACTION)
 }
 
-func SweepBaseSepoliaBlockchainTransactionDetails() {
+func SweepBaseSepoliaBlockchainTransactionDetails(ctx context.Context) {
 
 	core.SweepBlockchainTransactionDetails(
+		ctx,
 		baseSepoliaClient,
 		constant.BASE_SEPOLIA,
 		&setup.BaseSepoliaPublicKey,
+		&baseSepoliaTxRetryCount,
 		constant.BASE_SEPOLIA_PENDING_TRANSACTION)
 }
 
-func SweepBaseSepoliaBlockchainPendingBlock() {
+func SweepBaseSepoliaBlockchainPendingBlock(ctx context.Context) {
 	core.SweepBlockchainPendingBlock(
+		ctx,
 		baseSepoliaClient,
 		constant.BASE_SEPOLIA,
 		&setup.BaseSepoliaPublicKey,
-		&baseSepoliaSweepCount,
+		&baseSepoliaBlockRetryCount,
 		constant.BASE_SEPOLIA_PENDING_BLOCK,
 		constant.BASE_SEPOLIA_PENDING_TRANSACTION)
 }

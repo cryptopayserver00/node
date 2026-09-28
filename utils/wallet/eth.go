@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
@@ -8,10 +9,9 @@ import (
 	"node/global"
 	"node/global/constant"
 	sweepUtils "node/sweep/utils"
+	"node/sweep/utils/erc20"
 	"node/utils"
-	"os"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -59,9 +59,9 @@ func GenerateEthereumWallet() (string, string, error) {
 	return pKey, address, nil
 }
 
-func CallEthTransfer(chainId uint, rpc, fromPri, fromPub, toAddress string, value *big.Int, gasLimit uint64) (hash string, err error) {
+func CallEthTransfer(ctx context.Context, chainId uint, rpc, fromPri, fromPub, toAddress string, value *big.Int, gasLimit uint64) (hash string, err error) {
 	var data []byte
-	hash, err = CallWalletTransactionCore(chainId, rpc, fromPri, fromPub, toAddress, value, data, gasLimit)
+	hash, err = CallWalletTransactionCore(ctx, chainId, rpc, fromPri, fromPub, toAddress, value, data, gasLimit)
 	if err != nil {
 		return "", err
 	}
@@ -69,26 +69,15 @@ func CallEthTransfer(chainId uint, rpc, fromPri, fromPub, toAddress string, valu
 	return hash, nil
 }
 
-func CallTokenTransfer(chainId uint, rpc, fromPri, fromPub, toAddress, tokenAddress string, tokenValue *big.Int, gasLimit uint64) (hash string, err error) {
+func CallTokenTransfer(ctx context.Context, chainId uint, rpc, fromPri, fromPub, toAddress, tokenAddress string, tokenValue *big.Int, gasLimit uint64) (hash string, err error) {
 	var value = big.NewInt(0)
 
-	file, err := os.Open("json/ERC20.json")
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	contractABI, err := abi.JSON(file)
+	data, err := erc20.ERC20ABI.Pack(Transfer, common.HexToAddress(toAddress), tokenValue)
 	if err != nil {
 		return "", err
 	}
 
-	data, err := contractABI.Pack(Transfer, common.HexToAddress(toAddress), tokenValue)
-	if err != nil {
-		return "", err
-	}
-
-	hash, err = CallWalletTransactionCore(chainId, rpc, fromPri, fromPub, tokenAddress, value, data, gasLimit)
+	hash, err = CallWalletTransactionCore(ctx, chainId, rpc, fromPri, fromPub, tokenAddress, value, data, gasLimit)
 	if err != nil {
 		return "", err
 	}
@@ -96,8 +85,8 @@ func CallTokenTransfer(chainId uint, rpc, fromPri, fromPub, toAddress, tokenAddr
 	return hash, nil
 }
 
-func CallTokenName(rpc, tokenAddress string) (result any, err error) {
-	result, err = CallContractCore(rpc, tokenAddress, Name)
+func CallTokenName(ctx context.Context, rpc, tokenAddress string) (result any, err error) {
+	result, err = CallContractCore(ctx, rpc, tokenAddress, Name)
 	if err != nil {
 		return nil, err
 	}
@@ -105,24 +94,24 @@ func CallTokenName(rpc, tokenAddress string) (result any, err error) {
 	return
 }
 
-func CallTokenSymbol(rpc, tokenAddress string) (result any, err error) {
-	result, err = CallContractCore(rpc, tokenAddress, Symbol)
+func CallTokenSymbol(ctx context.Context, rpc, tokenAddress string) (result any, err error) {
+	result, err = CallContractCore(ctx, rpc, tokenAddress, Symbol)
 	if err != nil {
 		return nil, err
 	}
 	return
 }
 
-func CallTokenDecimals(rpc, tokenAddress string) (result any, err error) {
-	result, err = CallContractCore(rpc, tokenAddress, Decimals)
+func CallTokenDecimals(ctx context.Context, rpc, tokenAddress string) (result any, err error) {
+	result, err = CallContractCore(ctx, rpc, tokenAddress, Decimals)
 	if err != nil {
 		return nil, err
 	}
 	return
 }
 
-func CallTokenBalanceOf(rpc, fromPub, tokenAddress string) (balance *big.Int, err error) {
-	result, err := CallContractCore(rpc, tokenAddress, BalanceOf, common.HexToAddress(fromPub))
+func CallTokenBalanceOf(ctx context.Context, rpc, fromPub, tokenAddress string) (balance *big.Int, err error) {
+	result, err := CallContractCore(ctx, rpc, tokenAddress, BalanceOf, common.HexToAddress(fromPub))
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +124,7 @@ func GetTransactionSenderFromTx(tx *types.Transaction) (string, error) {
 	return from.String(), err
 }
 
-func SendEthTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
+func SendEthTransfer(ctx context.Context, chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
 	rpc := constant.GetRPCUrlByNetwork(chainId)
 	if rpc == "" {
 		err = errors.New("chain not support")
@@ -153,11 +142,11 @@ func SendEthTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (
 		return "", err
 	}
 
-	hash, err = CallEthTransfer(chainId, rpc, pri, pub, toAddress, sendValue, gasLimit)
+	hash, err = CallEthTransfer(ctx, chainId, rpc, pri, pub, toAddress, sendValue, gasLimit)
 	return
 }
 
-func SendEthTokenTransfer(chainId uint, pri, pub, toAddress, coin string, sendVal string) (hash string, err error) {
+func SendEthTokenTransfer(ctx context.Context, chainId uint, pri, pub, toAddress, coin string, sendVal string) (hash string, err error) {
 	rpc := constant.GetRPCUrlByNetwork(chainId)
 	if rpc == "" {
 		err = errors.New("chain not support")
@@ -179,6 +168,6 @@ func SendEthTokenTransfer(chainId uint, pri, pub, toAddress, coin string, sendVa
 		return "", err
 	}
 
-	hash, err = CallTokenTransfer(chainId, rpc, pri, pub, toAddress, contractAddress, sendValue, gasLimit)
+	hash, err = CallTokenTransfer(ctx, chainId, rpc, pri, pub, toAddress, contractAddress, sendValue, gasLimit)
 	return
 }

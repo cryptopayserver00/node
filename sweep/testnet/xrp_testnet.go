@@ -9,48 +9,63 @@ import (
 )
 
 var (
-	xrpTestnetSweepCount = make(map[int64]int)
+	xrpTestnetBlockRetryCount = make(map[int64]int)
+	xrpTestnetTxRetryCount    = make(map[string]int)
 
 	xrpTestnetClient NODE_Client.Client
 )
 
-func SweepXrpTestnetBlockchain() {
-	initXrpTestnet()
+func SweepXrpTestnetBlockchain(ctx context.Context) {
+	initXrpTestnet(ctx)
 
 	go func() {
 		for {
-			SweepXrpTestnetBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepXrpTestnetBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepXrpTestnetBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepXrpTestnetBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepXrpTestnetBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepXrpTestnetBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initXrpTestnet() {
-	core.SetupXrpLatestBlockHeight(constant.XRP_TESTNET)
+func initXrpTestnet(ctx context.Context) {
+	core.SetupXrpLatestBlockHeight(ctx, constant.XRP_TESTNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.XRP_TESTNET)
+	setup.SetupCacheBlockHeight(ctx, constant.XRP_TESTNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.XRP_TESTNET)
+	setup.SetupSweepBlockHeight(ctx, constant.XRP_TESTNET)
 }
 
-func SweepXrpTestnetBlockchainTransaction() {
-
+func SweepXrpTestnetBlockchainTransaction(ctx context.Context) {
 	core.SweepXrpBlockchainTransaction(
+		ctx,
 		xrpTestnetClient,
 		constant.XRP_TESTNET,
 		&setup.XrpTestnetPublicKey,
-		&xrpTestnetSweepCount,
 		&setup.XrpTestnetSweepBlockHeight,
 		&setup.XrpTestnetCacheBlockHeight,
 		constant.XRP_TESTNET_SWEEP_BLOCK,
@@ -58,20 +73,23 @@ func SweepXrpTestnetBlockchainTransaction() {
 		constant.XRP_TESTNET_PENDING_TRANSACTION)
 }
 
-func SweepXrpTestnetBlockchainTransactionDetails() {
-
+func SweepXrpTestnetBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepXrpBlockchainTransactionDetails(
+		ctx,
 		xrpTestnetClient,
 		constant.XRP_TESTNET,
 		&setup.XrpTestnetPublicKey,
+		&xrpTestnetTxRetryCount,
 		constant.XRP_TESTNET_PENDING_TRANSACTION)
 }
 
-func SweepXrpTestnetBlockchainPendingBlock() {
+func SweepXrpTestnetBlockchainPendingBlock(ctx context.Context) {
 	core.SweepXrpBlockchainPendingBlock(
+		ctx,
 		xrpTestnetClient,
 		constant.XRP_TESTNET,
 		&setup.XrpTestnetPublicKey,
+		&xrpTestnetBlockRetryCount,
 		constant.XRP_TESTNET_PENDING_BLOCK,
 		constant.XRP_TESTNET_PENDING_TRANSACTION)
 }

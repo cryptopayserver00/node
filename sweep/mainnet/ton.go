@@ -9,48 +9,64 @@ import (
 )
 
 var (
-	tonSweepCount = make(map[int64]int)
+	tonBlockRetryCount = make(map[int64]int)
+	tonTxRetryCount    = make(map[string]int)
 
 	tonClient NODE_Client.Client
 )
 
-func SweepTonBlockchain() {
-	initTon()
+func SweepTonBlockchain(ctx context.Context) {
+
+	initTon(ctx)
 
 	go func() {
 		for {
-			SweepTonBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepTonBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepTonBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepTonBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepTonBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepTonBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initTon() {
-	core.SetupTonLatestBlockHeight(tonClient, constant.TON_MAINNET)
+func initTon(ctx context.Context) {
+	core.SetupTonLatestBlockHeight(ctx, tonClient, constant.TON_MAINNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.TON_MAINNET)
+	setup.SetupCacheBlockHeight(ctx, constant.TON_MAINNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.TON_MAINNET)
+	setup.SetupSweepBlockHeight(ctx, constant.TON_MAINNET)
 }
 
-func SweepTonBlockchainTransaction() {
-
+func SweepTonBlockchainTransaction(ctx context.Context) {
 	core.SweepTonBlockchainTransaction(
+		ctx,
 		tonClient,
 		constant.TON_MAINNET,
 		&setup.TonPublicKey,
-		&tonSweepCount,
 		&setup.TonSweepBlockHeight,
 		&setup.TonCacheBlockHeight,
 		constant.TON_SWEEP_BLOCK,
@@ -58,20 +74,23 @@ func SweepTonBlockchainTransaction() {
 		constant.TON_PENDING_TRANSACTION)
 }
 
-func SweepTonBlockchainTransactionDetails() {
-
+func SweepTonBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepTonBlockchainTransactionDetails(
+		ctx,
 		tonClient,
 		constant.TON_MAINNET,
 		&setup.TonPublicKey,
+		&tonTxRetryCount,
 		constant.TON_PENDING_TRANSACTION)
 }
 
-func SweepTonBlockchainPendingBlock() {
+func SweepTonBlockchainPendingBlock(ctx context.Context) {
 	core.SweepTonBlockchainPendingBlock(
+		ctx,
 		tonClient,
 		constant.TON_MAINNET,
 		&setup.TonPublicKey,
+		&tonBlockRetryCount,
 		constant.TON_PENDING_BLOCK,
 		constant.TON_PENDING_TRANSACTION)
 }

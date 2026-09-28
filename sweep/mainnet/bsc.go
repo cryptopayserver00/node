@@ -9,47 +9,63 @@ import (
 )
 
 var (
-	bscSweepCount = make(map[int64]int)
+	bscBlockRetryCount = make(map[int64]int)
+	bscTxRetryCount    = make(map[string]int)
 
 	bscClient NODE_Client.Client
 )
 
-func SweepBscBlockchain() {
-	initBsc()
+func SweepBscBlockchain(ctx context.Context) {
+	initBsc(ctx)
 
 	go func() {
 		for {
-			SweepBscBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepBscBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepBscBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepBscBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepBscBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepBscBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initBsc() {
-	core.SetupLatestBlockHeight(bscClient, constant.BSC_MAINNET)
+func initBsc(ctx context.Context) {
+	core.SetupLatestBlockHeight(ctx, bscClient, constant.BSC_MAINNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.BSC_MAINNET)
+	setup.SetupCacheBlockHeight(ctx, constant.BSC_MAINNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.BSC_MAINNET)
+	setup.SetupSweepBlockHeight(ctx, constant.BSC_MAINNET)
 }
 
-func SweepBscBlockchainTransaction() {
+func SweepBscBlockchainTransaction(ctx context.Context) {
 	core.SweepBlockchainTransaction(
+		ctx,
 		bscClient,
 		constant.BSC_MAINNET,
 		&setup.BscPublicKey,
-		&bscSweepCount,
 		&setup.BscSweepBlockHeight,
 		&setup.BscCacheBlockHeight,
 		constant.BSC_SWEEP_BLOCK,
@@ -57,20 +73,23 @@ func SweepBscBlockchainTransaction() {
 		constant.BSC_PENDING_TRANSACTION)
 }
 
-func SweepBscBlockchainTransactionDetails() {
+func SweepBscBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepBlockchainTransactionDetails(
+		ctx,
 		bscClient,
 		constant.BSC_MAINNET,
 		&setup.BscPublicKey,
+		&bscTxRetryCount,
 		constant.BSC_PENDING_TRANSACTION)
 }
 
-func SweepBscBlockchainPendingBlock() {
+func SweepBscBlockchainPendingBlock(ctx context.Context) {
 	core.SweepBlockchainPendingBlock(
+		ctx,
 		bscClient,
 		constant.BSC_MAINNET,
 		&setup.BscPublicKey,
-		&bscSweepCount,
+		&bscBlockRetryCount,
 		constant.BSC_PENDING_BLOCK,
 		constant.BSC_PENDING_TRANSACTION)
 }

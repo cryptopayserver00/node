@@ -9,48 +9,63 @@ import (
 )
 
 var (
-	avaxSweepCount = make(map[int64]int)
+	avaxBlockRetryCount = make(map[int64]int)
+	avaxTxRetryCount    = make(map[string]int)
 
 	avaxClient NODE_Client.Client
 )
 
-func SweepAvaxBlockchain() {
-	initAvax()
+func SweepAvaxBlockchain(ctx context.Context) {
+	initAvax(ctx)
 
 	go func() {
 		for {
-			SweepAvaxBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepAvaxBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepAvaxBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepAvaxBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepAvaxBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepAvaxBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initAvax() {
-	core.SetupLatestBlockHeight(avaxClient, constant.AVAX_MAINNET)
+func initAvax(ctx context.Context) {
+	core.SetupLatestBlockHeight(ctx, avaxClient, constant.AVAX_MAINNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.AVAX_MAINNET)
+	setup.SetupCacheBlockHeight(ctx, constant.AVAX_MAINNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.AVAX_MAINNET)
+	setup.SetupSweepBlockHeight(ctx, constant.AVAX_MAINNET)
 }
 
-func SweepAvaxBlockchainTransaction() {
-
+func SweepAvaxBlockchainTransaction(ctx context.Context) {
 	core.SweepBlockchainTransaction(
+		ctx,
 		avaxClient,
 		constant.AVAX_MAINNET,
 		&setup.AvaxPublicKey,
-		&avaxSweepCount,
 		&setup.AvaxSweepBlockHeight,
 		&setup.AvaxCacheBlockHeight,
 		constant.AVAX_SWEEP_BLOCK,
@@ -58,21 +73,23 @@ func SweepAvaxBlockchainTransaction() {
 		constant.AVAX_PENDING_TRANSACTION)
 }
 
-func SweepAvaxBlockchainTransactionDetails() {
-
+func SweepAvaxBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepBlockchainTransactionDetails(
+		ctx,
 		avaxClient,
 		constant.AVAX_MAINNET,
 		&setup.AvaxPublicKey,
+		&avaxTxRetryCount,
 		constant.AVAX_PENDING_TRANSACTION)
 }
 
-func SweepAvaxBlockchainPendingBlock() {
+func SweepAvaxBlockchainPendingBlock(ctx context.Context) {
 	core.SweepBlockchainPendingBlock(
+		ctx,
 		avaxClient,
 		constant.AVAX_MAINNET,
 		&setup.AvaxPublicKey,
-		&avaxSweepCount,
+		&avaxBlockRetryCount,
 		constant.AVAX_PENDING_BLOCK,
 		constant.AVAX_PENDING_TRANSACTION)
 }

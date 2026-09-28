@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -16,9 +17,12 @@ import (
 	"strconv"
 
 	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/gin-gonic/gin"
 )
 
-func (n *NService) GetBtcBalance(req request.GetBtcBalance) (response.ClientBalanceResponse, error) {
+func (n *NService) GetBtcBalance(c *gin.Context, req request.GetBtcBalance) (response.ClientBalanceResponse, error) {
+	ctx := c.Request.Context()
+
 	var err error
 	var result response.ClientBalanceResponse
 
@@ -28,7 +32,7 @@ func (n *NService) GetBtcBalance(req request.GetBtcBalance) (response.ClientBala
 		"x-api-key": constant.GetTatumRandomKeyByNetwork(req.ChainId),
 	}
 	var balanceResponse tatum.BitcoinBalance
-	err = client.HTTPGet(&balanceResponse)
+	err = client.HTTPGet(ctx, &balanceResponse)
 	if err == nil {
 		result.Balance, err = utils.CalSubForBtcValue(balanceResponse.Incoming, balanceResponse.Outgoing)
 		if err == nil {
@@ -43,7 +47,7 @@ func (n *NService) GetBtcBalance(req request.GetBtcBalance) (response.ClientBala
 	// mempool
 	client.URL = fmt.Sprintf(constant.MempoolGetUtxoByNetwork(req.ChainId), req.Address)
 	var utxoResponse []mempool.MempoolUtxo
-	err = client.HTTPGet(&utxoResponse)
+	err = client.HTTPGet(ctx, &utxoResponse)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return result, err
@@ -64,7 +68,9 @@ func (n *NService) GetBtcBalance(req request.GetBtcBalance) (response.ClientBala
 	return result, nil
 }
 
-func (n *NService) GetBtcFeeRate(req request.GetBtcFeeRate) (tatum.BitcoinFeeRate, error) {
+func (n *NService) GetBtcFeeRate(c *gin.Context, req request.GetBtcFeeRate) (tatum.BitcoinFeeRate, error) {
+	ctx := c.Request.Context()
+
 	var err error
 
 	var rateResponse tatum.BitcoinFeeRate
@@ -75,7 +81,7 @@ func (n *NService) GetBtcFeeRate(req request.GetBtcFeeRate) (tatum.BitcoinFeeRat
 		"x-api-key": constant.GetTatumRandomKeyByNetwork(req.ChainId),
 	}
 
-	err = client.HTTPGet(&rateResponse)
+	err = client.HTTPGet(ctx, &rateResponse)
 	if err == nil {
 		return rateResponse, err
 	} else {
@@ -85,7 +91,7 @@ func (n *NService) GetBtcFeeRate(req request.GetBtcFeeRate) (tatum.BitcoinFeeRat
 	// mempool
 	client.URL = constant.MempoolGetFeesyNetwork(req.ChainId)
 	var feesResponse mempool.MempoolFees
-	err = client.HTTPGet(&feesResponse)
+	err = client.HTTPGet(ctx, &feesResponse)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return rateResponse, err
@@ -98,13 +104,15 @@ func (n *NService) GetBtcFeeRate(req request.GetBtcFeeRate) (tatum.BitcoinFeeRat
 	return rateResponse, nil
 }
 
-func (n *NService) GetBtcAddressUtxo(req request.GetBtcAddressUtxo) ([]blockstream.UtxoResponse, error) {
+func (n *NService) GetBtcAddressUtxo(c *gin.Context, req request.GetBtcAddressUtxo) ([]blockstream.UtxoResponse, error) {
+	ctx := c.Request.Context()
+
 	var err error
 
 	//blockstream
 	client.URL = fmt.Sprintf("%s/address/%s/utxo", constant.GetBlcokStreamHttpUrlByNetwork(req.ChainId), req.Address)
 	var utxoResponse []blockstream.UtxoResponse
-	err = client.HTTPGet(&utxoResponse)
+	err = client.HTTPGet(ctx, &utxoResponse)
 	if err == nil {
 		return utxoResponse, err
 	} else {
@@ -113,7 +121,7 @@ func (n *NService) GetBtcAddressUtxo(req request.GetBtcAddressUtxo) ([]blockstre
 
 	// mempool
 	client.URL = fmt.Sprintf(constant.MempoolGetUtxoByNetwork(req.ChainId), req.Address)
-	err = client.HTTPGet(&utxoResponse)
+	err = client.HTTPGet(ctx, &utxoResponse)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return utxoResponse, err
@@ -122,7 +130,9 @@ func (n *NService) GetBtcAddressUtxo(req request.GetBtcAddressUtxo) ([]blockstre
 	return utxoResponse, nil
 }
 
-func (n *NService) PostBtcBroadcast(req request.PostBtcBroadcast) (any, error) {
+func (n *NService) PostBtcBroadcast(c *gin.Context, req request.PostBtcBroadcast) (any, error) {
+	ctx := c.Request.Context()
+
 	var err error
 
 	// tatum
@@ -135,7 +145,7 @@ func (n *NService) PostBtcBroadcast(req request.PostBtcBroadcast) (any, error) {
 	payload := map[string]any{
 		"txData": req.TxData,
 	}
-	err = client.HTTPPost(payload, &tatumBroadcastResponse)
+	err = client.HTTPPost(ctx, payload, &tatumBroadcastResponse)
 	if err == nil {
 		return tatumBroadcastResponse, nil
 	} else {
@@ -149,7 +159,7 @@ func (n *NService) PostBtcBroadcast(req request.PostBtcBroadcast) (any, error) {
 
 	// blockstream
 	var blockstreambroadcastResponse blockstream.BroadcastResponse
-	err = client.HTTPPost(payload, &blockstreambroadcastResponse)
+	err = client.HTTPPost(ctx, payload, &blockstreambroadcastResponse)
 
 	if err == nil {
 		return blockstreambroadcastResponse, nil
@@ -160,12 +170,13 @@ func (n *NService) PostBtcBroadcast(req request.PostBtcBroadcast) (any, error) {
 
 }
 
-func (n *NService) GetBtcTransactions(req request.GetBtcTransactions) ([]response.ClientBtcTxResponse, error) {
+func (n *NService) GetBtcTransactions(c *gin.Context, req request.GetBtcTransactions) ([]response.ClientBtcTxResponse, error) {
+	ctx := c.Request.Context()
 
-	if err := n.UpdateBtcTransactionsForBlockStream(req.ChainId, req.Address); err != nil {
+	if err := n.UpdateBtcTransactionsForBlockStream(ctx, req.ChainId, req.Address); err != nil {
 		global.NODE_LOG.Error(err.Error())
 
-		if err := n.UpdateBtcTransactionsForTatum(req.ChainId, req.Address); err != nil {
+		if err := n.UpdateBtcTransactionsForTatum(ctx, req.ChainId, req.Address); err != nil {
 			global.NODE_LOG.Error(err.Error())
 		}
 	}
@@ -187,7 +198,7 @@ func (n *NService) GetBtcTransactions(req request.GetBtcTransactions) ([]respons
 	return txs, nil
 }
 
-func (n *NService) UpdateBtcTransactionsForBlockStream(chainId uint, address string) (err error) {
+func (n *NService) UpdateBtcTransactionsForBlockStream(ctx context.Context, chainId uint, address string) (err error) {
 	var (
 		saveTxs []response.ClientBtcTxResponse
 	)
@@ -195,7 +206,7 @@ func (n *NService) UpdateBtcTransactionsForBlockStream(chainId uint, address str
 	client.URL = fmt.Sprintf("%s/address/%s/txs", constant.GetBlcokStreamHttpUrlByNetwork(chainId), address)
 
 	var transactionResponse []blockstream.TransactionResponse
-	err = client.HTTPGet(&transactionResponse)
+	err = client.HTTPGet(ctx, &transactionResponse)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
@@ -243,7 +254,7 @@ func (n *NService) UpdateBtcTransactionsForBlockStream(chainId uint, address str
 	return nil
 }
 
-func (n *NService) UpdateBtcTransactionsForTatum(chainId uint, adress string) (err error) {
+func (n *NService) UpdateBtcTransactionsForTatum(ctx context.Context, chainId uint, adress string) (err error) {
 	var (
 		saveTxs  []response.ClientBtcTxResponse
 		pageSize = 50
@@ -255,7 +266,7 @@ func (n *NService) UpdateBtcTransactionsForTatum(chainId uint, adress string) (e
 	}
 
 	var txs []tatum.TatumBitcoinTx
-	err = client.HTTPGet(&txs)
+	err = client.HTTPGet(ctx, &txs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
@@ -303,7 +314,9 @@ func (n *NService) UpdateBtcTransactionsForTatum(chainId uint, adress string) (e
 	return nil
 }
 
-func (n *NService) GetBtcTransactionDetail(req request.GetBtcTransactionDetail) (result response.ClientBtcTxResponse, err error) {
+func (n *NService) GetBtcTransactionDetail(c *gin.Context, req request.GetBtcTransactionDetail) (result response.ClientBtcTxResponse, err error) {
+	ctx := c.Request.Context()
+
 	item, err := global.NODE_MEMCACHE.Get(fmt.Sprintf(constantOneTransactionHistory, req.ChainId, req.Hash))
 	if err == nil {
 		err = json.Unmarshal(item.Value, &result)
@@ -314,7 +327,7 @@ func (n *NService) GetBtcTransactionDetail(req request.GetBtcTransactionDetail) 
 		global.NODE_LOG.Error(err.Error())
 	}
 
-	result, err = n.DecodeBtcHashMultiplePlatform(req.ChainId, req.Hash)
+	result, err = n.DecodeBtcHashMultiplePlatform(ctx, req.ChainId, req.Hash)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
@@ -339,12 +352,12 @@ func (n *NService) GetBtcTransactionDetail(req request.GetBtcTransactionDetail) 
 	return result, nil
 }
 
-func (n *NService) DecodeBtcHashMultiplePlatform(chainId uint, hash string) (result response.ClientBtcTxResponse, err error) {
+func (n *NService) DecodeBtcHashMultiplePlatform(ctx context.Context, chainId uint, hash string) (result response.ClientBtcTxResponse, err error) {
 
 	// blockstream
 	client.URL = fmt.Sprintf("%s/tx/%s", constant.GetBlcokStreamHttpUrlByNetwork(chainId), hash)
 	var transactionResponse blockstream.TransactionResponse
-	err = client.HTTPGet(&transactionResponse)
+	err = client.HTTPGet(ctx, &transactionResponse)
 	if err == nil {
 		result, err = n.DecodeBtcTransactionForBlockStream(chainId, "", transactionResponse)
 		if err == nil {
@@ -359,7 +372,7 @@ func (n *NService) DecodeBtcHashMultiplePlatform(chainId uint, hash string) (res
 		"x-api-key": constant.GetTatumRandomKeyByNetwork(chainId),
 	}
 	var txs tatum.TatumBitcoinTx
-	err = client.HTTPGet(&txs)
+	err = client.HTTPGet(ctx, &txs)
 	if err == nil {
 		result, err = n.DecodeBtcTransactionForTatum(chainId, "", txs)
 		if err == nil {

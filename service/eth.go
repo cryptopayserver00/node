@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/gin-gonic/gin"
 )
 
 var (
@@ -28,7 +30,7 @@ var (
 	constantOnePendingTransactionHistory = "tx-pending-%d-%s"
 )
 
-func (n *NService) GetEthPendingTransactions(req request.GetEthTransactions) ([]response.ClientTransaction, error) {
+func (n *NService) GetEthPendingTransactions(ctx context.Context, req request.GetEthTransactions) ([]response.ClientTransaction, error) {
 	var err error
 	var pendings []response.ClientTransaction
 
@@ -40,7 +42,7 @@ func (n *NService) GetEthPendingTransactions(req request.GetEthTransactions) ([]
 		"params":  []string{req.Address},
 	}
 	var rpcGeneralResponse response.RPCGeneralTxpool
-	err = client.HTTPPost(payload, &rpcGeneralResponse)
+	err = client.HTTPPost(ctx, payload, &rpcGeneralResponse)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return nil, err
@@ -93,8 +95,10 @@ func (n *NService) GetEthPendingTransaction(req request.GetEthPendingTransaction
 	return tx, nil
 }
 
-func (n *NService) GetEthTransactions(req request.GetEthTransactions) ([]response.ClientTransaction, error) {
-	if err := n.UpdateEthTransactionsByAlchemy(req); err != nil {
+func (n *NService) GetEthTransactions(c *gin.Context, req request.GetEthTransactions) ([]response.ClientTransaction, error) {
+	ctx := c.Request.Context()
+
+	if err := n.UpdateEthTransactionsByAlchemy(ctx, req); err != nil {
 		global.NODE_LOG.Error(err.Error())
 	}
 
@@ -133,7 +137,7 @@ func (n *NService) GetEthTransactions(req request.GetEthTransactions) ([]respons
 	return filterTxs, nil
 }
 
-func (n *NService) UpdateEthTransactionsByAlchemy(req request.GetEthTransactions) (err error) {
+func (n *NService) UpdateEthTransactionsByAlchemy(ctx context.Context, req request.GetEthTransactions) (err error) {
 	client.URL = constant.GetAlchemyRPCUrlByNetwork(req.ChainId)
 
 	var fromRpcAlchemyTxs response.RPCAlchemyTransactionDetails
@@ -175,13 +179,13 @@ func (n *NService) UpdateEthTransactionsByAlchemy(req request.GetEthTransactions
 		},
 	}
 
-	err = client.HTTPPost(fromPayload, &fromRpcAlchemyTxs)
+	err = client.HTTPPost(ctx, fromPayload, &fromRpcAlchemyTxs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
 	}
 
-	err = client.HTTPPost(toPayload, &toRpcAlchemyTxs)
+	err = client.HTTPPost(ctx, toPayload, &toRpcAlchemyTxs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
@@ -206,7 +210,7 @@ func (n *NService) UpdateEthTransactionsByAlchemy(req request.GetEthTransactions
 	}
 
 	// get pending transaction
-	pendingTxs, err := n.GetEthPendingTransactions(req)
+	pendingTxs, err := n.GetEthPendingTransactions(ctx, req)
 	if err == nil {
 		saveTxs = append(saveTxs, pendingTxs...)
 	}

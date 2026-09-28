@@ -1,22 +1,22 @@
 package core
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"node/global"
 	"node/initialize"
 	"node/service"
 	"node/service/task"
 	"node/sweep"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/fvbock/endless"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
-
-type Server interface {
-	ListenAndServe() error
-}
 
 func RunWindowsServer() {
 	if global.NODE_CONFIG.System.UseInit {
@@ -35,11 +35,11 @@ func RunWindowsServer() {
 	}
 
 	if global.NODE_CONFIG.Blockchain.OpenSweepBlock {
-		sweep.RunBlockSweep()
+		sweep.RunBlockSweep(context.Background())
 	}
 
 	if global.NODE_CONFIG.System.UseTask {
-		task.RunTask()
+		task.RunTask(context.Background())
 	}
 
 	router := initialize.Routers()
@@ -47,16 +47,36 @@ func RunWindowsServer() {
 	address := fmt.Sprintf(":%d", global.NODE_CONFIG.System.Addr)
 	server := initServer(address, router)
 
-	global.NODE_LOG.Info("http server run success on ", zap.String("address", address))
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	global.NODE_LOG.Error(server.ListenAndServe().Error())
+	go func() {
+		global.NODE_LOG.Info("server run success", zap.String("address", address))
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			global.NODE_LOG.Error(err.Error())
+		}
+	}()
+
+	<-ctx.Done()
+	stop()
+	global.NODE_LOG.Info("shutting down server...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		global.NODE_LOG.Error("server forced to shutdown", zap.String("err", err.Error()))
+	}
+
+	global.NODE_LOG.Info("server exited")
 }
 
-func initServer(address string, router *gin.Engine) Server {
-	server := endless.NewServer(address, router)
-	server.ReadHeaderTimeout = 20 * time.Second
-	server.WriteTimeout = 20 * time.Second
-	server.MaxHeaderBytes = 1 << 20
-
-	return server
+func initServer(address string, router *gin.Engine) *http.Server {
+	return &http.Server{
+		Addr:              address,
+		Handler:           router,
+		ReadHeaderTimeout: 20 * time.Second,
+		WriteTimeout:      20 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
 }

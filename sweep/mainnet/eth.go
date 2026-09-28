@@ -9,49 +9,64 @@ import (
 )
 
 var (
-	ethSweepCount = make(map[int64]int)
+	ethBlockRetryCount = make(map[int64]int)
+	ethTxRetryCount    = make(map[string]int)
 
 	ethClient NODE_Client.Client
 )
 
-func SweepEthBlockchain() {
+func SweepEthBlockchain(ctx context.Context) {
 
-	initEth()
+	initEth(ctx)
 
 	go func() {
 		for {
-			SweepEthBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepEthBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepEthBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepEthBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepEthBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepEthBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initEth() {
-	core.SetupLatestBlockHeight(ethClient, constant.ETH_MAINNET)
+func initEth(ctx context.Context) {
+	core.SetupLatestBlockHeight(ctx, ethClient, constant.ETH_MAINNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.ETH_MAINNET)
+	setup.SetupCacheBlockHeight(ctx, constant.ETH_MAINNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.ETH_MAINNET)
+	setup.SetupSweepBlockHeight(ctx, constant.ETH_MAINNET)
 }
 
-func SweepEthBlockchainTransaction() {
-
+func SweepEthBlockchainTransaction(ctx context.Context) {
 	core.SweepBlockchainTransaction(
+		ctx,
 		ethClient,
 		constant.ETH_MAINNET,
 		&setup.EthPublicKey,
-		&ethSweepCount,
 		&setup.EthSweepBlockHeight,
 		&setup.EthCacheBlockHeight,
 		constant.ETH_SWEEP_BLOCK,
@@ -59,20 +74,23 @@ func SweepEthBlockchainTransaction() {
 		constant.ETH_PENDING_TRANSACTION)
 }
 
-func SweepEthBlockchainTransactionDetails() {
+func SweepEthBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepBlockchainTransactionDetails(
+		ctx,
 		ethClient,
 		constant.ETH_MAINNET,
 		&setup.EthPublicKey,
+		&ethTxRetryCount,
 		constant.ETH_PENDING_TRANSACTION)
 }
 
-func SweepEthBlockchainPendingBlock() {
+func SweepEthBlockchainPendingBlock(ctx context.Context) {
 	core.SweepBlockchainPendingBlock(
+		ctx,
 		ethClient,
 		constant.ETH_MAINNET,
 		&setup.EthPublicKey,
-		&ethSweepCount,
+		&ethBlockRetryCount,
 		constant.ETH_PENDING_BLOCK,
 		constant.ETH_PENDING_TRANSACTION)
 }

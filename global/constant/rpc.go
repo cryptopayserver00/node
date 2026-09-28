@@ -1,6 +1,7 @@
 package constant
 
 import (
+	"context"
 	"math/rand/v2"
 	"node/global"
 	"node/model/node/request"
@@ -49,8 +50,6 @@ var (
 	OPMainnetRPC = []string{
 		"https://mainnet.optimism.io",
 		"https://optimism-rpc.publicnode.com",
-		"https://op-pokt.nodies.app",
-		"https://1rpc.io/op",
 	}
 
 	OPSepoliaRPC = []string{
@@ -62,7 +61,6 @@ var (
 		"https://arb1.arbitrum.io/rpc",
 		"https://arbitrum-one.publicnode.com",
 		"https://arbitrum-one-rpc.publicnode.com",
-		"https://1rpc.io/arb",
 	}
 
 	ArbitrumNovaRPC = []string{
@@ -75,6 +73,7 @@ var (
 
 	SolanaMainnetRPC = []string{
 		"https://api.mainnet-beta.solana.com",
+		"https://solana-rpc.publicnode.com",
 	}
 
 	SolanaDevnetRpc = []string{
@@ -83,8 +82,6 @@ var (
 
 	PolMainnetRPC = []string{
 		"https://polygon-bor-rpc.publicnode.com",
-		// "https://polygon-pokt.nodies.app",
-		// "https://1rpc.io/matic",
 	}
 
 	PolTestnetRPC = []string{
@@ -94,7 +91,6 @@ var (
 
 	AvaxMainnetRPC = []string{
 		"https://avalanche-c-chain-rpc.publicnode.com",
-		"https://1rpc.io/avax/c",
 	}
 
 	AvaxTestnetRPC = []string{
@@ -106,8 +102,6 @@ var (
 	BaseMainnetRPC = []string{
 		"https://mainnet.base.org",
 		"https://developer-access-mainnet.base.org",
-		"https://1rpc.io/base",
-		"https://base-pokt.nodies.app",
 		"https://base-rpc.publicnode.com",
 	}
 
@@ -245,7 +239,7 @@ func GetAlchemyRPCUrlByNetwork(chainId uint) string {
 
 }
 
-func GetRealRpcByArray(rpcs []string) string {
+func GetRealRpcByArray(ctx context.Context, rpcs []string) string {
 	for _, rpc := range rpcs {
 		client.URL = rpc
 		var rpcBlockInfo response.RPCBlockInfo
@@ -254,7 +248,7 @@ func GetRealRpcByArray(rpcs []string) string {
 		jsonRpcRequest.Jsonrpc = "2.0"
 		jsonRpcRequest.Method = "eth_getBlockByNumber"
 		jsonRpcRequest.Params = []any{"latest", false}
-		err := client.HTTPPost(jsonRpcRequest, &rpcBlockInfo)
+		err := client.HTTPPost(ctx, jsonRpcRequest, &rpcBlockInfo)
 		if err != nil {
 			continue
 		}
@@ -273,20 +267,60 @@ func GetRPCUrlByNetwork(chainId uint) string {
 	case ETH_MAINNET:
 		index := rand.IntN(len(ETHMainnetRPC))
 		return ETHMainnetRPC[index]
-	case POL_MAINNET:
-		index := rand.IntN(len(PolMainnetRPC))
-		return PolMainnetRPC[index]
+	case ETH_SEPOLIA:
+		index := rand.IntN(len(ETHSepoliaRPC))
+		return ETHSepoliaRPC[index]
 	case BSC_MAINNET:
 		index := rand.IntN(len(BSCMainnetRPC))
 		return BSCMainnetRPC[index]
-	case ETH_SEPOLIA, BSC_TESTNET, OP_MAINNET, OP_SEPOLIA, ARBITRUM_ONE, ARBITRUM_NOVA, ARBITRUM_SEPOLIA, SOL_MAINNET, SOL_DEVNET, POL_TESTNET, AVAX_MAINNET, AVAX_TESTNET, BASE_MAINNET, BASE_SEPOLIA:
-		return GetAlchemyRPCUrlByNetwork(chainId)
+	case BSC_TESTNET:
+		index := rand.IntN(len(BSCTestnetRPC))
+		return BSCTestnetRPC[index]
+	case ARBITRUM_ONE:
+		index := rand.IntN(len(ArbitrumOneRPC))
+		return ArbitrumOneRPC[index]
+	case ARBITRUM_NOVA:
+		index := rand.IntN(len(ArbitrumNovaRPC))
+		return ArbitrumNovaRPC[index]
+	case ARBITRUM_SEPOLIA:
+		index := rand.IntN(len(ArbitrumSepoliaRPC))
+		return ArbitrumSepoliaRPC[index]
+	case OP_MAINNET:
+		index := rand.IntN(len(OPMainnetRPC))
+		return OPMainnetRPC[index]
+	case OP_SEPOLIA:
+		index := rand.IntN(len(OPSepoliaRPC))
+		return OPSepoliaRPC[index]
 	case XRP_MAINNET:
 		index := rand.IntN(len(XRPMainnetRPC))
 		return XRPMainnetRPC[index]
 	case XRP_TESTNET:
 		index := rand.IntN(len(XRPTestnetRPC))
 		return XRPTestnetRPC[index]
+	case POL_MAINNET:
+		index := rand.IntN(len(PolMainnetRPC))
+		return PolMainnetRPC[index]
+	case POL_TESTNET:
+		index := rand.IntN(len(PolTestnetRPC))
+		return PolTestnetRPC[index]
+	case AVAX_MAINNET:
+		index := rand.IntN(len(AvaxMainnetRPC))
+		return AvaxMainnetRPC[index]
+	case AVAX_TESTNET:
+		index := rand.IntN(len(AvaxTestnetRPC))
+		return AvaxTestnetRPC[index]
+	case BASE_MAINNET:
+		index := rand.IntN(len(BaseMainnetRPC))
+		return BaseMainnetRPC[index]
+	case BASE_SEPOLIA:
+		index := rand.IntN(len(BaseSepoliaRPC))
+		return BaseSepoliaRPC[index]
+	case SOL_MAINNET:
+		index := rand.IntN(len(SolanaMainnetRPC))
+		return SolanaMainnetRPC[index]
+	case SOL_DEVNET:
+		index := rand.IntN(len(SolanaDevnetRpc))
+		return SolanaDevnetRpc[index]
 	default:
 		return ""
 	}

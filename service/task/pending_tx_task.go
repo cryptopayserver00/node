@@ -13,22 +13,23 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func RunGetPendingTxNumberTask() {
+const GetPendingTxNumberInterval = 1 * time.Hour
+
+func RunGetPendingTxNumberTask(ctx context.Context) {
+	ticker := time.NewTicker(GetPendingTxNumberInterval)
+	defer ticker.Stop()
+
 	for {
-		now := time.Now()
-
-		nextHour := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
-		durationUntilNextHour := nextHour.Sub(now)
-
-		ticker := time.NewTicker(durationUntilNextHour)
-
-		<-ticker.C
-
-		RunPendingTxNumberCore()
+		select {
+		case <-ticker.C:
+			RunPendingTxNumberCore(ctx)
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
-func RunPendingTxNumberCore() {
+func RunPendingTxNumberCore(ctx context.Context) {
 	defer utils.HandlePanic()
 
 	global.NODE_LOG.Info("---------- Run Get Pending Transaction Number Task ----------")
@@ -37,7 +38,7 @@ func RunPendingTxNumberCore() {
 
 	allPendingTxString := []string{}
 	for _, v := range constant.AllPendingTx {
-		len, err := global.NODE_REDIS.LLen(context.Background(), v).Result()
+		len, err := global.NODE_REDIS.LLen(ctx, v).Result()
 		if err != nil && !errors.Is(err, redis.Nil) {
 			global.NODE_LOG.Error(err.Error())
 			continue
@@ -48,7 +49,7 @@ func RunPendingTxNumberCore() {
 
 	allPendingBlockString := []string{}
 	for _, v := range constant.AllPendingBlock {
-		len, err := global.NODE_REDIS.LLen(context.Background(), v).Result()
+		len, err := global.NODE_REDIS.LLen(ctx, v).Result()
 		if err != nil && !errors.Is(err, redis.Nil) {
 			global.NODE_LOG.Error(err.Error())
 			continue

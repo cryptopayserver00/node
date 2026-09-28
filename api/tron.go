@@ -27,7 +27,7 @@ func (n *NodeApi) GetTronTransactions(c *gin.Context) {
 	rd, _ := json.Marshal(trx)
 	global.NODE_LOG.Info("GetTronTransactions: " + string(rd))
 
-	result, err := service.NodeService.GetTronTransactions(trx)
+	result, err := service.NodeService.GetTronTransactions(c, trx)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
@@ -55,7 +55,7 @@ func (n *NodeApi) GetTrxTransactions(c *gin.Context) {
 	rd, _ := json.Marshal(trx)
 	global.NODE_LOG.Info("GetTrxTransactions: " + string(rd))
 
-	result, err := service.NodeService.GetTrxTransactions(trx)
+	result, err := service.NodeService.GetTrxTransactions(c, trx)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
@@ -83,7 +83,7 @@ func (n *NodeApi) GetTrc20Transactions(c *gin.Context) {
 	rd, _ := json.Marshal(trc20)
 	global.NODE_LOG.Info("GetTrc20Transactions: " + string(rd))
 
-	result, err := service.NodeService.GetTrc20Transactions(trc20)
+	result, err := service.NodeService.GetTrc20Transactions(c, trc20)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())

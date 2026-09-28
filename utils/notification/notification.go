@@ -16,37 +16,36 @@ var (
 	client NODE_Client.Client
 )
 
-func NotificationRequest(request request.NotificationRequest) (err error) {
-
-	rd, _ := json.Marshal(request)
-	global.NODE_LOG.Info("NotificationRequest: " + string(rd))
-
-	err = handleNotification(request)
+func NotificationRequest(ctx context.Context, req request.NotificationRequest) error {
+	rd, err := json.Marshal(req)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error())
+		global.NODE_LOG.Error("NotificationRequest marshal failed: " + err.Error())
+	} else {
+		global.NODE_LOG.Info("NotificationRequest: " + string(rd))
+		go utils.TxInformToTelegram("NotificationRequest: \n\n" + string(rd))
 	}
 
-	utils.TxInformToTelegram("NotificationRequest: \n\n" + string(rd))
+	if err := handleNotification(ctx, req); err != nil {
+		global.NODE_LOG.Error("handleNotification failed: " + err.Error())
+		return err
+	}
 
 	return nil
 }
 
-func handleNotification(request request.NotificationRequest) (err error) {
-	ownId, err := service.NodeService.SaveOwnTx(request)
+func handleNotification(ctx context.Context, req request.NotificationRequest) error {
+	ownId, err := service.NodeService.SaveOwnTx(ctx, req)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return
+		return fmt.Errorf("SaveOwnTx failed, hash=%s: %w", req.Hash, err)
 	}
 
 	if ownId == 0 {
-		global.NODE_LOG.Info(fmt.Sprintf("OwnId already existed, hash: %s", request.Hash))
-		return
+		global.NODE_LOG.Info(fmt.Sprintf("OwnId already existed, hash: %s", req.Hash))
+		return nil
 	}
 
-	_, err = global.NODE_REDIS.RPush(context.Background(), constant.WS_NOTIFICATION, ownId).Result()
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return
+	if err := global.NODE_REDIS.RPush(ctx, constant.WS_NOTIFICATION, ownId).Err(); err != nil {
+		return fmt.Errorf("RPush WS_NOTIFICATION failed, ownId=%d: %w", ownId, err)
 	}
 
 	return nil

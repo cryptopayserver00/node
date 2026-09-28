@@ -9,47 +9,63 @@ import (
 )
 
 var (
-	btcTestnetSweepCount = make(map[int64]int)
+	btcTestnetBlockRetryCount = make(map[int64]int)
+	btcTestnetTxRetryCount    = make(map[string]int)
 
 	btcTestnetClient NODE_Client.Client
 )
 
-func SweepBtcTestnetBlockchain() {
-	initBtcTestnet()
+func SweepBtcTestnetBlockchain(ctx context.Context) {
+	initBtcTestnet(ctx)
 
 	go func() {
 		for {
-			SweepBtcTestnetBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepBtcTestnetBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepBtcTestnetBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepBtcTestnetBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepBtcTestnetBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepBtcTestnetBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initBtcTestnet() {
-	core.SetupBtcLatestBlockHeight(btcTestnetClient, constant.BTC_TESTNET)
+func initBtcTestnet(ctx context.Context) {
+	core.SetupBtcLatestBlockHeight(ctx, btcTestnetClient, constant.BTC_TESTNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.BTC_TESTNET)
+	setup.SetupCacheBlockHeight(ctx, constant.BTC_TESTNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.BTC_TESTNET)
+	setup.SetupSweepBlockHeight(ctx, constant.BTC_TESTNET)
 }
 
-func SweepBtcTestnetBlockchainTransaction() {
+func SweepBtcTestnetBlockchainTransaction(ctx context.Context) {
 	core.SweepBtcBlockchainTransaction(
+		ctx,
 		btcTestnetClient,
 		constant.BTC_TESTNET,
 		&setup.BtcTestnetPublicKey,
-		&btcTestnetSweepCount,
 		&setup.BtcTestnetSweepBlockHeight,
 		&setup.BtcTestnetCacheBlockHeight,
 		constant.BTC_TESTNET_SWEEP_BLOCK,
@@ -57,19 +73,23 @@ func SweepBtcTestnetBlockchainTransaction() {
 		constant.BTC_TESTNET_PENDING_TRANSACTION)
 }
 
-func SweepBtcTestnetBlockchainTransactionDetails() {
+func SweepBtcTestnetBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepBtcBlockchainTransactionDetails(
+		ctx,
 		btcTestnetClient,
 		constant.BTC_TESTNET,
 		&setup.BtcTestnetPublicKey,
+		&btcTestnetTxRetryCount,
 		constant.BTC_TESTNET_PENDING_TRANSACTION)
 }
 
-func SweepBtcTestnetBlockchainPendingBlock() {
+func SweepBtcTestnetBlockchainPendingBlock(ctx context.Context) {
 	core.SweepBtcBlockchainPendingBlock(
+		ctx,
 		btcTestnetClient,
 		constant.BTC_TESTNET,
 		&setup.BtcTestnetPublicKey,
+		&btcTestnetBlockRetryCount,
 		constant.BTC_TESTNET_PENDING_BLOCK,
 		constant.BTC_TESTNET_PENDING_TRANSACTION)
 }

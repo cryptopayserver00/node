@@ -9,47 +9,63 @@ import (
 )
 
 var (
-	ltcTestnetSweepCount = make(map[int64]int)
+	ltcTestnetBlockRetryCount = make(map[int64]int)
+	ltcTestnetTxRetryCount    = make(map[string]int)
 
 	ltcTestnetClient NODE_Client.Client
 )
 
-func SweepLtcTestnetBlockchain() {
-	initLtcTestnet()
+func SweepLtcTestnetBlockchain(ctx context.Context) {
+	initLtcTestnet(ctx)
 
 	go func() {
 		for {
-			SweepLtcTestnetBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepLtcTestnetBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepLtcTestnetBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepLtcTestnetBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepLtcTestnetBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepLtcTestnetBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initLtcTestnet() {
-	core.SetupLtcLatestBlockHeight(ltcTestnetClient, constant.LTC_TESTNET)
+func initLtcTestnet(ctx context.Context) {
+	core.SetupLtcLatestBlockHeight(ctx, ltcTestnetClient, constant.LTC_TESTNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.LTC_TESTNET)
+	setup.SetupCacheBlockHeight(ctx, constant.LTC_TESTNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.LTC_TESTNET)
+	setup.SetupSweepBlockHeight(ctx, constant.LTC_TESTNET)
 }
 
-func SweepLtcTestnetBlockchainTransaction() {
+func SweepLtcTestnetBlockchainTransaction(ctx context.Context) {
 	core.SweepLtcBlockchainTransaction(
+		ctx,
 		ltcTestnetClient,
 		constant.LTC_TESTNET,
 		&setup.LtcTestnetPublicKey,
-		&ltcTestnetSweepCount,
 		&setup.LtcTestnetSweepBlockHeight,
 		&setup.LtcTestnetCacheBlockHeight,
 		constant.LTC_TESTNET_SWEEP_BLOCK,
@@ -57,19 +73,23 @@ func SweepLtcTestnetBlockchainTransaction() {
 		constant.LTC_TESTNET_PENDING_TRANSACTION)
 }
 
-func SweepLtcTestnetBlockchainTransactionDetails() {
+func SweepLtcTestnetBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepLtcBlockchainTransactionDetails(
+		ctx,
 		ltcTestnetClient,
 		constant.LTC_TESTNET,
 		&setup.LtcTestnetPublicKey,
+		&ltcTestnetTxRetryCount,
 		constant.LTC_TESTNET_PENDING_TRANSACTION)
 }
 
-func SweepLtcTestnetBlockchainPendingBlock() {
+func SweepLtcTestnetBlockchainPendingBlock(ctx context.Context) {
 	core.SweepLtcBlockchainPendingBlock(
+		ctx,
 		ltcTestnetClient,
 		constant.LTC_TESTNET,
 		&setup.LtcTestnetPublicKey,
+		&ltcTestnetBlockRetryCount,
 		constant.LTC_TESTNET_PENDING_BLOCK,
 		constant.LTC_TESTNET_PENDING_TRANSACTION)
 }

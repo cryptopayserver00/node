@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"node/global"
 	"node/global/constant"
 	"node/model/node/response"
 	sweepUtils "node/sweep/utils"
@@ -35,7 +34,22 @@ var (
 		"0xb19385f7": SenderTransferFrom,
 		"0xf7ece0cf": Withdraw,
 	}
+
+	ERC20ABI abi.ABI
 )
+
+func init() {
+	file, err := os.Open("json/ERC20.json")
+	if err != nil {
+		panic("can not open erc20 abi file: " + err.Error())
+	}
+	defer file.Close()
+
+	ERC20ABI, err = abi.JSON(file)
+	if err != nil {
+		panic("can not parse erc20 abi: " + err.Error())
+	}
+}
 
 func IsHandleTokenTransaction(chainId uint, hash, contractName, fromAddress, contractAddress, monitorAddress, data string) bool {
 	if !sweepUtils.IsChainJoinSweep(chainId) {
@@ -46,7 +60,7 @@ func IsHandleTokenTransaction(chainId uint, hash, contractName, fromAddress, con
 	case constant.SWAP:
 		break
 	default:
-		return handleERC20Transaction(chainId, hash, fromAddress, contractAddress, monitorAddress, data)
+		return handleERC20Transaction(chainId, hash, fromAddress, monitorAddress, data)
 	}
 
 	return false
@@ -65,7 +79,7 @@ func GetAllAddressByTransaction(chainId uint, from, hash, data string) ([]string
 	return []string{decodeFromAddress, decodeToAddress}, nil
 }
 
-func GetAllAddressByTransactionTwo(chainId uint, contractName, from, to, hash, data string) ([]string, error) {
+func GetAllAddressByTransactionTwo(chainId uint, contractName, from, hash, data string) ([]string, error) {
 	allAddress := make([]string, 0)
 	switch contractName {
 	default:
@@ -83,7 +97,7 @@ func GetAllAddressByTransactionTwo(chainId uint, contractName, from, to, hash, d
 	return allAddress, nil
 }
 
-func handleERC20Transaction(chainId uint, hash, fromAddress, contractAddress, monitorAddress, data string) bool {
+func handleERC20Transaction(chainId uint, hash, fromAddress, monitorAddress, data string) bool {
 	methodName, decodeFromAddress, decodeToAddress, _, err := DecodeERC20TransactionInputData(chainId, hash, data)
 
 	if err != nil {
@@ -120,36 +134,20 @@ func DecodeERC20TransactionInputData(chainId uint, hash, data string) (methodNam
 	}
 
 	methodSigData := data[:10]
-	inputSigData := data[10:]
-
-	decodedData, err := hex.DecodeString(inputSigData)
-	if err != nil {
-		err = errors.New("can not decode input sig data")
-		return
-	}
-
-	file, err := os.Open("json/ERC20.json")
-	if err != nil {
-		err = errors.New("can not open erc20 file")
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> hash:%s, message:%s", constant.GetChainName(chainId), hash, err.Error()))
-		return
-	}
-	defer file.Close()
-
-	contractABI, err := abi.JSON(file)
-	if err != nil {
-		err = errors.New("can not from file to json of abi")
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> hash:%s, message:%s", constant.GetChainName(chainId), hash, err.Error()))
-		return
-	}
-
 	methodName, isKnownMethod := knownMethods[methodSigData]
 	if !isKnownMethod || (methodName != Transfer && methodName != TransferFrom) {
 		err = errors.New("not a valid transfer method")
 		return
 	}
 
-	method, isAbiMethod := contractABI.Methods[methodName]
+	inputSigData := data[10:]
+	decodedData, err := hex.DecodeString(inputSigData)
+	if err != nil {
+		err = fmt.Errorf("can not decode input sig data: %w", err)
+		return
+	}
+
+	method, isAbiMethod := ERC20ABI.Methods[methodName]
 	if !isAbiMethod {
 		err = errors.New("transfer method not found in ABI")
 		return
@@ -158,7 +156,7 @@ func DecodeERC20TransactionInputData(chainId uint, hash, data string) (methodNam
 	inputsMap := make(map[string]any)
 
 	if err = method.Inputs.UnpackIntoMap(inputsMap, decodedData); err != nil {
-		err = errors.New("can not decode: Unpack Into Map")
+		err = fmt.Errorf("can not decode unpack into map: %w", err)
 		return
 	}
 
@@ -240,6 +238,7 @@ func DecodeERC20TransactionReceiptLog(chainId uint, log response.RPCReceiptLogs)
 
 	fromBytes, err := hex.DecodeString(fromTopic)
 	if err != nil {
+		err = fmt.Errorf("can not decode from topic: %w", err)
 		return
 	}
 
@@ -263,6 +262,7 @@ func DecodeERC20TransactionReceiptLog(chainId uint, log response.RPCReceiptLogs)
 
 	toBytes, err := hex.DecodeString(toTopic)
 	if err != nil {
+		err = fmt.Errorf("can not decode to topic: %w", err)
 		return
 	}
 
@@ -285,6 +285,12 @@ func DecodeERC20TransactionReceiptLog(chainId uint, log response.RPCReceiptLogs)
 
 	dataBytes, err := hex.DecodeString(data)
 	if err != nil {
+		err = fmt.Errorf("can not decode data: %w", err)
+		return
+	}
+
+	if len(dataBytes) != 32 {
+		err = errors.New("no support the dataBytes")
 		return
 	}
 

@@ -9,48 +9,64 @@ import (
 )
 
 var (
-	arbitrumSepoliaSweepCount = make(map[int64]int)
+	arbitrumSepoliaBlockRetryCount = make(map[int64]int)
+	arbitrumSepoliaTxRetryCount    = make(map[string]int)
 
 	arbitrumSepoliaClient NODE_Client.Client
 )
 
-func SweepArbitrumSepoliaBlockchain() {
+func SweepArbitrumSepoliaBlockchain(ctx context.Context) {
 
-	initArbitrumSepolia()
+	initArbitrumSepolia(ctx)
 
 	go func() {
 		for {
-			SweepArbitrumSepoliaBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepArbitrumSepoliaBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepArbitrumSepoliaBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepArbitrumSepoliaBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepArbitrumSepoliaBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepArbitrumSepoliaBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initArbitrumSepolia() {
-	core.SetupLatestBlockHeight(arbitrumSepoliaClient, constant.ARBITRUM_SEPOLIA)
+func initArbitrumSepolia(ctx context.Context) {
+	core.SetupLatestBlockHeight(ctx, arbitrumSepoliaClient, constant.ARBITRUM_SEPOLIA)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.ARBITRUM_SEPOLIA)
+	setup.SetupCacheBlockHeight(ctx, constant.ARBITRUM_SEPOLIA)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.ARBITRUM_SEPOLIA)
+	setup.SetupSweepBlockHeight(ctx, constant.ARBITRUM_SEPOLIA)
 }
 
-func SweepArbitrumSepoliaBlockchainTransaction() {
+func SweepArbitrumSepoliaBlockchainTransaction(ctx context.Context) {
 	core.SweepBlockchainTransaction(
+		ctx,
 		arbitrumSepoliaClient,
 		constant.ARBITRUM_SEPOLIA,
 		&setup.ArbitrumSepoliaPublicKey,
-		&arbitrumSepoliaSweepCount,
 		&setup.ArbitrumSepoliaSweepBlockHeight,
 		&setup.ArbitrumSepoliaCacheBlockHeight,
 		constant.ARBITRUM_SEPOLIA_SWEEP_BLOCK,
@@ -58,20 +74,23 @@ func SweepArbitrumSepoliaBlockchainTransaction() {
 		constant.ARBITRUM_SEPOLIA_PENDING_TRANSACTION)
 }
 
-func SweepArbitrumSepoliaBlockchainTransactionDetails() {
+func SweepArbitrumSepoliaBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepBlockchainTransactionDetails(
+		ctx,
 		arbitrumSepoliaClient,
 		constant.ARBITRUM_SEPOLIA,
 		&setup.ArbitrumSepoliaPublicKey,
+		&arbitrumSepoliaTxRetryCount,
 		constant.ARBITRUM_SEPOLIA_PENDING_TRANSACTION)
 }
 
-func SweepArbitrumSepoliaBlockchainPendingBlock() {
+func SweepArbitrumSepoliaBlockchainPendingBlock(ctx context.Context) {
 	core.SweepBlockchainPendingBlock(
+		ctx,
 		arbitrumSepoliaClient,
 		constant.ARBITRUM_SEPOLIA,
 		&setup.ArbitrumSepoliaPublicKey,
-		&arbitrumSepoliaSweepCount,
+		&arbitrumSepoliaBlockRetryCount,
 		constant.ARBITRUM_SEPOLIA_PENDING_BLOCK,
 		constant.ARBITRUM_SEPOLIA_PENDING_TRANSACTION)
 }

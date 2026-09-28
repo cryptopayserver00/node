@@ -9,48 +9,63 @@ import (
 )
 
 var (
-	xrpSweepCount = make(map[int64]int)
+	xrpBlockRetryCount = make(map[int64]int)
+	xrpTxRetryCount    = make(map[string]int)
 
 	xrpClient NODE_Client.Client
 )
 
-func SweepXrpBlockchain() {
-	initXrp()
+func SweepXrpBlockchain(ctx context.Context) {
+	initXrp(ctx)
 
 	go func() {
 		for {
-			SweepXrpBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepXrpBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepXrpBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepXrpBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepXrpBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepXrpBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initXrp() {
-	core.SetupXrpLatestBlockHeight(constant.XRP_MAINNET)
+func initXrp(ctx context.Context) {
+	core.SetupXrpLatestBlockHeight(ctx, constant.XRP_MAINNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.XRP_MAINNET)
+	setup.SetupCacheBlockHeight(ctx, constant.XRP_MAINNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.XRP_MAINNET)
+	setup.SetupSweepBlockHeight(ctx, constant.XRP_MAINNET)
 }
 
-func SweepXrpBlockchainTransaction() {
-
+func SweepXrpBlockchainTransaction(ctx context.Context) {
 	core.SweepXrpBlockchainTransaction(
+		ctx,
 		xrpClient,
 		constant.XRP_MAINNET,
 		&setup.XrpPublicKey,
-		&xrpSweepCount,
 		&setup.XrpSweepBlockHeight,
 		&setup.XrpCacheBlockHeight,
 		constant.XRP_SWEEP_BLOCK,
@@ -58,20 +73,23 @@ func SweepXrpBlockchainTransaction() {
 		constant.XRP_PENDING_TRANSACTION)
 }
 
-func SweepXrpBlockchainTransactionDetails() {
-
+func SweepXrpBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepXrpBlockchainTransactionDetails(
+		ctx,
 		xrpClient,
 		constant.XRP_MAINNET,
 		&setup.XrpPublicKey,
+		&xrpTxRetryCount,
 		constant.XRP_PENDING_TRANSACTION)
 }
 
-func SweepXrpBlockchainPendingBlock() {
+func SweepXrpBlockchainPendingBlock(ctx context.Context) {
 	core.SweepXrpBlockchainPendingBlock(
+		ctx,
 		xrpClient,
 		constant.XRP_MAINNET,
 		&setup.XrpPublicKey,
+		&xrpBlockRetryCount,
 		constant.XRP_PENDING_BLOCK,
 		constant.XRP_PENDING_TRANSACTION)
 }

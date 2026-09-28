@@ -13,8 +13,6 @@ func main() {
 	global.NODE_LOG = core.Zap()
 	zap.ReplaceGlobals(global.NODE_LOG)
 	global.NODE_DB = initialize.Gorm()
-	// initialize.Timer()
-	// initialize.DBList()
 
 	if global.NODE_DB != nil {
 		initialize.RegisterTables()

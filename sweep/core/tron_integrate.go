@@ -15,14 +15,16 @@ import (
 	"node/utils"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
+	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-func SetupTronLatestBlockHeight(client NODE_Client.Client, chainId uint) {
+func SetupTronLatestBlockHeight(ctx context.Context, client NODE_Client.Client, chainId uint) {
 	var err error
 	client.URL = constant.TronGetBlockByNetwork(chainId)
 	client.Headers = map[string]string{
@@ -32,67 +34,85 @@ func SetupTronLatestBlockHeight(client NODE_Client.Client, chainId uint) {
 	var blockRequest request.TronGetBlockRequest
 	blockRequest.Detail = false
 	var blockResponse response.TronGetBlockResponse
-	err = client.HTTPPost(blockRequest, &blockResponse)
+	err = client.HTTPPost(ctx, blockRequest, &blockResponse)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		time.Sleep(2 * time.Second)
 		return
 	}
 
-	setup.SetupLatestBlockHeight(context.Background(), chainId, int64(blockResponse.BlockHeader.RawData.Number))
+	if blockResponse.BlockHeader.RawData.Number > 0 {
+		setup.SetupLatestBlockHeight(ctx, chainId, int64(blockResponse.BlockHeader.RawData.Number))
+	}
 }
 
 func SweepTronBlockchainTransaction(
+	ctx context.Context,
 	client NODE_Client.Client,
 	chainId uint,
 	publicKey *[]string,
-	sweepCount *map[int64]int,
 	sweepBlockHeight, cacheBlockHeight *int64,
 	constantSweepBlock, constantPendingBlock, constantPendingTransaction string) {
 	defer utils.HandlePanic()
 
 	if len(*publicKey) <= 0 {
-		SetupTronLatestBlockHeight(client, chainId)
-		setup.UpdateCacheBlockHeight(context.Background(), chainId)
-		setup.UpdateSweepBlockHeight(context.Background(), chainId)
-		setup.UpdatePublicKey(context.Background(), chainId)
+		SetupTronLatestBlockHeight(ctx, client, chainId)
+		setup.UpdateCacheBlockHeight(ctx, chainId)
+		setup.UpdateSweepBlockHeight(ctx, chainId)
+		setup.UpdatePublicKey(ctx, chainId)
 		return
 	}
 
 	if *sweepBlockHeight >= *cacheBlockHeight {
-		SetupTronLatestBlockHeight(client, chainId)
-		setup.UpdateCacheBlockHeight(context.Background(), chainId)
-		setup.UpdatePublicKey(context.Background(), chainId)
-		time.Sleep(time.Second * 3)
+		SetupTronLatestBlockHeight(ctx, client, chainId)
+		setup.UpdateCacheBlockHeight(ctx, chainId)
+		setup.UpdatePublicKey(ctx, chainId)
+		time.Sleep(time.Second * 5)
 		return
 	}
+
+	var wg sync.WaitGroup
+
+	numWorkers := calcNumWorkers(*sweepBlockHeight, *cacheBlockHeight, maxWorkers)
+	if numWorkers == 0 {
+		return
+	}
+
+	start := *sweepBlockHeight
+	end := start + int64(numWorkers) - 1
+
+	for h := start; h <= end; h++ {
+		wg.Add(1)
+		go func(height int64) {
+			defer wg.Done()
+			defer utils.HandlePanic()
+
+			if err := SweepTronBlockchainTransactionCore(ctx, client, chainId, publicKey, height, constantSweepBlock, constantPendingBlock, constantPendingTransaction); err != nil {
+				if _, rpushErr := global.NODE_REDIS.RPush(ctx, constantPendingBlock, height).Result(); rpushErr != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), rpushErr.Error()))
+				}
+			}
+		}(h)
+	}
+
+	wg.Wait()
+	*sweepBlockHeight = end + 1
+	if _, err := global.NODE_REDIS.Set(ctx, constantSweepBlock, *sweepBlockHeight, 0).Result(); err != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		return
+	}
+}
+
+func SweepTronBlockchainTransactionCore(
+	ctx context.Context,
+	client NODE_Client.Client,
+	chainId uint,
+	publicKey *[]string,
+	sweepBlockHeight int64,
+	constantSweepBlock, constantPendingBlock, constantPendingTransaction string) error {
+	defer utils.HandlePanic()
 
 	var err error
-
-	blockN, ok := (*sweepCount)[*sweepBlockHeight]
-	if !ok {
-		(*sweepCount)[*sweepBlockHeight] = 1
-	} else if blockN >= setup.SweepThreshold {
-		// skip current block
-		_, err = global.NODE_REDIS.Set(context.Background(), constantSweepBlock, *sweepBlockHeight+1, 0).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-			return
-		}
-
-		// current block to pending queue
-		_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingBlock, *sweepBlockHeight).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-			return
-		}
-
-		delete(*sweepCount, *sweepBlockHeight)
-
-		*sweepBlockHeight += 1
-		return
-	} else {
-		(*sweepCount)[*sweepBlockHeight]++
-	}
 
 	client.URL = constant.TronGetBlockByNumByNetwork(chainId)
 	client.Headers = map[string]string{
@@ -100,20 +120,27 @@ func SweepTronBlockchainTransaction(
 	}
 
 	var blockByNumRequest request.TronGetBlockByNumRequest
-	blockByNumRequest.Num = int(*sweepBlockHeight)
+	blockByNumRequest.Num = int(sweepBlockHeight)
 	var blockByNumResponse response.TronGetBlockByNumResponse
-	err = client.HTTPPost(blockByNumRequest, &blockByNumResponse)
+	err = client.HTTPPost(ctx, blockByNumRequest, &blockByNumResponse)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
+		time.Sleep(2 * time.Second)
+		return err
 	}
 
-	if *sweepBlockHeight == int64(blockByNumResponse.BlockHeader.RawData.Number) {
-
+	if sweepBlockHeight == int64(blockByNumResponse.BlockHeader.RawData.Number) {
 		if len(blockByNumResponse.Transactions) > 0 {
 			for _, transaction := range blockByNumResponse.Transactions {
+				if len(transaction.Ret) == 0 {
+					continue
+				}
 
 				if transaction.Ret[0].ContractRet != "SUCCESS" {
+					continue
+				}
+
+				if len(transaction.RawData.Contract) == 0 {
 					continue
 				}
 
@@ -162,61 +189,101 @@ func SweepTronBlockchainTransaction(
 					)
 
 					if isMonitorTx {
-						redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
+						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
+							time.Sleep(2 * time.Second)
+							return err
 						}
 
-						for _, redisTx := range redisTxs {
-							if redisTx == transaction.TxID {
-								continue outerCurrentTxLoop
+						found := slices.Contains(redisTxs, transaction.TxID)
+						if found {
+							break outerCurrentTxLoop
+						} else {
+							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.TxID).Result()
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								time.Sleep(2 * time.Second)
+								return err
 							}
+							break
 						}
-
-						_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingTransaction, transaction.TxID).Result()
-						if err != nil {
-							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
-						}
-						break
 					}
 				}
-
 			}
 		}
 
-		_, err = global.NODE_REDIS.Set(context.Background(), constantSweepBlock, *sweepBlockHeight+1, 0).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-			return
-		}
-
-		*sweepBlockHeight += 1
+		return nil
 	} else {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", *sweepBlockHeight, int64(blockByNumResponse.BlockHeader.RawData.Number))))
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", sweepBlockHeight, int64(blockByNumResponse.BlockHeader.RawData.Number))))
+		time.Sleep(2 * time.Second)
+		return errors.New("not the same height of block")
 	}
 }
 
 func SweepTronBlockchainTransactionDetails(
+	ctx context.Context,
 	client NODE_Client.Client,
 	chainId uint,
 	publicKey *[]string,
+	txRetryCount *map[string]int,
 	constantPendingTransaction string,
 ) {
 	defer utils.HandlePanic()
 
-	txHash, err := global.NODE_REDIS.LIndex(context.Background(), constantPendingTransaction, 0).Result()
+	txHash, err := global.NODE_REDIS.LIndex(ctx, constantPendingTransaction, 0).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			time.Sleep(2 * time.Second)
 			return
 		}
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		time.Sleep(2 * time.Second)
 		return
 	}
 
 	global.NODE_LOG.Info(fmt.Sprintf("%s -> handle tx: %s", constant.GetChainName(chainId), txHash))
+
+	err = handleTronTransactionDetails(ctx, client, chainId, publicKey, txHash)
+
+	if err != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("Can not handle the tx: %s, Retry | %s -> %s", txHash, constant.GetChainName(chainId), err.Error()))
+
+		retryCount := (*txRetryCount)[txHash]
+		retryCount++
+		if retryCount >= setup.SweepThreshold {
+			global.NODE_LOG.Error(fmt.Sprintf("give up tx after retries: %s", txHash))
+			_, err = global.NODE_REDIS.LPop(ctx, constantPendingTransaction).Result()
+			if err != nil {
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				time.Sleep(2 * time.Second)
+				return
+			}
+			delete(*txRetryCount, txHash)
+			return
+		}
+		(*txRetryCount)[txHash] = retryCount
+		time.Sleep(2 * time.Second)
+		return
+	}
+
+	_, err = global.NODE_REDIS.LPop(ctx, constantPendingTransaction).Result()
+	if err != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		time.Sleep(2 * time.Second)
+		return
+	}
+	delete(*txRetryCount, txHash)
+}
+
+func handleTronTransactionDetails(
+	ctx context.Context,
+	client NODE_Client.Client,
+	chainId uint,
+	publicKey *[]string,
+	txHash string,
+) error {
+	var err error
 
 	client.URL = constant.TronGetTxByIdByNetwork(chainId)
 	client.Headers = map[string]string{
@@ -226,14 +293,23 @@ func SweepTronBlockchainTransactionDetails(
 	var txRequest request.TronGetBlockTxByIdRequest
 	txRequest.Value = txHash
 	var txResponse response.TronGetTxResponse
-	err = client.HTTPPost(txRequest, &txResponse)
+	err = client.HTTPPost(ctx, txRequest, &txResponse)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
+		time.Sleep(2 * time.Second)
+		return err
+	}
+
+	if len(txResponse.Ret) == 0 {
+		return errors.New("not support")
 	}
 
 	if txResponse.Ret[0].ContractRet != "SUCCESS" {
-		return
+		return errors.New("not support")
+	}
+
+	if len(txResponse.RawData.Contract) == 0 {
+		return errors.New("not support")
 	}
 
 	var notifyRequest request.NotificationRequest
@@ -245,29 +321,20 @@ func SweepTronBlockchainTransactionDetails(
 
 	switch contractType {
 	case tron.TransferContract:
-		err = handleTransferContractTx(chainId, publicKey, notifyRequest, txResponse)
+		err = handleTransferContractTx(ctx, chainId, publicKey, notifyRequest, txResponse)
 	case tron.TriggerSmartContract:
-		err = handleTriggerSmartContract(chainId, publicKey, notifyRequest, txResponse)
+		err = handleTriggerSmartContract(ctx, chainId, publicKey, notifyRequest, txResponse)
 	default:
-		return
+		return errors.New("not support")
 	}
 
-	if err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("Can not handle the tx: %s, Retry | %s -> %s", txHash, constant.GetChainName(chainId), err.Error()))
-		return
-	}
-
-	_, err = global.NODE_REDIS.LPop(context.Background(), constantPendingTransaction).Result()
-	if err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
-	}
+	return err
 }
 
-func handleTransferContractTx(chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, txResponse response.TronGetTxResponse) error {
+func handleTransferContractTx(ctx context.Context, chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, txResponse response.TronGetTxResponse) error {
 	var err error
 
-	isSupportContract, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb")
+	isSupportContract, contractName, _, decimals := sweepUtils.GetContractInfo(chainId, constant.TRX_NATIVE_PLACEHOLDER_ADDRESS)
 	if !isSupportContract {
 		err = errors.New("can not find the contract")
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
@@ -293,15 +360,10 @@ func handleTransferContractTx(chainId uint, publicKey *[]string, notifyRequest r
 	notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(txResponse.RawData.Contract[0].Parameter.Value.Amount)), decimals)
 	notifyRequest.Token = contractName
 
-	isProcess, _ := handleNotification(chainId, publicKey, notifyRequest, fromAddress, toAddress)
-	if !isProcess {
-		return fmt.Errorf("can not handle the tx: %s", notifyRequest.Hash)
-	}
-
-	return nil
+	return handleNotification(ctx, chainId, publicKey, notifyRequest, fromAddress, toAddress)
 }
 
-func handleTriggerSmartContract(chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, txResponse response.TronGetTxResponse) error {
+func handleTriggerSmartContract(ctx context.Context, chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, txResponse response.TronGetTxResponse) error {
 	contractData := txResponse.RawData.Contract[0].Parameter.Value.Data
 	methodID, _, _ := tron.TronDecodeMethod(contractData)
 
@@ -319,6 +381,14 @@ func handleTriggerSmartContract(chainId uint, publicKey *[]string, notifyRequest
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 			return err
 		}
+
+		const minTransferDataLen = 136 // 8(selector) + 64(to slot) + 64(value slot)
+		if len(contractData) < minTransferDataLen {
+			err := fmt.Errorf("insufficient contract data length: %d", len(contractData))
+			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+			return err
+		}
+
 		toAddress, err := tron.FromHexAddress("41" + contractData[32:72])
 		if err != nil {
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
@@ -343,12 +413,15 @@ func handleTriggerSmartContract(chainId uint, publicKey *[]string, notifyRequest
 		notifyRequest.Token = contractName
 		notifyRequest.Amount = utils.CalculateBalance(value, decimals)
 
-		isProcess, _ := handleNotification(chainId, publicKey, notifyRequest, fromAddress, toAddress)
-		if !isProcess {
-			return fmt.Errorf("can not handle the tx: %s", notifyRequest.Hash)
+		return handleNotification(ctx, chainId, publicKey, notifyRequest, fromAddress, toAddress)
+	case tron.TransferFrom:
+		const minTransferDataLen = 200 // 8(selector) + 64(from slot) + 64(to slot) + 64(value slot)
+		if len(contractData) < minTransferDataLen {
+			err := fmt.Errorf("insufficient contract data length: %d", len(contractData))
+			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+			return err
 		}
 
-	case tron.TransferFrom:
 		fromAddress, err := tron.FromHexAddress("41" + contractData[32:72])
 		if err != nil {
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
@@ -379,22 +452,22 @@ func handleTriggerSmartContract(chainId uint, publicKey *[]string, notifyRequest
 		notifyRequest.Token = contractName
 		notifyRequest.Amount = utils.CalculateBalance(value, decimals)
 
-		isProcess, _ := handleNotification(chainId, publicKey, notifyRequest, fromAddress, toAddress)
-		if !isProcess {
-			return fmt.Errorf("can not handle the tx: %s", notifyRequest.Hash)
-		}
+		return handleNotification(ctx, chainId, publicKey, notifyRequest, fromAddress, toAddress)
+	default:
+		err := fmt.Errorf("known but unhandled method: %s", method)
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		return err
 	}
-
-	return nil
 }
 
-func handleNotification(chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, fromAddress, toAddress string) (isProcess bool, err error) {
+func handleNotification(ctx context.Context, chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, fromAddress, toAddress string) error {
+	var err error
+	isProcess := false
 
 	if fromAddress == "" || toAddress == "" {
 		err = fmt.Errorf("can not be empty, fromAddress: %s, toAddress: %s", fromAddress, toAddress)
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		isProcess = false
-		return
+		return err
 	}
 
 	notifyRequest.FromAddress = fromAddress
@@ -405,11 +478,10 @@ func handleNotification(chainId uint, publicKey *[]string, notifyRequest request
 			notifyRequest.TransactType = "send"
 			notifyRequest.Address = v
 
-			err = notification.NotificationRequest(notifyRequest)
+			err = notification.NotificationRequest(ctx, notifyRequest)
 			if err != nil {
 				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-				isProcess = false
-				return
+				return err
 			}
 			isProcess = true
 		}
@@ -418,34 +490,40 @@ func handleNotification(chainId uint, publicKey *[]string, notifyRequest request
 			notifyRequest.TransactType = "receive"
 			notifyRequest.Address = v
 
-			err = notification.NotificationRequest(notifyRequest)
+			err = notification.NotificationRequest(ctx, notifyRequest)
 			if err != nil {
 				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-				isProcess = false
-				return
+				return err
 			}
 			isProcess = true
 		}
 	}
 
-	return isProcess, nil
+	if !isProcess {
+		return fmt.Errorf("no monitored address matched for tx: %s", notifyRequest.Hash)
+	}
+
+	return nil
 }
 
 func SweepTronBlockchainPendingBlock(
+	ctx context.Context,
 	client NODE_Client.Client,
 	chainId uint,
 	publicKey *[]string,
+	retryBlockCount *map[int64]int,
 	constantPendingBlock, constantPendingTransaction string,
 ) {
 	defer utils.HandlePanic()
 
-	blockHeight, err := global.NODE_REDIS.LIndex(context.Background(), constantPendingBlock, 0).Result()
+	blockHeight, err := global.NODE_REDIS.LIndex(ctx, constantPendingBlock, 0).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			time.Sleep(10 * time.Second)
+			time.Sleep(2 * time.Second)
 			return
 		}
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		time.Sleep(10 * time.Second)
 		return
 	}
 
@@ -463,18 +541,25 @@ func SweepTronBlockchainPendingBlock(
 	var blockByNumRequest request.TronGetBlockByNumRequest
 	blockByNumRequest.Num = int(blockHeightInt)
 	var blockByNumResponse response.TronGetBlockByNumResponse
-	err = client.HTTPPost(blockByNumRequest, &blockByNumResponse)
+	err = client.HTTPPost(ctx, blockByNumRequest, &blockByNumResponse)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		time.Sleep(2 * time.Second)
 		return
 	}
 
 	if blockHeightInt == int64(blockByNumResponse.BlockHeader.RawData.Number) {
-
 		if len(blockByNumResponse.Transactions) > 0 {
 			for _, transaction := range blockByNumResponse.Transactions {
+				if len(transaction.Ret) == 0 {
+					continue
+				}
 
 				if transaction.Ret[0].ContractRet != "SUCCESS" {
+					continue
+				}
+
+				if len(transaction.RawData.Contract) == 0 {
 					continue
 				}
 
@@ -522,35 +607,52 @@ func SweepTronBlockchainPendingBlock(
 					)
 
 					if isMonitorTx {
-						// Determine duplicate transactions
-						redisTxs, err := global.NODE_REDIS.LRange(context.Background(), constantPendingTransaction, 0, -1).Result()
+						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
 						if err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							return
 						}
 
-						for _, redisTx := range redisTxs {
-							if redisTx == transaction.TxID {
-								continue outerCurrentTxLoop
+						found := slices.Contains(redisTxs, transaction.TxID)
+						if found {
+							break outerCurrentTxLoop
+						} else {
+							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.TxID).Result()
+							if err != nil {
+								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+								return
 							}
+							break
 						}
-
-						_, err = global.NODE_REDIS.RPush(context.Background(), constantPendingTransaction, transaction.TxID).Result()
-						if err != nil {
-							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							return
-						}
-						break
 					}
 				}
 			}
 		}
 
-		_, err = global.NODE_REDIS.LPop(context.Background(), constantPendingBlock).Result()
+		_, err = global.NODE_REDIS.LPop(ctx, constantPendingBlock).Result()
 		if err != nil {
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+			time.Sleep(2 * time.Second)
+			return
 		}
+		delete(*retryBlockCount, blockHeightInt)
 	} else {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", blockHeightInt, int64(blockByNumResponse.BlockHeader.RawData.Number))))
+
+		retryCount := (*retryBlockCount)[blockHeightInt]
+		retryCount++
+		if retryCount >= setup.SweepThreshold {
+			global.NODE_LOG.Error(fmt.Sprintf("give up block after retries: %d", blockHeightInt))
+			_, err = global.NODE_REDIS.LPop(ctx, constantPendingBlock).Result()
+			if err != nil {
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				time.Sleep(2 * time.Second)
+				return
+			}
+			delete(*retryBlockCount, blockHeightInt)
+			return
+		}
+		(*retryBlockCount)[blockHeightInt] = retryCount
+		time.Sleep(2 * time.Second)
 	}
 }

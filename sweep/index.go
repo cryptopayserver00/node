@@ -8,125 +8,125 @@ import (
 	"node/sweep/testnet"
 )
 
-func RunBlockSweep() {
-	setup.SetupPublicKey(context.Background())
+func RunBlockSweep(ctx context.Context) {
+	setup.SetupPublicKey(ctx)
 
 	if global.NODE_CONFIG.Blockchain.Ethereum {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepEthBlockchain()
+			mainnet.SweepEthBlockchain(ctx)
 		} else {
-			testnet.SweepEthSepoliaBlockchain()
+			testnet.SweepEthSepoliaBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Bsc {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepBscBlockchain()
+			mainnet.SweepBscBlockchain(ctx)
 		} else {
-			testnet.SweepBscTestnetBlockchain()
+			testnet.SweepBscTestnetBlockchain(ctx)
 		}
 
 	}
 
 	if global.NODE_CONFIG.Blockchain.Bitcoin {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepBtcBlockchain()
+			mainnet.SweepBtcBlockchain(ctx)
 		} else {
-			testnet.SweepBtcTestnetBlockchain()
+			testnet.SweepBtcTestnetBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Tron {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepTronBlockchain()
+			mainnet.SweepTronBlockchain(ctx)
 		} else {
-			testnet.SweepTronNileBlockchain()
+			testnet.SweepTronNileBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Litecoin {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepLtcBlockchain()
+			mainnet.SweepLtcBlockchain(ctx)
 		} else {
-			testnet.SweepLtcTestnetBlockchain()
+			testnet.SweepLtcTestnetBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Op {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepOpBlockchain()
+			mainnet.SweepOpBlockchain(ctx)
 		} else {
-			testnet.SweepOpSepoliaBlockchain()
+			testnet.SweepOpSepoliaBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.ArbitrumOne {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepArbitrumOneBlockchain()
+			mainnet.SweepArbitrumOneBlockchain(ctx)
 		} else {
-			testnet.SweepArbitrumSepoliaBlockchain()
+			testnet.SweepArbitrumSepoliaBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.ArbitrumNova {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepArbitrumNovaBlockchain()
+			mainnet.SweepArbitrumNovaBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Solana {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepSolBlockchain()
+			mainnet.SweepSolBlockchain(ctx)
 		} else {
-			testnet.SweepSolDevnetBlockchain()
+			testnet.SweepSolDevnetBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Ton {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepTonBlockchain()
+			mainnet.SweepTonBlockchain(ctx)
 		} else {
-			testnet.SweepTonTestnetBlockchain()
+			testnet.SweepTonTestnetBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Xrp {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepXrpBlockchain()
+			mainnet.SweepXrpBlockchain(ctx)
 		} else {
-			testnet.SweepXrpTestnetBlockchain()
+			testnet.SweepXrpTestnetBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Bch {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepBchBlockchain()
+			mainnet.SweepBchBlockchain(ctx)
 		} else {
-			// testnet.SweepBchTestnetBlockchain()
+			// testnet.SweepBchTestnetBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Pol {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepPolBlockchain()
+			mainnet.SweepPolBlockchain(ctx)
 		} else {
-			testnet.SweepPolTestnetBlockchain()
+			testnet.SweepPolTestnetBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Avax {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepAvaxBlockchain()
+			mainnet.SweepAvaxBlockchain(ctx)
 		} else {
-			testnet.SweepAvaxTestnetBlockchain()
+			testnet.SweepAvaxTestnetBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Base {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepBaseBlockchain()
+			mainnet.SweepBaseBlockchain(ctx)
 		} else {
-			testnet.SweepBaseSepoliaBlockchain()
+			testnet.SweepBaseSepoliaBlockchain(ctx)
 		}
 	}
 }

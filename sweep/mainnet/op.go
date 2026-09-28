@@ -9,48 +9,64 @@ import (
 )
 
 var (
-	opSweepCount = make(map[int64]int)
+	opBlockRetryCount = make(map[int64]int)
+	opTxRetryCount    = make(map[string]int)
 
 	opClient NODE_Client.Client
 )
 
-func SweepOpBlockchain() {
+func SweepOpBlockchain(ctx context.Context) {
 
-	initOp()
+	initOp(ctx)
 
 	go func() {
 		for {
-			SweepOpBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepOpBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepOpBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepOpBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepOpBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepOpBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initOp() {
-	core.SetupLatestBlockHeight(opClient, constant.OP_MAINNET)
+func initOp(ctx context.Context) {
+	core.SetupLatestBlockHeight(ctx, opClient, constant.OP_MAINNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.OP_MAINNET)
+	setup.SetupCacheBlockHeight(ctx, constant.OP_MAINNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.OP_MAINNET)
+	setup.SetupSweepBlockHeight(ctx, constant.OP_MAINNET)
 }
 
-func SweepOpBlockchainTransaction() {
+func SweepOpBlockchainTransaction(ctx context.Context) {
 	core.SweepBlockchainTransaction(
+		ctx,
 		opClient,
 		constant.OP_MAINNET,
 		&setup.OpPublicKey,
-		&opSweepCount,
 		&setup.OpSweepBlockHeight,
 		&setup.OpCacheBlockHeight,
 		constant.OP_SWEEP_BLOCK,
@@ -58,20 +74,23 @@ func SweepOpBlockchainTransaction() {
 		constant.OP_PENDING_TRANSACTION)
 }
 
-func SweepOpBlockchainTransactionDetails() {
+func SweepOpBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepBlockchainTransactionDetails(
+		ctx,
 		opClient,
 		constant.OP_MAINNET,
 		&setup.OpPublicKey,
+		&opTxRetryCount,
 		constant.OP_PENDING_TRANSACTION)
 }
 
-func SweepOpBlockchainPendingBlock() {
+func SweepOpBlockchainPendingBlock(ctx context.Context) {
 	core.SweepBlockchainPendingBlock(
+		ctx,
 		opClient,
 		constant.OP_MAINNET,
 		&setup.OpPublicKey,
-		&opSweepCount,
+		&opBlockRetryCount,
 		constant.OP_PENDING_BLOCK,
 		constant.OP_PENDING_TRANSACTION)
 }

@@ -12,6 +12,7 @@ import (
 )
 
 func (m *NService) GetFreeCoin(c *gin.Context, req request.GetFreeCoin) (freeCoin response.FreeCoinResponse, err error) {
+	ctx := c.Request.Context()
 
 	var hash string
 
@@ -23,7 +24,7 @@ func (m *NService) GetFreeCoin(c *gin.Context, req request.GetFreeCoin) (freeCoi
 		return freeCoin, errors.New("do not support the address")
 	}
 
-	hash, err = wallet.TransferFreeCoinToReceiveAddress(req.ChainId, req.Coin, req.Address, req.Amount)
+	hash, err = wallet.TransferFreeCoinToReceiveAddress(ctx, req.ChainId, req.Coin, req.Address, req.Amount)
 	if err != nil {
 		return
 	}

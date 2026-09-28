@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,9 +16,12 @@ import (
 	"strconv"
 
 	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/gin-gonic/gin"
 )
 
-func (n *NService) GetLtcBalance(req request.GetLtcBalance) (response.ClientBalanceResponse, error) {
+func (n *NService) GetLtcBalance(c *gin.Context, req request.GetLtcBalance) (response.ClientBalanceResponse, error) {
+	ctx := c.Request.Context()
+
 	var err error
 	var result response.ClientBalanceResponse
 
@@ -27,7 +31,7 @@ func (n *NService) GetLtcBalance(req request.GetLtcBalance) (response.ClientBala
 		"x-api-key": constant.GetTatumRandomKeyByNetwork(req.ChainId),
 	}
 	var balanceResponse tatum.LitecoinBalance
-	err = client.HTTPGet(&balanceResponse)
+	err = client.HTTPGet(ctx, &balanceResponse)
 	if err == nil {
 		result.Balance, err = utils.CalSubForBtcValue(balanceResponse.Incoming, balanceResponse.Outgoing)
 		if err == nil {
@@ -42,7 +46,7 @@ func (n *NService) GetLtcBalance(req request.GetLtcBalance) (response.ClientBala
 	//mempool
 	client.URL = fmt.Sprintf(constant.MempoolGetUtxoByNetwork(req.ChainId), req.Address)
 	var utxoResponse []mempool.MempoolUtxo
-	err = client.HTTPGet(&utxoResponse)
+	err = client.HTTPGet(ctx, &utxoResponse)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return result, err
@@ -63,7 +67,9 @@ func (n *NService) GetLtcBalance(req request.GetLtcBalance) (response.ClientBala
 	return result, nil
 }
 
-func (n *NService) GetLtcFeeRate(req request.GetLtcFeeRate) (tatum.LitecoinFeeRate, error) {
+func (n *NService) GetLtcFeeRate(c *gin.Context, req request.GetLtcFeeRate) (tatum.LitecoinFeeRate, error) {
+	ctx := c.Request.Context()
+
 	var err error
 
 	var rateResponse tatum.LitecoinFeeRate
@@ -73,7 +79,7 @@ func (n *NService) GetLtcFeeRate(req request.GetLtcFeeRate) (tatum.LitecoinFeeRa
 	client.Headers = map[string]string{
 		"x-api-key": constant.GetTatumRandomKeyByNetwork(req.ChainId),
 	}
-	err = client.HTTPGet(&rateResponse)
+	err = client.HTTPGet(ctx, &rateResponse)
 	if err == nil {
 		return rateResponse, err
 	} else {
@@ -83,7 +89,7 @@ func (n *NService) GetLtcFeeRate(req request.GetLtcFeeRate) (tatum.LitecoinFeeRa
 	// mempool
 	client.URL = constant.MempoolGetFeesyNetwork(req.ChainId)
 	var feesResponse mempool.MempoolFees
-	err = client.HTTPGet(&feesResponse)
+	err = client.HTTPGet(ctx, &feesResponse)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return rateResponse, err
@@ -96,7 +102,9 @@ func (n *NService) GetLtcFeeRate(req request.GetLtcFeeRate) (tatum.LitecoinFeeRa
 	return rateResponse, nil
 }
 
-func (n *NService) GetLtcAddressUtxo(req request.GetLtcAddressUtxo) ([]mempool.MempoolUtxo, error) {
+func (n *NService) GetLtcAddressUtxo(c *gin.Context, req request.GetLtcAddressUtxo) ([]mempool.MempoolUtxo, error) {
+	ctx := c.Request.Context()
+
 	var err error
 	var utxos []mempool.MempoolUtxo
 	var chainString string
@@ -119,7 +127,7 @@ func (n *NService) GetLtcAddressUtxo(req request.GetLtcAddressUtxo) ([]mempool.M
 	}
 
 	var tatumUtxos []tatum.LitecoinUtxo
-	err = client.HTTPGet(&tatumUtxos)
+	err = client.HTTPGet(ctx, &tatumUtxos)
 	if err == nil {
 		for _, v := range tatumUtxos {
 			var mem mempool.MempoolUtxo
@@ -135,7 +143,7 @@ func (n *NService) GetLtcAddressUtxo(req request.GetLtcAddressUtxo) ([]mempool.M
 
 	// mempool
 	client.URL = fmt.Sprintf(constant.MempoolGetUtxoByNetwork(req.ChainId), req.Address)
-	err = client.HTTPGet(&utxos)
+	err = client.HTTPGet(ctx, &utxos)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return utxos, err
@@ -144,7 +152,7 @@ func (n *NService) GetLtcAddressUtxo(req request.GetLtcAddressUtxo) ([]mempool.M
 	return utxos, nil
 }
 
-func (n *NService) PostLtcBroadcast(req request.PostLtcBroadcast) (tatum.LitecoinBroadcast, error) {
+func (n *NService) PostLtcBroadcast(ctx context.Context, req request.PostLtcBroadcast) (tatum.LitecoinBroadcast, error) {
 	var broadcastResponse tatum.LitecoinBroadcast
 
 	client.URL = constant.TatumGetLitecoinBroadcast
@@ -154,7 +162,7 @@ func (n *NService) PostLtcBroadcast(req request.PostLtcBroadcast) (tatum.Litecoi
 	tatumPayload := map[string]any{
 		"txData": req.TxData,
 	}
-	err := client.HTTPPost(tatumPayload, &broadcastResponse)
+	err := client.HTTPPost(ctx, tatumPayload, &broadcastResponse)
 	if err == nil {
 		return broadcastResponse, err
 	} else {
@@ -165,7 +173,7 @@ func (n *NService) PostLtcBroadcast(req request.PostLtcBroadcast) (tatum.Litecoi
 	mempoolPayload := map[string]any{
 		"txHash": req.TxData,
 	}
-	mempoolErr := client.HTTPPost(mempoolPayload, &broadcastResponse)
+	mempoolErr := client.HTTPPost(ctx, mempoolPayload, &broadcastResponse)
 	if mempoolErr != nil {
 		global.NODE_LOG.Error(mempoolErr.Error())
 		return broadcastResponse, mempoolErr
@@ -174,9 +182,10 @@ func (n *NService) PostLtcBroadcast(req request.PostLtcBroadcast) (tatum.Litecoi
 	return broadcastResponse, nil
 }
 
-func (n *NService) GetLtcTransactions(req request.GetLtcTransactions) ([]response.ClientBtcTxResponse, error) {
+func (n *NService) GetLtcTransactions(c *gin.Context, req request.GetLtcTransactions) ([]response.ClientBtcTxResponse, error) {
+	ctx := c.Request.Context()
 
-	if err := n.UpdateLtcTransactionsForTatum(req); err != nil {
+	if err := n.UpdateLtcTransactionsForTatum(ctx, req); err != nil {
 		global.NODE_LOG.Error(err.Error())
 	}
 
@@ -197,7 +206,7 @@ func (n *NService) GetLtcTransactions(req request.GetLtcTransactions) ([]respons
 	return txs, nil
 }
 
-func (n *NService) UpdateLtcTransactionsForTatum(req request.GetLtcTransactions) (err error) {
+func (n *NService) UpdateLtcTransactionsForTatum(ctx context.Context, req request.GetLtcTransactions) (err error) {
 	var (
 		saveTxs  []response.ClientBtcTxResponse
 		pageSize = 50
@@ -209,7 +218,7 @@ func (n *NService) UpdateLtcTransactionsForTatum(req request.GetLtcTransactions)
 	}
 
 	var txs []tatum.TatumLitecoinTx
-	err = client.HTTPGet(&txs)
+	err = client.HTTPGet(ctx, &txs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
@@ -350,7 +359,7 @@ func (n *NService) DecodeLtcTransactionForTatum(chainId uint, address string, tx
 	return result, nil
 }
 
-func (n *NService) DecodeLtcHashMultiplePlatform(chainId uint, hash string) (result response.ClientBtcTxResponse, err error) {
+func (n *NService) DecodeLtcHashMultiplePlatform(ctx context.Context, chainId uint, hash string) (result response.ClientBtcTxResponse, err error) {
 	// tatum
 	client.URL = fmt.Sprintf("%s%s", constant.TatumGetLitecoinTxByHash, hash)
 	client.Headers = map[string]string{
@@ -358,7 +367,7 @@ func (n *NService) DecodeLtcHashMultiplePlatform(chainId uint, hash string) (res
 	}
 
 	var txs tatum.TatumLitecoinTx
-	err = client.HTTPGet(&txs)
+	err = client.HTTPGet(ctx, &txs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return result, err
@@ -374,7 +383,9 @@ func (n *NService) DecodeLtcHashMultiplePlatform(chainId uint, hash string) (res
 	return
 }
 
-func (n *NService) GetLtcTxByHash(req request.GetLtcTxByHash) (result response.ClientBtcTxResponse, err error) {
+func (n *NService) GetLtcTxByHash(c *gin.Context, req request.GetLtcTxByHash) (result response.ClientBtcTxResponse, err error) {
+	ctx := c.Request.Context()
+
 	item, err := global.NODE_MEMCACHE.Get(fmt.Sprintf(constantOneTransactionHistory, req.ChainId, req.Hash))
 	if err == nil {
 		err = json.Unmarshal(item.Value, &result)
@@ -385,7 +396,7 @@ func (n *NService) GetLtcTxByHash(req request.GetLtcTxByHash) (result response.C
 		global.NODE_LOG.Error(err.Error())
 	}
 
-	result, err = n.DecodeLtcHashMultiplePlatform(req.ChainId, req.Hash)
+	result, err = n.DecodeLtcHashMultiplePlatform(ctx, req.ChainId, req.Hash)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return

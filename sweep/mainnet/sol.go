@@ -8,45 +8,60 @@ import (
 )
 
 var (
-	solSweepCount = make(map[int64]int)
+	solBlockRetryCount = make(map[int64]int)
+	solTxRetryCount    = make(map[string]int)
 )
 
-func SweepSolBlockchain() {
-	initSol()
+func SweepSolBlockchain(ctx context.Context) {
+	initSol(ctx)
 
 	go func() {
 		for {
-			SweepSolBlockchainTransaction()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepSolBlockchainTransaction(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepSolBlockchainTransactionDetails()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepSolBlockchainTransactionDetails(ctx)
+			}
 		}
 	}()
 
 	go func() {
 		for {
-			SweepSolBlockchainPendingBlock()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				SweepSolBlockchainPendingBlock(ctx)
+			}
 		}
 	}()
 }
 
-func initSol() {
-	core.SetupSolLatestBlockHeight(constant.SOL_MAINNET)
+func initSol(ctx context.Context) {
+	core.SetupSolLatestBlockHeight(ctx, constant.SOL_MAINNET)
 
-	setup.SetupCacheBlockHeight(context.Background(), constant.SOL_MAINNET)
+	setup.SetupCacheBlockHeight(ctx, constant.SOL_MAINNET)
 
-	setup.SetupSweepBlockHeight(context.Background(), constant.SOL_MAINNET)
+	setup.SetupSweepBlockHeight(ctx, constant.SOL_MAINNET)
 }
 
-func SweepSolBlockchainTransaction() {
-
+func SweepSolBlockchainTransaction(ctx context.Context) {
 	core.SweepSolBlockchainTransaction(
+		ctx,
 		constant.SOL_MAINNET,
 		&setup.SolPublicKey,
-		&solSweepCount,
 		&setup.SolSweepBlockHeight,
 		&setup.SolCacheBlockHeight,
 		constant.SOL_SWEEP_BLOCK,
@@ -54,19 +69,22 @@ func SweepSolBlockchainTransaction() {
 		constant.SOL_PENDING_TRANSACTION)
 }
 
-func SweepSolBlockchainTransactionDetails() {
-
+func SweepSolBlockchainTransactionDetails(ctx context.Context) {
 	core.SweepSolBlockchainTransactionDetails(
+		ctx,
 		constant.SOL_MAINNET,
 		&setup.SolPublicKey,
+		&solTxRetryCount,
 		constant.SOL_PENDING_TRANSACTION)
 }
 
-func SweepSolBlockchainPendingBlock() {
+func SweepSolBlockchainPendingBlock(ctx context.Context) {
 
 	core.SweepSolBlockchainPendingBlock(
+		ctx,
 		constant.SOL_MAINNET,
 		&setup.SolPublicKey,
+		&solBlockRetryCount,
 		constant.SOL_PENDING_BLOCK,
 		constant.SOL_PENDING_TRANSACTION)
 }

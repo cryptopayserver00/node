@@ -1,6 +1,8 @@
 package wallet
 
-func SendSolTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
+import "context"
+
+func SendSolTransfer(ctx context.Context, chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
 	return "", nil
 	// client := rpc.NewRpcClient(rpc.DevnetRPCEndpoint)
 
@@ -23,7 +25,7 @@ func SendSolTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (
 	// // 	return
 	// // }
 
-	// recentBlockhashResponse, err := client.GetLatestBlockhash(context.Background())
+	// recentBlockhashResponse, err := client.GetLatestBlockhash(ctx)
 	// if err != nil {
 	// 	return
 	// }
@@ -52,7 +54,7 @@ func SendSolTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (
 	// 	return
 	// }
 
-	// txHash, err := client.SendTransaction(context.Background(), string(serializedTx))
+	// txHash, err := client.SendTransaction(ctx, string(serializedTx))
 	// if err != nil {
 	// 	return
 	// }
@@ -60,6 +62,6 @@ func SendSolTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (
 	// return txHash.Result, nil
 }
 
-func SendSolTokenTransfer(chainId uint, pri, pub, toAddress, coin string, sendVal string) (hash string, err error) {
+func SendSolTokenTransfer(ctx context.Context, chainId uint, pri, pub, toAddress, coin string, sendVal string) (hash string, err error) {
 	return "", nil
 }

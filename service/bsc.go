@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -15,10 +16,13 @@ import (
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/gin-gonic/gin"
 )
 
-func (n *NService) GetBscTransactions(req request.GetBscTransactions) ([]response.ClientTransaction, error) {
-	if err := n.UpdateBscTransactionsByAlchemy(req); err != nil {
+func (n *NService) GetBscTransactions(c *gin.Context, req request.GetBscTransactions) ([]response.ClientTransaction, error) {
+	ctx := c.Request.Context()
+
+	if err := n.UpdateBscTransactionsByAlchemy(ctx, req); err != nil {
 		global.NODE_LOG.Error(err.Error())
 	}
 
@@ -57,7 +61,7 @@ func (n *NService) GetBscTransactions(req request.GetBscTransactions) ([]respons
 	return filterTxs, nil
 }
 
-func (n *NService) UpdateBscTransactionsByAlchemy(req request.GetBscTransactions) (err error) {
+func (n *NService) UpdateBscTransactionsByAlchemy(ctx context.Context, req request.GetBscTransactions) (err error) {
 	client.URL = constant.GetAlchemyRPCUrlByNetwork(req.ChainId)
 
 	var fromRpcAlchemyTxs response.RPCAlchemyTransactionDetails
@@ -99,13 +103,13 @@ func (n *NService) UpdateBscTransactionsByAlchemy(req request.GetBscTransactions
 		},
 	}
 
-	err = client.HTTPPost(fromPayload, &fromRpcAlchemyTxs)
+	err = client.HTTPPost(ctx, fromPayload, &fromRpcAlchemyTxs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
 	}
 
-	err = client.HTTPPost(toPayload, &toRpcAlchemyTxs)
+	err = client.HTTPPost(ctx, toPayload, &toRpcAlchemyTxs)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return

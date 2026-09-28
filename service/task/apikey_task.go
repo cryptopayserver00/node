@@ -15,34 +15,35 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 )
 
-func RunApiKeyTestTask() {
+const ApiKeyTestInterval = 1 * time.Hour
+
+func RunApiKeyTestTask(ctx context.Context) {
+	ticker := time.NewTicker(ApiKeyTestInterval)
+	defer ticker.Stop()
+
 	for {
-		now := time.Now()
-
-		nextHour := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location())
-		durationUntilNextHour := nextHour.Sub(now)
-
-		ticker := time.NewTicker(durationUntilNextHour)
-
-		<-ticker.C
-
-		RunApiKeyTestCore()
+		select {
+		case <-ticker.C:
+			RunApiKeyTestCore(ctx)
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
-func RunApiKeyTestCore() {
+func RunApiKeyTestCore(ctx context.Context) {
 	defer utils.HandlePanic()
 
 	global.NODE_LOG.Info("---------- Run Node Testing Task ----------")
 
-	ethNode, ethRate := testLikeEthNodeKey()
-	btcNode, btcRate := testBtcNodeKey()
-	ltcNode, ltcRate := testLtcNodeKey()
-	tronKeys, tronRate := testTronNodeKey()
-	solKeys, solRate := testSolanaNodeKey()
+	ethNode, ethRate := testLikeEthNodeKey(ctx)
+	btcNode, btcRate := testBtcNodeKey(ctx)
+	ltcNode, ltcRate := testLtcNodeKey(ctx)
+	tronKeys, tronRate := testTronNodeKey(ctx)
+	solKeys, solRate := testSolanaNodeKey(ctx)
 	tonKeys, tonRate := testTonNodeKey()
-	xrpKeys, xrpRate := testXrpNodeKey()
-	bchKeys, bchRate := testBchNodeKey()
+	xrpKeys, xrpRate := testXrpNodeKey(ctx)
+	bchKeys, bchRate := testBchNodeKey(ctx)
 
 	testAllNode := []string{}
 	testAllNode = append(testAllNode, "---------- Run Node Testing Task ----------")
@@ -68,7 +69,7 @@ func RunApiKeyTestCore() {
 	}
 }
 
-func testLikeEthNodeKey() ([]string, float64) {
+func testLikeEthNodeKey(ctx context.Context) ([]string, float64) {
 	var failedUrl []string
 	failedUrl = append(failedUrl, "Like Ethereum RPC Chain Testing:\n")
 
@@ -82,7 +83,7 @@ func testLikeEthNodeKey() ([]string, float64) {
 	}
 
 	for _, i := range nodes {
-		rpcUrl, successRate := testLikeEthByChain(i)
+		rpcUrl, successRate := testLikeEthByChain(ctx, i)
 		failedUrl = append(failedUrl, rpcUrl...)
 		totalSuccessRate += successRate
 	}
@@ -90,7 +91,7 @@ func testLikeEthNodeKey() ([]string, float64) {
 	return failedUrl, totalSuccessRate / float64(len(nodes))
 }
 
-func testBtcNodeKey() ([]string, float64) {
+func testBtcNodeKey(ctx context.Context) ([]string, float64) {
 	var failedUrl []string
 	failedUrl = append(failedUrl, "Bitcoin Chain Testing:\n")
 
@@ -104,7 +105,7 @@ func testBtcNodeKey() ([]string, float64) {
 	}
 
 	for _, i := range nodes {
-		url, successRate := testBtcByChain(i)
+		url, successRate := testBtcByChain(ctx, i)
 		failedUrl = append(failedUrl, url...)
 		totalSuccessRate += successRate
 	}
@@ -112,7 +113,7 @@ func testBtcNodeKey() ([]string, float64) {
 	return failedUrl, totalSuccessRate / float64(len(nodes))
 }
 
-func testLtcNodeKey() ([]string, float64) {
+func testLtcNodeKey(ctx context.Context) ([]string, float64) {
 	var failedUrl []string
 	failedUrl = append(failedUrl, "Litecoin Chain Testing:\n")
 
@@ -126,7 +127,7 @@ func testLtcNodeKey() ([]string, float64) {
 	}
 
 	for _, i := range nodes {
-		url, successRate := testLtcByChain(i)
+		url, successRate := testLtcByChain(ctx, i)
 		failedUrl = append(failedUrl, url...)
 		totalSuccessRate += successRate
 	}
@@ -134,7 +135,7 @@ func testLtcNodeKey() ([]string, float64) {
 	return failedUrl, totalSuccessRate / float64(len(nodes))
 }
 
-func testTronNodeKey() ([]string, float64) {
+func testTronNodeKey(ctx context.Context) ([]string, float64) {
 	var failedUrl []string
 	failedUrl = append(failedUrl, "Tron Chain Testing:\n")
 
@@ -148,7 +149,7 @@ func testTronNodeKey() ([]string, float64) {
 	}
 
 	for _, i := range nodes {
-		url, successRate := testTronByChain(i)
+		url, successRate := testTronByChain(ctx, i)
 		failedUrl = append(failedUrl, url...)
 		totalSuccessRate += successRate
 	}
@@ -156,7 +157,7 @@ func testTronNodeKey() ([]string, float64) {
 	return failedUrl, totalSuccessRate / float64(len(nodes))
 }
 
-func testSolanaNodeKey() ([]string, float64) {
+func testSolanaNodeKey(ctx context.Context) ([]string, float64) {
 	var failedUrl []string
 	failedUrl = append(failedUrl, "Solana Chain Testing:\n")
 
@@ -170,7 +171,7 @@ func testSolanaNodeKey() ([]string, float64) {
 	}
 
 	for _, i := range nodes {
-		rpcUrl, successRate := testSolByChain(i)
+		rpcUrl, successRate := testSolByChain(ctx, i)
 		failedUrl = append(failedUrl, rpcUrl...)
 		totalSuccessRate += successRate
 	}
@@ -200,7 +201,7 @@ func testTonNodeKey() ([]string, float64) {
 	return failedUrl, totalSuccessRate / float64(len(nodes))
 }
 
-func testXrpNodeKey() ([]string, float64) {
+func testXrpNodeKey(ctx context.Context) ([]string, float64) {
 	var failedUrl []string
 	failedUrl = append(failedUrl, "Xrp Chain Testing:\n")
 
@@ -214,7 +215,7 @@ func testXrpNodeKey() ([]string, float64) {
 	}
 
 	for _, i := range nodes {
-		rpcUrl, successRate := testXrpByChain(i)
+		rpcUrl, successRate := testXrpByChain(ctx, i)
 		failedUrl = append(failedUrl, rpcUrl...)
 		totalSuccessRate += successRate
 	}
@@ -222,7 +223,7 @@ func testXrpNodeKey() ([]string, float64) {
 	return failedUrl, totalSuccessRate / float64(len(nodes))
 }
 
-func testBchNodeKey() ([]string, float64) {
+func testBchNodeKey(ctx context.Context) ([]string, float64) {
 	var failedUrl []string
 	failedUrl = append(failedUrl, "Bitcoin Cash Chain Testing:\n")
 
@@ -236,7 +237,7 @@ func testBchNodeKey() ([]string, float64) {
 	}
 
 	for _, i := range nodes {
-		rpcUrl, successRate := testBchByChain(i)
+		rpcUrl, successRate := testBchByChain(ctx, i)
 		failedUrl = append(failedUrl, rpcUrl...)
 		totalSuccessRate += successRate
 	}
@@ -244,7 +245,7 @@ func testBchNodeKey() ([]string, float64) {
 	return failedUrl, totalSuccessRate / float64(len(nodes))
 }
 
-func testLikeEthByChain(chainId uint) (status []string, successRate float64) {
+func testLikeEthByChain(ctx context.Context, chainId uint) (status []string, successRate float64) {
 	var err error
 	allRpc := constant.GetAllRPCUrlByNetwork(chainId)
 	var successCount = 0
@@ -257,7 +258,7 @@ func testLikeEthByChain(chainId uint) (status []string, successRate float64) {
 			jsonRpcRequest.Jsonrpc = "2.0"
 			jsonRpcRequest.Method = "eth_getBlockByNumber"
 			jsonRpcRequest.Params = []any{"latest", false}
-			err = client.HTTPPost(jsonRpcRequest, &rpcBlockInfo)
+			err = client.HTTPPost(ctx, jsonRpcRequest, &rpcBlockInfo)
 			if err != nil {
 				global.NODE_LOG.Error(err.Error())
 				status = append(status, fmt.Sprintf("❌ | %s -> %s\n", constant.GetChainName(chainId), v))
@@ -279,7 +280,7 @@ func testLikeEthByChain(chainId uint) (status []string, successRate float64) {
 	return status, float64(successCount) / float64(len(allRpc))
 }
 
-func testBtcByChain(chainId uint) (status []string, successRate float64) {
+func testBtcByChain(ctx context.Context, chainId uint) (status []string, successRate float64) {
 	var err error
 	var totalNumber int
 	var successCount = 0
@@ -294,7 +295,7 @@ func testBtcByChain(chainId uint) (status []string, successRate float64) {
 			}
 
 			var bitcoinInfoResponse tatum.TatumGetBitcoinInfo
-			err = client.HTTPGet(&bitcoinInfoResponse)
+			err = client.HTTPGet(ctx, &bitcoinInfoResponse)
 			if err != nil {
 				global.NODE_LOG.Error(err.Error())
 				status = append(status, fmt.Sprintf("❌ | %s -> %s\n", constant.GetChainName(chainId), v))
@@ -315,7 +316,7 @@ func testBtcByChain(chainId uint) (status []string, successRate float64) {
 	// mempool
 	client.URL = constant.MempoolGetBlockHeightByNetwork(chainId)
 	var bitcoinHeight int64
-	err = client.HTTPGetUnique(&bitcoinHeight)
+	err = client.HTTPGetUnique(ctx, &bitcoinHeight)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		status = append(status, fmt.Sprintf("❌ | %s -> %s\n", constant.GetChainName(chainId), client.URL))
@@ -333,7 +334,7 @@ func testBtcByChain(chainId uint) (status []string, successRate float64) {
 	return status, float64(successCount) / float64(totalNumber)
 }
 
-func testLtcByChain(chainId uint) (status []string, successRate float64) {
+func testLtcByChain(ctx context.Context, chainId uint) (status []string, successRate float64) {
 	var err error
 	var totalNumber int
 	var successCount = 0
@@ -348,7 +349,7 @@ func testLtcByChain(chainId uint) (status []string, successRate float64) {
 			}
 
 			var litecoinInfoResponse tatum.TatumGetLitecoinInfo
-			err = client.HTTPGet(&litecoinInfoResponse)
+			err = client.HTTPGet(ctx, &litecoinInfoResponse)
 			if err != nil {
 				global.NODE_LOG.Error(err.Error())
 				status = append(status, fmt.Sprintf("❌ | %s -> %s\n", constant.GetChainName(chainId), v))
@@ -370,7 +371,7 @@ func testLtcByChain(chainId uint) (status []string, successRate float64) {
 		// mempool
 		client.URL = constant.MempoolGetBlockHeightByNetwork(chainId)
 		var bitcoinHeight int64
-		err = client.HTTPGetUnique(&bitcoinHeight)
+		err = client.HTTPGetUnique(ctx, &bitcoinHeight)
 		if err != nil {
 			global.NODE_LOG.Error(err.Error())
 			status = append(status, fmt.Sprintf("❌ | %s -> %s\n", constant.GetChainName(chainId), client.URL))
@@ -389,7 +390,7 @@ func testLtcByChain(chainId uint) (status []string, successRate float64) {
 	return status, float64(successCount) / float64(totalNumber)
 }
 
-func testTronByChain(chainId uint) (status []string, successRate float64) {
+func testTronByChain(ctx context.Context, chainId uint) (status []string, successRate float64) {
 	var err error
 	allAPiKey := constant.GetAllHTTPKeyByNetwork(chainId)
 	var successCount = 0
@@ -403,7 +404,7 @@ func testTronByChain(chainId uint) (status []string, successRate float64) {
 			var blockRequest request.TronGetBlockRequest
 			blockRequest.Detail = false
 			var blockResponse response.TronGetBlockResponse
-			err = client.HTTPPost(blockRequest, &blockResponse)
+			err = client.HTTPPost(ctx, blockRequest, &blockResponse)
 			if err != nil {
 				global.NODE_LOG.Error(err.Error())
 				status = append(status, fmt.Sprintf("❌ | %s -> %s\n", constant.GetChainName(chainId), v))
@@ -424,7 +425,7 @@ func testTronByChain(chainId uint) (status []string, successRate float64) {
 	return status, float64(successCount) / float64(len(allAPiKey))
 }
 
-func testSolByChain(chainId uint) (status []string, successRate float64) {
+func testSolByChain(ctx context.Context, chainId uint) (status []string, successRate float64) {
 	var successCount = 0
 
 	allRpc := constant.GetAllRPCUrlByNetwork(chainId)
@@ -432,7 +433,7 @@ func testSolByChain(chainId uint) (status []string, successRate float64) {
 		for _, v := range allRpc {
 			client := rpc.New(v)
 
-			height, err := client.GetSlot(context.Background(), rpc.CommitmentFinalized)
+			height, err := client.GetSlot(ctx, rpc.CommitmentFinalized)
 			if err != nil {
 				global.NODE_LOG.Error(err.Error())
 				status = append(status, fmt.Sprintf("❌ | %s -> %s\n", constant.GetChainName(chainId), v))
@@ -455,7 +456,7 @@ func testTonByChain(chainId uint) (status []string, successRate float64) {
 	return status, 1
 }
 
-func testXrpByChain(chainId uint) (status []string, successRate float64) {
+func testXrpByChain(ctx context.Context, chainId uint) (status []string, successRate float64) {
 	var err error
 	var successCount = 0
 
@@ -474,7 +475,7 @@ func testXrpByChain(chainId uint) (status []string, successRate float64) {
 				},
 			}
 
-			err = client.HTTPPost(jsonRpcRequest, &rpcBlockDetail)
+			err = client.HTTPPost(ctx, jsonRpcRequest, &rpcBlockDetail)
 			if err != nil {
 				global.NODE_LOG.Error(err.Error())
 				status = append(status, fmt.Sprintf("❌ | %s -> %s\n", constant.GetChainName(chainId), v))
@@ -493,7 +494,7 @@ func testXrpByChain(chainId uint) (status []string, successRate float64) {
 	return status, float64(successCount) / float64(len(allRpc))
 }
 
-func testBchByChain(chainId uint) (status []string, successRate float64) {
+func testBchByChain(ctx context.Context, chainId uint) (status []string, successRate float64) {
 	var err error
 	var totalNumber int
 	var successCount = 0
@@ -501,7 +502,7 @@ func testBchByChain(chainId uint) (status []string, successRate float64) {
 	// mempool
 	client.URL = constant.MempoolGetBlockHeightByNetwork(chainId)
 	var bitcoinHeight int64
-	err = client.HTTPGetUnique(&bitcoinHeight)
+	err = client.HTTPGetUnique(ctx, &bitcoinHeight)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		status = append(status, fmt.Sprintf("❌ | %s -> %s\n", constant.GetChainName(chainId), client.URL))

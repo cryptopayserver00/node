@@ -27,7 +27,7 @@ func (n *NodeApi) GetBscTransactions(c *gin.Context) {
 	rd, _ := json.Marshal(tx)
 	global.NODE_LOG.Info("GetBscTransactions: " + string(rd))
 
-	result, err := service.NodeService.GetBscTransactions(tx)
+	result, err := service.NodeService.GetBscTransactions(c, tx)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithDetailed(common.Error, err.Error(), result)

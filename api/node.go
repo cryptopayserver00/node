@@ -55,7 +55,7 @@ func (n *NodeApi) StoreWalletAddress(c *gin.Context) {
 	rd, _ := json.Marshal(wallet)
 	global.NODE_LOG.Info("StoreWalletAddress: " + string(rd))
 
-	err = service.NodeService.StoreUserWallet(wallet)
+	err = service.NodeService.StoreUserWallet(c, wallet)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
@@ -82,7 +82,7 @@ func (n *NodeApi) BulkStoreUserWallet(c *gin.Context) {
 	rd, _ := json.Marshal(wallets)
 	global.NODE_LOG.Info("BulkStoreUserWallet: " + string(rd))
 
-	result, err := service.NodeService.BulkStorageUserWallets(wallets)
+	result, err := service.NodeService.BulkStorageUserWallets(c, wallets)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithDetailed(common.Error, err.Error(), result)
@@ -95,6 +95,8 @@ func (n *NodeApi) BulkStoreUserWallet(c *gin.Context) {
 }
 
 func (n *NodeApi) GetTransactionsByChainAndAddress(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	var res common.Response
 	var tx request.TransactionsByChainAndAddress
 
@@ -109,7 +111,7 @@ func (n *NodeApi) GetTransactionsByChainAndAddress(c *gin.Context) {
 	rd, _ := json.Marshal(tx)
 	global.NODE_LOG.Info("GetTransactionsByChainAndAddress: " + string(rd))
 
-	result, total, err := service.NodeService.GetTransactionsByChainAndAddress(tx)
+	result, total, err := service.NodeService.GetTransactionsByChainAndAddress(ctx, tx)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithDetailed(common.Error, err.Error(), result)

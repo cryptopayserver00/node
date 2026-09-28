@@ -1,6 +1,7 @@
 package constant
 
 import (
+	"context"
 	"node/global"
 	"node/model/node/request"
 	"node/model/node/response"
@@ -392,7 +393,7 @@ var (
 	client NODE_Client.Client
 )
 
-func IsAddressContractSupport(chainId uint, address string) bool {
+func IsAddressContractSupport(ctx context.Context, chainId uint, address string) bool {
 	if !IsNetworkSupport(chainId) {
 		return false
 	}
@@ -421,7 +422,7 @@ func IsAddressContractSupport(chainId uint, address string) bool {
 		jsonRpcRequest.Method = "eth_getCode"
 		jsonRpcRequest.Params = []any{address, "latest"}
 
-		err := client.HTTPPost(jsonRpcRequest, &rpcGeneral)
+		err := client.HTTPPost(ctx, jsonRpcRequest, &rpcGeneral)
 		if err != nil {
 			global.NODE_LOG.Error(err.Error())
 			return false
@@ -431,7 +432,7 @@ func IsAddressContractSupport(chainId uint, address string) bool {
 			return true
 		}
 	case TRON_MAINNET, TRON_NILE:
-		resultVal, _ := TronValidateContratAddress(chainId, address)
+		resultVal, _ := TronValidateContratAddress(ctx, chainId, address)
 		return resultVal
 	case SOL_MAINNET, SOL_DEVNET:
 		_, err := solana.PublicKeyFromBase58(address)
@@ -458,25 +459,6 @@ func GetChainName(chainId uint) string {
 	return ChainId[chainId]
 }
 
-// func TronValidateAddress(chainId uint, address string) (bool, string) {
-// 	client.URL = TronValidateAddressByNetwork(chainId)
-// 	client.Headers = map[string]string{
-// 		"TRON-PRO-API-KEY": GetRandomHTTPKeyByNetwork(chainId),
-// 	}
-
-// 	var addressRequest request.TronValidateAddressRequest
-// 	addressRequest.Address = address
-// 	addressRequest.Visible = true
-// 	var addressResponse response.TronValidateAddressResponse
-// 	err := client.HTTPPost(addressRequest, &addressResponse)
-// 	if err != nil {
-// 		global.NODE_LOG.Error(err.Error())
-// 		return false, ""
-// 	}
-
-// 	return addressResponse.Result, addressResponse.Message
-// }
-
 // TronValidateAddress 校验波场地址(Base58Check，版本前缀 0x41）
 func TronValidateAddress(address string) bool {
 	if len(address) != 34 || address[0] != 'T' {
@@ -494,7 +476,7 @@ func TronValidateAddress(address string) bool {
 	return true
 }
 
-func TronValidateContratAddress(chainId uint, address string) (bool, string) {
+func TronValidateContratAddress(ctx context.Context, chainId uint, address string) (bool, string) {
 	client.URL = TronValidateContractAddressByNetwork(chainId)
 	client.Headers = map[string]string{
 		"TRON-PRO-API-KEY": GetRandomHTTPKeyByNetwork(chainId),
@@ -504,7 +486,7 @@ func TronValidateContratAddress(chainId uint, address string) (bool, string) {
 	contractRequest.Value = address
 	contractRequest.Visible = true
 	var contractResponse response.TronContractResponse
-	err := client.HTTPPost(contractRequest, &contractResponse)
+	err := client.HTTPPost(ctx, contractRequest, &contractResponse)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return false, ""
@@ -516,24 +498,6 @@ func TronValidateContratAddress(chainId uint, address string) (bool, string) {
 
 	return false, ""
 }
-
-// func SolanaValidateAddress(rpc, address string) (bool, string) {
-// 	client := solanaRpc.NewRpcClient(rpc)
-
-// 	pubKey := solanaCommon.PublicKeyFromString(address)
-
-// 	accountInfo, err := client.GetAccountInfo(context.Background(), pubKey.ToBase58())
-// 	if err != nil {
-// 		global.NODE_LOG.Error(err.Error())
-// 		return false, ""
-// 	}
-
-// 	if accountInfo.GetResult().Value.Owner == "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" {
-// 		return true, "contract"
-// 	} else {
-// 		return true, "address"
-// 	}
-// }
 
 // LtcValidateAddress 校验莱特币地址（Legacy P2PKH/P2SH + Bech32）
 func LtcValidateAddress(chainId uint, address string) bool {
