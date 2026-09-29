@@ -34,13 +34,13 @@ func NotificationRequest(ctx context.Context, req request.NotificationRequest) e
 }
 
 func handleNotification(ctx context.Context, req request.NotificationRequest) error {
-	ownId, err := service.NodeService.SaveOwnTx(ctx, req)
+	ownId, created, err := service.NodeService.SaveOwnTx(ctx, req)
 	if err != nil {
 		return fmt.Errorf("SaveOwnTx failed, hash=%s: %w", req.Hash, err)
 	}
 
-	if ownId == 0 {
-		global.NODE_LOG.Info(fmt.Sprintf("OwnId already existed, hash: %s", req.Hash))
+	if !created {
+		global.NODE_LOG.Info(fmt.Sprintf("own tx already existed, skip, hash: %s", req.Hash))
 		return nil
 	}
 
