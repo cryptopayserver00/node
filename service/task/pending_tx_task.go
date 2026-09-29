@@ -65,5 +65,5 @@ func RunPendingTxNumberCore(ctx context.Context) {
 	allString = append(allString, "\n")
 	allString = append(allString, allPendingBlockString...)
 
-	utils.InformToTelegram(strings.Join(allString, ""))
+	go utils.InformToTelegram(strings.Join(allString, ""))
 }

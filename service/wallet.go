@@ -12,36 +12,39 @@ import (
 	"node/sweep/setup"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-func (n *NService) BulkStorageUserWallets(c *gin.Context, wallets request.BulkStoreUserWallet) (errWalletResponses response.BulkStoreUserWalletResponse, err error) {
+func (n *NService) BulkStorageUserWallets(c *gin.Context, wallets request.BulkStoreUserWallet) (resp response.BulkStoreUserWalletResponse, err error) {
 	ctx := c.Request.Context()
 
-	if len(wallets.BulkStorage) > 0 {
-
-		for _, v := range wallets.BulkStorage {
-			if err = n.saveWallet(ctx, v.ChainId, v.Address); err != nil {
-				var errorWallet response.StoreUserWallet
-				errorWallet.ChainId = v.ChainId
-				errorWallet.Address = v.Address
-				errWalletResponses.BulkStorage = append(errWalletResponses.BulkStorage, errorWallet)
-				global.NODE_LOG.Error(err.Error())
-
-				continue
-			}
-		}
-
-		if len(errWalletResponses.BulkStorage) > 0 {
-			return errWalletResponses, errors.New("some wallets failed to store")
-		}
+	if len(wallets.BulkStorage) == 0 {
+		return resp, nil
 	}
 
-	return
+	err = global.NODE_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, v := range wallets.BulkStorage {
+			if saveErr := n.saveWallet(ctx, tx, v.ChainId, v.Address); saveErr != nil {
+				global.NODE_LOG.Error(fmt.Sprintf(
+					"BulkStorageUserWallets saveWallet failed, chainId=%d, address=%s, err=%v",
+					v.ChainId, v.Address, err,
+				))
+				return fmt.Errorf("chain_id=%d address=%s: %w", v.ChainId, v.Address, saveErr)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return resp, errors.New("some wallets failed to store")
+	}
+
+	return resp, nil
 }
 
 func (n *NService) StoreUserWallet(c *gin.Context, wallet request.StoreUserWallet) (err error) {
 	ctx := c.Request.Context()
-	return n.saveWallet(ctx, wallet.ChainId, wallet.Address)
+	return n.saveWallet(ctx, global.NODE_DB.WithContext(ctx), wallet.ChainId, wallet.Address)
 }
 
 func (n *NService) HasWalletByChainIdAndAddress(ctx context.Context, chainId uint, address string) (hasWallet bool, err error) {
@@ -55,7 +58,7 @@ func (n *NService) HasWalletByChainIdAndAddress(ctx context.Context, chainId uin
 	return count > 0, nil
 }
 
-func (n *NService) saveWallet(ctx context.Context, chainId uint, address string) (err error) {
+func (n *NService) saveWallet(ctx context.Context, tx *gorm.DB, chainId uint, address string) (err error) {
 	if !constant.IsNetworkSupport(chainId) {
 		return errors.New("do not support the network")
 	}
@@ -79,7 +82,7 @@ func (n *NService) saveWallet(ctx context.Context, chainId uint, address string)
 	saveWallet.NetworkName = constant.GetChainName(chainId)
 	saveWallet.Status = 1
 
-	if err = global.NODE_DB.WithContext(ctx).Create(&saveWallet).Error; err != nil {
+	if err = tx.Create(&saveWallet).Error; err != nil {
 		return
 	}
 

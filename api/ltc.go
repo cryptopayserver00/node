@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"node/global"
 	"node/model/common"
@@ -9,7 +8,6 @@ import (
 	"node/service"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 func (n *NodeApi) GetLtcBalance(c *gin.Context) {
@@ -24,12 +22,8 @@ func (n *NodeApi) GetLtcBalance(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(balance)
-	global.NODE_LOG.Info("GetLtcBalance: " + string(rd))
-
 	result, err := service.NodeService.GetLtcBalance(c, balance)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -52,12 +46,8 @@ func (n *NodeApi) GetLtcFeeRate(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(rate)
-	global.NODE_LOG.Info("GetLtcFeeRate: " + string(rd))
-
 	result, err := service.NodeService.GetLtcFeeRate(c, rate)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -80,12 +70,8 @@ func (n *NodeApi) PostLtcBroadcast(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(broadcast)
-	global.NODE_LOG.Info("PostLtcBroadcast: " + string(rd))
-
 	result, err := service.NodeService.PostLtcBroadcast(c, broadcast)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -108,12 +94,8 @@ func (n *NodeApi) GetLtcTransactions(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(broadcast)
-	global.NODE_LOG.Info("GetLtcTransactions: " + string(rd))
-
 	result, err := service.NodeService.GetLtcTransactions(c, broadcast)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -136,12 +118,8 @@ func (n *NodeApi) GetLtcTxByHash(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(tx)
-	global.NODE_LOG.Info("GetLtcTxByHash: " + string(rd))
-
 	result, err := service.NodeService.GetLtcTxByHash(c, tx)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -164,12 +142,8 @@ func (n *NodeApi) GetLtcAddressUtxo(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(utxo)
-	global.NODE_LOG.Info("GetLtcAddressUtxo: " + string(rd))
-
 	result, err := service.NodeService.GetLtcAddressUtxo(c, utxo)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"node/global"
 	"node/model/common"
@@ -9,7 +8,6 @@ import (
 	"node/service"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 func (n *NodeApi) GetBtcBalance(c *gin.Context) {
@@ -24,12 +22,8 @@ func (n *NodeApi) GetBtcBalance(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(balance)
-	global.NODE_LOG.Info("GetBtcBalance: " + string(rd))
-
 	result, err := service.NodeService.GetBtcBalance(c, balance)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -52,12 +46,8 @@ func (n *NodeApi) GetBtcFeeRate(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(rate)
-	global.NODE_LOG.Info("GetBtcFeeRate: " + string(rd))
-
 	result, err := service.NodeService.GetBtcFeeRate(c, rate)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -80,12 +70,8 @@ func (n *NodeApi) GetBtcAddressUtxo(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(utxo)
-	global.NODE_LOG.Info("GetBtcAddressUtxo: " + string(rd))
-
 	result, err := service.NodeService.GetBtcAddressUtxo(c, utxo)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -108,12 +94,8 @@ func (n *NodeApi) PostBtcBroadcast(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(broadcast)
-	global.NODE_LOG.Info("PostBtcBroadcast: " + string(rd))
-
 	result, err := service.NodeService.PostBtcBroadcast(c, broadcast)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -136,12 +118,8 @@ func (n *NodeApi) GetBtcTransactions(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(txs)
-	global.NODE_LOG.Info("GetBtcTransactions: " + string(rd))
-
 	result, err := service.NodeService.GetBtcTransactions(c, txs)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -164,12 +142,8 @@ func (n *NodeApi) GetBtcTransactionDetail(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(detail)
-	global.NODE_LOG.Info("GetBtcTransactionDetail: " + string(rd))
-
 	result, err := service.NodeService.GetBtcTransactionDetail(c, detail)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"node/global"
 	"node/model/common"
@@ -9,7 +8,6 @@ import (
 	"node/service"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 func (n *NodeApi) GetSolanaTransactions(c *gin.Context) {
@@ -24,12 +22,8 @@ func (n *NodeApi) GetSolanaTransactions(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(tx)
-	global.NODE_LOG.Info("GetSolanaTransactions: " + string(rd))
-
 	result, err := service.NodeService.GetSolanaTransactions(tx)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -52,12 +46,8 @@ func (n *NodeApi) GetSolTransactions(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(tx)
-	global.NODE_LOG.Info("GetSolTransactions: " + string(rd))
-
 	result, err := service.NodeService.GetSolTransactions(tx)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -80,12 +70,8 @@ func (n *NodeApi) GetSplTransactions(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(tx)
-	global.NODE_LOG.Info("GetSplTransactions: " + string(rd))
-
 	result, err := service.NodeService.GetSplTransactions(tx)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return

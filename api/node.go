@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"node/global"
 	"node/model/common"
@@ -10,7 +9,6 @@ import (
 	"node/service"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 func (n *NodeApi) GetNetworkInfo(c *gin.Context) {
@@ -25,12 +23,8 @@ func (n *NodeApi) GetNetworkInfo(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(info)
-	global.NODE_LOG.Info("GetNetworkInfo: " + string(rd))
-
 	result, err := service.NodeService.GetInfo(c, info)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -52,12 +46,8 @@ func (n *NodeApi) StoreWalletAddress(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(wallet)
-	global.NODE_LOG.Info("StoreWalletAddress: " + string(rd))
-
 	err = service.NodeService.StoreUserWallet(c, wallet)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
 		return
@@ -79,12 +69,8 @@ func (n *NodeApi) BulkStoreUserWallet(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(wallets)
-	global.NODE_LOG.Info("BulkStoreUserWallet: " + string(rd))
-
 	result, err := service.NodeService.BulkStorageUserWallets(c, wallets)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithDetailed(common.Error, err.Error(), result)
 		c.JSON(http.StatusOK, res)
 		return
@@ -108,12 +94,8 @@ func (n *NodeApi) GetTransactionsByChainAndAddress(c *gin.Context) {
 		return
 	}
 
-	rd, _ := json.Marshal(tx)
-	global.NODE_LOG.Info("GetTransactionsByChainAndAddress: " + string(rd))
-
 	result, total, err := service.NodeService.GetTransactionsByChainAndAddress(ctx, tx)
 	if err != nil {
-		global.NODE_LOG.Error(err.Error(), zap.Error(err))
 		res = common.FailWithDetailed(common.Error, err.Error(), result)
 		c.JSON(http.StatusOK, res)
 		return
