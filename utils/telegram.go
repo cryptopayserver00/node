@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"gopkg.in/telebot.v3"
 )
 
@@ -43,8 +44,8 @@ func InformToTelegram(message string) bool {
 
 	_, err = bot.Send(&telebot.Chat{ID: global.NODE_CONFIG.Telegram.InformChannelId}, message)
 	if err != nil {
-		global.NODE_LOG.Error("telegram send failed")
-		return false
+		global.NODE_LOG.Error("telegram send failed", zap.String("err", err.Error()))
+
 	}
 	return true
 }
@@ -62,7 +63,7 @@ func TxInformToTelegram(message string) bool {
 
 	_, err = bot.Send(&telebot.Chat{ID: global.NODE_CONFIG.Telegram.TxInformChannelId}, message)
 	if err != nil {
-		global.NODE_LOG.Error("telegram send failed")
+		global.NODE_LOG.Error("telegram send failed", zap.String("err", err.Error()))
 		return false
 	}
 	return true

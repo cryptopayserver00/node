@@ -82,6 +82,8 @@ var (
 
 	PolMainnetRPC = []string{
 		"https://polygon-bor-rpc.publicnode.com",
+		"https://polygon.drpc.org",
+		"https://poly.api.pocket.network",
 	}
 
 	PolTestnetRPC = []string{
