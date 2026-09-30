@@ -23,7 +23,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const maxWorkers = 4
+const maxWorkers = 10
 
 func calcNumWorkers(sweepBlockHeight, cacheBlockHeight int64, maxWorkers int) int {
 	remaining := cacheBlockHeight - sweepBlockHeight + 1

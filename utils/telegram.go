@@ -27,7 +27,7 @@ import (
 */
 var (
 	tgBot        *telebot.Bot
-	tgBotMu      *sync.Mutex
+	tgBotMu      sync.Mutex
 	messageLimit = 4000
 
 	// 全局限流:每 3 秒 1 条,突发最多 5 条(约 20 条/分钟,贴合单频道限制)
@@ -112,7 +112,21 @@ func InformToTelegram(message string) bool {
 	case tgQueue <- message:
 		return true
 	default:
-		global.NODE_LOG.Warn("telegram queue full, drop message")
+		return false
+	}
+}
+
+func InformToTelegramWithKey(key, message string) bool {
+	tgWorkerOnce.Do(func() { go tgWorker() })
+
+	if !dedup.Allow(key) {
+		return false // 冷却期内的重复消息
+	}
+
+	select {
+	case tgQueue <- message:
+		return true
+	default:
 		return false
 	}
 }

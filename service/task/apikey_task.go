@@ -65,7 +65,7 @@ func RunApiKeyTestCore(ctx context.Context) {
 	testAllNode = append(testAllNode, bchKeys...)
 	testAllNode = append(testAllNode, fmt.Sprintf("\n\n Total Success Rate: %.2f%%\n", (ethRate+btcRate+ltcRate+tronRate+solRate+tonRate+xrpRate+bchRate)/8*100))
 	if len(testAllNode) > 0 {
-		go utils.InformToTelegram(strings.Join(testAllNode, ""))
+		utils.InformToTelegram(strings.Join(testAllNode, ""))
 	}
 }
 

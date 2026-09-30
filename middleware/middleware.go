@@ -119,7 +119,7 @@ func Logger() gin.HandlerFunc {
 				c.Errors.String(),
 				logBody,
 			)
-			go utils.InformToTelegram(msg)
+			utils.InformToTelegram(msg)
 		case status >= 400:
 			global.NODE_LOG.Warn("request", fields...)
 		default:
