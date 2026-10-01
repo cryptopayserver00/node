@@ -6,12 +6,11 @@ require (
 	github.com/Peersyst/xrpl-go v0.3.1
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
 	github.com/btcsuite/btcd v0.24.2
+	github.com/btcsuite/btcd/btcec/v2 v2.3.5
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/ethereum/go-ethereum v1.16.2
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6
-	github.com/gagliardetto/binary v0.8.0
 	github.com/gagliardetto/solana-go v1.13.0
 	github.com/gcash/bchd v0.21.1
 	github.com/gcash/bchutil v0.0.0-20250514010653-ef9bffba99e1
@@ -22,6 +21,8 @@ require (
 	github.com/spf13/viper v1.20.1
 	github.com/xssnick/tonutils-go v1.14.1
 	go.uber.org/zap v1.27.0
+	golang.org/x/crypto v0.54.0
+	golang.org/x/time v0.12.0
 	gopkg.in/telebot.v3 v3.3.8
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.30.2
@@ -34,7 +35,6 @@ require (
 	github.com/bits-and-blooms/bitset v1.24.0 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/bsv-blockchain/go-sdk v1.2.9 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.5 // indirect
 	github.com/btcsuite/btclog v1.0.0 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
@@ -54,6 +54,7 @@ require (
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
+	github.com/gagliardetto/binary v0.8.0 // indirect
 	github.com/gagliardetto/treeout v0.1.4 // indirect
 	github.com/gcash/bchlog v0.0.0-20180913005452-b4f036f92fa6 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
@@ -101,14 +102,12 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/ratelimit v0.3.1 // indirect
 	golang.org/x/arch v0.20.0 // indirect
-	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
-	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

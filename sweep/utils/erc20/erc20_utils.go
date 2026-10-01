@@ -127,7 +127,6 @@ func handleERC20Transaction(chainId uint, hash, fromAddress, monitorAddress, dat
 }
 
 func DecodeERC20TransactionInputData(chainId uint, hash, data string) (methodName, decodeFromAddress, decodeToAddress string, amount *big.Int, err error) {
-
 	if len(data) < 138 {
 		err = errors.New("insufficient data length")
 		return

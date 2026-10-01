@@ -16,6 +16,7 @@ import (
 	NODE_Client "node/utils/http"
 
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
@@ -39,6 +40,34 @@ type btcNet struct {
 	MaxCoins       int64  // 总量上限（币），用于金额校验
 	DefaultFeeRate float64
 	FeeAPI         feeAPI
+	// AcceptWIFIDs 是额外接受的 WIF 版本字节。为空时只接受 Params.PrivateKeyID。
+	// 例如 LTC 主网官方是 0xb0，但不少钱包/库导出的是 BTC 风格的 0x80。
+	AcceptWIFIDs []byte
+}
+
+// wifVersion 读取 WIF 的版本字节（网络标识）。
+func wifVersion(wifStr string) (byte, bool) {
+	_, v, err := base58.CheckDecode(wifStr)
+	if err != nil {
+		return 0, false
+	}
+	return v, true
+}
+
+// checkWIF 校验 WIF 的网络字节是否属于当前网络，不匹配时给出可读的错误。
+func (n *btcNet) checkWIF(wifStr string) error {
+	v, ok := wifVersion(wifStr)
+	if !ok {
+		return errors.New("wif: invalid base58check encoding")
+	}
+	allowed := append([]byte{n.Params.PrivateKeyID}, n.AcceptWIFIDs...)
+	for _, id := range allowed {
+		if v == id {
+			return nil
+		}
+	}
+	return fmt.Errorf("wif private key does not match the selected network %s: version byte 0x%02x, allowed %#v",
+		n.Params.Name, v, allowed)
 }
 
 func (n *btcNet) dust() int64 {
@@ -219,6 +248,17 @@ func selectUTXOs(utxos []UTXO, amount int64, destLen, changeLen int, feeRate flo
 
 // selectUTXOsDust 同 selectUTXOs，但粉尘阈值由调用方指定（LTC 为 5460）。
 func selectUTXOsDust(utxos []UTXO, amount int64, destLen, changeLen int, feeRate float64, dust int64) (*selection, error) {
+	return selectUTXOsWith(utxos, amount, destLen, changeLen, dust, func(nIn int, outLens []int) int64 {
+		return estimateFee(nIn, outLens, feeRate)
+	})
+}
+
+// feeFunc 按输入个数和各输出 pkScript 长度计算手续费。不同链/脚本类型的体积不同
+// （P2WPKH 输入约 68 vB，P2PKH 输入约 148 B），由调用方提供。
+type feeFunc func(nIn int, outScriptLens []int) int64
+
+// selectUTXOsWith 是选币的通用实现：只用已确认的 UTXO，金额大的优先。
+func selectUTXOsWith(utxos []UTXO, amount int64, destLen, changeLen int, dust int64, feeFn feeFunc) (*selection, error) {
 	// 只用已确认的 UTXO，金额大的优先。
 	confirmed := make([]UTXO, 0, len(utxos))
 	for _, u := range utxos {
@@ -233,12 +273,12 @@ func selectUTXOsDust(utxos []UTXO, amount int64, destLen, changeLen int, feeRate
 		sel.inputs = append(sel.inputs, u)
 		sel.total += u.Value
 
-		feeNoChange := estimateFee(len(sel.inputs), []int{destLen}, feeRate)
+		feeNoChange := feeFn(len(sel.inputs), []int{destLen})
 		if sel.total < amount+feeNoChange {
 			continue
 		}
 
-		feeWithChange := estimateFee(len(sel.inputs), []int{destLen, changeLen}, feeRate)
+		feeWithChange := feeFn(len(sel.inputs), []int{destLen, changeLen})
 		change := sel.total - amount - feeWithChange
 		if change >= dust {
 			sel.hasChange, sel.change, sel.fee = true, change, feeWithChange
@@ -249,7 +289,7 @@ func selectUTXOsDust(utxos []UTXO, amount int64, destLen, changeLen int, feeRate
 		return sel, nil
 	}
 
-	fee := estimateFee(len(sel.inputs), []int{destLen, changeLen}, feeRate)
+	fee := feeFn(len(sel.inputs), []int{destLen, changeLen})
 	return nil, fmt.Errorf("insufficient funds: have %d sat (confirmed), need about %d sat", sel.total, amount+fee)
 }
 
@@ -280,8 +320,8 @@ func buildTransfer(ctx context.Context, net *btcNet, pri, pub, toAddress, sendVa
 	if err != nil {
 		return nil, fmt.Errorf("decode wif: %w", err)
 	}
-	if !wif.IsForNet(net.Params) {
-		return nil, errors.New("wif private key does not match the selected network")
+	if err := net.checkWIF(pri); err != nil {
+		return nil, err
 	}
 	if !wif.CompressPubKey {
 		return nil, errors.New("segwit requires a compressed public key (use a compressed WIF)")
