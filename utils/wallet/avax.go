@@ -1,9 +1,11 @@
 package wallet
 
-func SendAvaxTransfer(chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
+import "context"
+
+func SendAvaxTransfer(ctx context.Context, chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
 	return "", nil
 }
 
-func SendAvaxTokenTransfer(chainId uint, pri, pub, toAddress string, coin, sendVal string) (hash string, err error) {
+func SendAvaxTokenTransfer(ctx context.Context, chainId uint, pri, pub, toAddress string, coin, sendVal string) (hash string, err error) {
 	return "", nil
 }

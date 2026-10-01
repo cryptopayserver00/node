@@ -10,9 +10,9 @@ import (
 func TransferFreeCoinToReceiveAddress(ctx context.Context, chainId uint, coin, address, amount string) (hash string, err error) {
 	switch chainId {
 	case constant.BTC_TESTNET:
-		hash, err = SendBtcTransfer(chainId, global.NODE_CONFIG.FreeCoin.Bitcoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Bitcoin.PublicKey, address, amount)
+		hash, err = SendBtcTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Bitcoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Bitcoin.PublicKey, address, amount)
 	case constant.LTC_TESTNET:
-		hash, err = SendLtcTransfer(chainId, global.NODE_CONFIG.FreeCoin.Litecoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Litecoin.PublicKey, address, amount)
+		hash, err = SendLtcTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Litecoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Litecoin.PublicKey, address, amount)
 	case constant.ETH_SEPOLIA, constant.OP_SEPOLIA, constant.ARBITRUM_SEPOLIA, constant.BASE_SEPOLIA:
 		switch coin {
 		case constant.ETH:
@@ -30,9 +30,9 @@ func TransferFreeCoinToReceiveAddress(ctx context.Context, chainId uint, coin, a
 	case constant.TRON_NILE:
 		switch coin {
 		case constant.TRX:
-			hash, err = SendTrxTransfer(chainId, global.NODE_CONFIG.FreeCoin.Tron.PrivateKey, global.NODE_CONFIG.FreeCoin.Tron.PublicKey, address, amount)
+			hash, err = SendTrxTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Tron.PrivateKey, global.NODE_CONFIG.FreeCoin.Tron.PublicKey, address, amount)
 		default:
-			hash, err = SendTronTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Tron.PrivateKey, global.NODE_CONFIG.FreeCoin.Tron.PublicKey, address, coin, amount)
+			hash, err = SendTronTokenTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Tron.PrivateKey, global.NODE_CONFIG.FreeCoin.Tron.PublicKey, address, coin, amount)
 		}
 	case constant.SOL_DEVNET:
 		switch coin {
@@ -49,22 +49,22 @@ func TransferFreeCoinToReceiveAddress(ctx context.Context, chainId uint, coin, a
 			hash, err = SendTonTokenTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ton.Mnemonic, global.NODE_CONFIG.FreeCoin.Ton.PublicKey, address, coin, amount)
 		}
 	case constant.XRP_TESTNET:
-		hash, err = SendXrpTransfer(chainId, global.NODE_CONFIG.FreeCoin.Xrp.Mnemonic, global.NODE_CONFIG.FreeCoin.Xrp.PublicKey, address, amount)
+		hash, err = SendXrpTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Xrp.Mnemonic, global.NODE_CONFIG.FreeCoin.Xrp.PublicKey, address, amount)
 	case constant.BCH_TESTNET:
-		hash, err = SendBchTransfer(chainId, global.NODE_CONFIG.FreeCoin.Xrp.Mnemonic, global.NODE_CONFIG.FreeCoin.Xrp.PublicKey, address, amount)
+		hash, err = SendBchTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Xrp.PrivateKey, global.NODE_CONFIG.FreeCoin.Xrp.PublicKey, address, amount)
 	case constant.POL_TESTNET:
 		switch coin {
 		case constant.POL:
-			hash, err = SendPolTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
+			hash, err = SendPolTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
 		default:
-			hash, err = SendPolTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
+			hash, err = SendPolTokenTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
 		}
 	case constant.AVAX_TESTNET:
 		switch coin {
 		case constant.AVAX:
-			hash, err = SendAvaxTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
+			hash, err = SendAvaxTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
 		default:
-			hash, err = SendAvaxTokenTransfer(chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
+			hash, err = SendAvaxTokenTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
 		}
 	}
 
