@@ -153,3 +153,18 @@ func (c *Client) timeoutOrDefault() time.Duration {
 	}
 	return c.Timeout
 }
+
+// HTTPPostText 以 text/plain 原样发送 body，并原样返回响应体（不做 JSON 编解码）。
+// 用于 Esplora 的 POST /tx：请求体是 hex 字符串，响应体是纯文本 txid。
+func (c *Client) HTTPPostText(ctx context.Context, body string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.timeoutOrDefault())
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL, strings.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create post request: %w", err)
+	}
+	req.Header.Set("Content-Type", "text/plain; charset=utf-8")
+
+	return c.doRequest(req)
+}
