@@ -291,6 +291,7 @@ func HandleLtcTransactionDetailsByTatum(
 	if len(strconv.Itoa(litecoinTxResponse.Time)) == 10 {
 		litecoinTxResponse.Time *= 1000
 	}
+	notifyRequest.BlockTimestamp = litecoinTxResponse.Time
 
 	isProcess := false
 

@@ -13,7 +13,7 @@ func TransferFreeCoinToReceiveAddress(ctx context.Context, chainId uint, coin, a
 		hash, err = SendBtcTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Bitcoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Bitcoin.PublicKey, address, amount)
 	case constant.LTC_TESTNET:
 		hash, err = SendLtcTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Litecoin.PrivateKey, global.NODE_CONFIG.FreeCoin.Litecoin.PublicKey, address, amount)
-	case constant.ETH_SEPOLIA, constant.OP_SEPOLIA, constant.ARBITRUM_SEPOLIA, constant.BASE_SEPOLIA:
+	case constant.ETH_SEPOLIA, constant.OP_SEPOLIA, constant.ARBITRUM_SEPOLIA, constant.BASE_SEPOLIA, constant.POL_TESTNET, constant.AVAX_TESTNET:
 		switch coin {
 		case constant.ETH:
 			hash, err = SendEthTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
@@ -52,20 +52,22 @@ func TransferFreeCoinToReceiveAddress(ctx context.Context, chainId uint, coin, a
 		hash, err = SendXrpTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Xrp.Mnemonic, global.NODE_CONFIG.FreeCoin.Xrp.PublicKey, address, amount)
 	case constant.BCH_TESTNET:
 		hash, err = SendBchTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Xrp.PrivateKey, global.NODE_CONFIG.FreeCoin.Xrp.PublicKey, address, amount)
-	case constant.POL_TESTNET:
-		switch coin {
-		case constant.POL:
-			hash, err = SendPolTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
-		default:
-			hash, err = SendPolTokenTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
-		}
-	case constant.AVAX_TESTNET:
-		switch coin {
-		case constant.AVAX:
-			hash, err = SendAvaxTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
-		default:
-			hash, err = SendAvaxTokenTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
-		}
+	// case constant.POL_TESTNET:
+	// 	switch coin {
+	// 	case constant.POL:
+	// 		hash, err = SendPolTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
+	// 	default:
+	// 		hash, err = SendPolTokenTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
+	// 	}
+	// case constant.AVAX_TESTNET:
+	// 	switch coin {
+	// 	case constant.AVAX:
+	// 		hash, err = SendAvaxTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, amount)
+	// 	default:
+	// 		hash, err = SendAvaxTokenTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ethereum.PrivateKey, global.NODE_CONFIG.FreeCoin.Ethereum.PublicKey, address, coin, amount)
+	// 	}
+	default:
+		return "", errors.New("not support")
 	}
 
 	if err != nil {

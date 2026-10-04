@@ -157,7 +157,6 @@ func HandleBchTransactionDetailsByMempool(
 	var err error
 
 	client.URL = fmt.Sprintf(constant.MempoolGetTransctionByNetwork(chainId), txHash)
-
 	var bitcoincashTxResponse mempool.MempoolTx
 	err = client.HTTPGet(ctx, &bitcoincashTxResponse)
 	if err != nil {

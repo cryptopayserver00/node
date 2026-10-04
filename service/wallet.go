@@ -7,6 +7,7 @@ import (
 	"node/global"
 	"node/global/constant"
 	"node/model"
+	"node/model/common"
 	"node/model/node/request"
 	"node/model/node/response"
 	"node/sweep/setup"
@@ -76,12 +77,12 @@ func (n *NService) saveWallet(ctx context.Context, tx *gorm.DB, chainId uint, ad
 		return nil
 	}
 
-	var saveWallet model.Wallet
-	saveWallet.Address = address
-	saveWallet.ChainId = chainId
-	saveWallet.NetworkName = constant.GetChainName(chainId)
-	saveWallet.Status = 1
-
+	saveWallet := model.Wallet{
+		Address:     address,
+		ChainId:     chainId,
+		NetworkName: constant.GetChainName(chainId),
+		NODE_MODEL:  common.NODE_MODEL{Status: 1},
+	}
 	if err = tx.Create(&saveWallet).Error; err != nil {
 		return
 	}
