@@ -18,6 +18,29 @@ type Server struct {
 	Wss              Wss              `mapstructure:"wss" json:"wss" yaml:"wss"`
 	FreeCoin         FreeCoin         `mapstructure:"freecoin" json:"freecoin" yaml:"freecoin"`
 	Key              Key              `mapstructure:"key" json:"key" yaml:"key"`
+	Rpc              Rpc              `mapstructure:"rpc" json:"rpc" yaml:"rpc"`
+}
+
+type Rpc struct {
+	EthMainnet      string `mapstructure:"eth_mainnet" json:"eth_mainnet" yaml:"eth_mainnet"`
+	EthSepolia      string `mapstructure:"eth_sepolia" json:"eth_sepolia" yaml:"eth_sepolia"`
+	BscMainnet      string `mapstructure:"bsc_mainnet" json:"bsc_mainnet" yaml:"bsc_mainnet"`
+	BscTestnet      string `mapstructure:"bsc_testnet" json:"bsc_testnet" yaml:"bsc_testnet"`
+	OpMainnet       string `mapstructure:"op_mainnet" json:"op_mainnet" yaml:"op_mainnet"`
+	OpSepolia       string `mapstructure:"op_sepolia" json:"op_sepolia" yaml:"op_sepolia"`
+	ArbitrumOne     string `mapstructure:"arbitrum_one" json:"arbitrum_one" yaml:"arbitrum_one"`
+	ArbitrumNova    string `mapstructure:"arbitrum_nova" json:"arbitrum_nova" yaml:"arbitrum_nova"`
+	ArbitrumSepolia string `mapstructure:"arbitrum_sepolia" json:"arbitrum_sepolia" yaml:"arbitrum_sepolia"`
+	SolanaMainnet   string `mapstructure:"solana_mainnet" json:"solana_mainnet" yaml:"solana_mainnet"`
+	SolanaDevnet    string `mapstructure:"solana_devnet" json:"solana_devnet" yaml:"solana_devnet"`
+	PolMainnet      string `mapstructure:"pol_mainnet" json:"pol_mainnet" yaml:"pol_mainnet"`
+	PolTestnet      string `mapstructure:"pol_testnet" json:"pol_testnet" yaml:"pol_testnet"`
+	AvaxMainnet     string `mapstructure:"avax_mainnet" json:"avax_mainnet" yaml:"avax_mainnet"`
+	AvaxTestnet     string `mapstructure:"avax_testnet" json:"avax_testnet" yaml:"avax_testnet"`
+	BaseMainnet     string `mapstructure:"base_mainnet" json:"base_mainnet" yaml:"base_mainnet"`
+	BaseSepolia     string `mapstructure:"base_sepolia" json:"base_sepolia" yaml:"base_sepolia"`
+	XrpMainnet      string `mapstructure:"xrp_mainnet" json:"xrp_mainnet" yaml:"xrp_mainnet"`
+	XrpTestnet      string `mapstructure:"xrp_testnet" json:"xrp_testnet" yaml:"xrp_testnet"`
 }
 
 type Key struct {

@@ -10,9 +10,9 @@ func MempoolGetBlockHeightByNetwork(network uint) string {
 		return "https://litecoinspace.org/api/blocks/tip/height"
 	case BCH_MAINNET:
 		return "https://bch.fullstack.cash/v6/full-node/blockchain/getBlockCount"
+	default:
+		panic("not support")
 	}
-
-	return ""
 }
 
 func MempoolGetBlockTransactionByNetwork(network uint) string {
@@ -25,9 +25,9 @@ func MempoolGetBlockTransactionByNetwork(network uint) string {
 		return "https://litecoinspace.org/api/block/%s/txs/%d"
 	case BCH_MAINNET:
 		return "https://bchexplorer.cash/api/block/%s/txs/%d"
+	default:
+		panic("not support")
 	}
-
-	return ""
 }
 
 func MempoolGetBlockHashByNetwork(network uint) string {
@@ -40,9 +40,9 @@ func MempoolGetBlockHashByNetwork(network uint) string {
 		return "https://litecoinspace.org/api/block-height/%d"
 	case BCH_MAINNET:
 		return "https://bchexplorer.cash/api/block-height/%d"
+	default:
+		panic("not support")
 	}
-
-	return ""
 }
 
 func MempoolGetBlockByNetwork(network uint) string {
@@ -55,9 +55,9 @@ func MempoolGetBlockByNetwork(network uint) string {
 		return "https://litecoinspace.org/api/block/%s"
 	case BCH_MAINNET:
 		return "https://bchexplorer.cash/api/block/%s"
+	default:
+		panic("not support")
 	}
-
-	return ""
 }
 
 func MempoolGetTransctionByNetwork(network uint) string {
@@ -70,9 +70,9 @@ func MempoolGetTransctionByNetwork(network uint) string {
 		return "https://litecoinspace.org/api/tx/%s"
 	case BCH_MAINNET:
 		return "https://bchexplorer.cash/api/tx/%s"
+	default:
+		panic("not support")
 	}
-
-	return ""
 }
 
 func MempoolGetUtxoByNetwork(network uint) string {
@@ -87,9 +87,9 @@ func MempoolGetUtxoByNetwork(network uint) string {
 		return "https://litecoinspace.org/testnet/api/address/%s/utxo"
 	case BCH_MAINNET:
 		return "https://bchexplorer.cash/api/address/%s/utxo"
+	default:
+		panic("not support")
 	}
-
-	return ""
 }
 
 func MempoolGetFeesyNetwork(network uint) string {
@@ -104,9 +104,9 @@ func MempoolGetFeesyNetwork(network uint) string {
 		return "https://litecoinspace.org/testnet/api/v1/fees/recommended"
 	case BCH_MAINNET:
 		return "https://bchexplorer.cash/api/v1/fees/recommended"
+	default:
+		panic("not support")
 	}
-
-	return ""
 }
 
 func MempoolBroadcastByNetwork(network uint) string {
@@ -121,7 +121,7 @@ func MempoolBroadcastByNetwork(network uint) string {
 		return "https://litecoinspace.org/testnet/api/tx"
 	case BCH_MAINNET:
 		return "https://bchexplorer.cash/api/tx"
+	default:
+		panic("not support")
 	}
-
-	return ""
 }

@@ -41,9 +41,9 @@ var TatumSupportChain = []uint{
 	TRON_MAINNET,
 }
 
-func IsNetworkSupportTatum(id uint) bool {
+func IsNetworkSupportTatum(network uint) bool {
 	for _, v := range TatumSupportChain {
-		if v == id {
+		if v == network {
 			return true
 		}
 	}
@@ -51,26 +51,21 @@ func IsNetworkSupportTatum(id uint) bool {
 	return false
 }
 
-func GetTatumRandomKeyByNetwork(id uint) string {
-	switch id {
-	case BTC_MAINNET, ETH_MAINNET, LTC_MAINNET, BSC_MAINNET, TRON_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.TatumMainnetKey, ",")))
-		return strings.Split(global.NODE_CONFIG.Key.TatumMainnetKey, ",")[index]
-	case BTC_TESTNET, ETH_SEPOLIA, LTC_TESTNET, BSC_TESTNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.TatumTestnetKey, ",")))
-		return strings.Split(global.NODE_CONFIG.Key.TatumTestnetKey, ",")[index]
-	default:
-		return ""
+func GetTatumRandomKeyByNetwork(network uint) string {
+	keys := GetAllTatumAPIKeyByNetwork(network)
+	if len(keys) == 0 {
+		panic("not support")
 	}
+	return keys[rand.IntN(len(keys))]
 }
 
-func GetAllTatumAPiKey(id uint) []string {
-	switch id {
+func GetAllTatumAPIKeyByNetwork(network uint) []string {
+	switch network {
 	case BTC_MAINNET, ETH_MAINNET, LTC_MAINNET, BSC_MAINNET, TRON_MAINNET:
 		return strings.Split(global.NODE_CONFIG.Key.TatumMainnetKey, ",")
 	case BTC_TESTNET, ETH_SEPOLIA, LTC_TESTNET, BSC_TESTNET:
 		return strings.Split(global.NODE_CONFIG.Key.TatumTestnetKey, ",")
 	default:
-		return nil
+		panic("not support")
 	}
 }

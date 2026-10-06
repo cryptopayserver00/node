@@ -26,7 +26,7 @@ import (
 )
 
 func SetupSolLatestBlockHeight(ctx context.Context, chainId uint) {
-	endpoint := constant.GetRPCUrlByNetwork(chainId)
+	endpoint := constant.GetRPCUrlByChainId(chainId)
 	client := rpc.New(endpoint)
 
 	height, err := client.GetSlot(ctx, rpc.CommitmentFinalized)
@@ -108,7 +108,7 @@ func SweepSolBlockchainTransactionCore(
 
 	var err error
 
-	endpoint := constant.GetRPCUrlByNetwork(chainId)
+	endpoint := constant.GetRPCUrlByChainId(chainId)
 	client := rpc.New(endpoint)
 
 	includeRewards := false
@@ -348,7 +348,7 @@ func handleSolTransactionDetails(
 	publicKey *[]string,
 	txHash string,
 ) error {
-	endpoint := constant.GetRPCUrlByNetwork(chainId)
+	endpoint := constant.GetRPCUrlByChainId(chainId)
 	client := rpc.New(endpoint)
 
 	txSig := solana.MustSignatureFromBase58(txHash)
@@ -585,7 +585,7 @@ func SweepSolBlockchainPendingBlock(
 		return
 	}
 
-	endpoint := constant.GetRPCUrlByNetwork(chainId)
+	endpoint := constant.GetRPCUrlByChainId(chainId)
 	client := rpc.New(endpoint)
 
 	includeRewards := false

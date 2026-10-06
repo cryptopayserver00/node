@@ -10,235 +10,199 @@ import (
 	"strings"
 )
 
-var (
-	ETHGeneralMainnetRPC = []string{
-		"https://ethereum-rpc.publicnode.com",
-	}
+// var (
+// 	ETHMainnetRPC = []string{
+// 		"https://ethereum-rpc.publicnode.com",
+// 	}
 
-	ETHGeneralSepoliaRPC = []string{
-		"https://ethereum-sepolia.publicnode.com",
-	}
+// 	ETHSepoliaRPC = []string{
+// 		"https://ethereum-sepolia.publicnode.com",
+// 	}
 
-	ETHMainnetRPC = []string{
-		"https://ethereum-rpc.publicnode.com",
-	}
+// 	BSCMainnetRPC = []string{
+// 		"https://bsc-dataseed1.binance.org",
+// 		"https://bsc-dataseed2.binance.org",
+// 		"https://bsc-dataseed3.binance.org",
+// 		"https://bsc-dataseed4.binance.org",
+// 		"https://bsc-dataseed1.ninicoin.io",
+// 		"https://bsc-dataseed2.ninicoin.io",
+// 		"https://bsc-dataseed3.ninicoin.io",
+// 		"https://bsc-dataseed4.ninicoin.io",
+// 	}
 
-	ETHSepoliaRPC = []string{
-		"https://ethereum-sepolia.publicnode.com",
-	}
+// 	BSCTestnetRPC = []string{
+// 		"https://data-seed-prebsc-1-s1.binance.org:8545",
+// 		"https://data-seed-prebsc-2-s1.binance.org:8545",
+// 		"https://data-seed-prebsc-1-s2.binance.org:8545",
+// 		"https://data-seed-prebsc-2-s2.binance.org:8545",
+// 		"https://data-seed-prebsc-1-s3.binance.org:8545",
+// 		"https://data-seed-prebsc-2-s3.binance.org:8545",
+// 	}
 
-	BSCMainnetRPC = []string{
-		"https://bsc-dataseed1.binance.org",
-		"https://bsc-dataseed2.binance.org",
-		"https://bsc-dataseed3.binance.org",
-		"https://bsc-dataseed4.binance.org",
-		"https://bsc-dataseed1.ninicoin.io",
-		"https://bsc-dataseed2.ninicoin.io",
-		"https://bsc-dataseed3.ninicoin.io",
-		"https://bsc-dataseed4.ninicoin.io",
-	}
+// 	OPMainnetRPC = []string{
+// 		"https://mainnet.optimism.io",
+// 		"https://optimism-rpc.publicnode.com",
+// 	}
 
-	BSCTestnetRPC = []string{
-		"https://data-seed-prebsc-1-s1.binance.org:8545",
-		"https://data-seed-prebsc-2-s1.binance.org:8545",
-		"https://data-seed-prebsc-1-s2.binance.org:8545",
-		"https://data-seed-prebsc-2-s2.binance.org:8545",
-		"https://data-seed-prebsc-1-s3.binance.org:8545",
-		"https://data-seed-prebsc-2-s3.binance.org:8545",
-	}
+// 	OPSepoliaRPC = []string{
+// 		"https://sepolia.optimism.io",
+// 		"https://endpoints.omniatech.io/v1/op/sepolia/public",
+// 	}
 
-	OPMainnetRPC = []string{
-		"https://mainnet.optimism.io",
-		"https://optimism-rpc.publicnode.com",
-	}
+// 	ArbitrumOneRPC = []string{
+// 		"https://arb1.arbitrum.io/rpc",
+// 		"https://arbitrum-one.publicnode.com",
+// 		"https://arbitrum-one-rpc.publicnode.com",
+// 	}
 
-	OPSepoliaRPC = []string{
-		"https://sepolia.optimism.io",
-		"https://endpoints.omniatech.io/v1/op/sepolia/public",
-	}
+// 	ArbitrumNovaRPC = []string{
+// 		"https://nova.arbitrum.io/rpc",
+// 	}
 
-	ArbitrumOneRPC = []string{
-		"https://arb1.arbitrum.io/rpc",
-		"https://arbitrum-one.publicnode.com",
-		"https://arbitrum-one-rpc.publicnode.com",
-	}
+// 	ArbitrumSepoliaRPC = []string{
+// 		"https://sepolia-rollup.arbitrum.io/rpc",
+// 	}
 
-	ArbitrumNovaRPC = []string{
-		"https://nova.arbitrum.io/rpc",
-	}
+// 	SolanaMainnetRPC = []string{
+// 		"https://api.mainnet-beta.solana.com",
+// 		"https://solana-rpc.publicnode.com",
+// 	}
 
-	ArbitrumSepoliaRPC = []string{
-		"https://sepolia-rollup.arbitrum.io/rpc",
-	}
+// 	SolanaDevnetRpc = []string{
+// 		"https://api.devnet.solana.com",
+// 	}
 
-	SolanaMainnetRPC = []string{
-		"https://api.mainnet-beta.solana.com",
-		"https://solana-rpc.publicnode.com",
-	}
+// 	PolMainnetRPC = []string{
+// 		"https://polygon-bor-rpc.publicnode.com",
+// 		"https://polygon.drpc.org",
+// 		"https://poly.api.pocket.network",
+// 	}
 
-	SolanaDevnetRpc = []string{
-		"https://api.devnet.solana.com",
-	}
+// 	PolTestnetRPC = []string{
+// 		"https://polygon-amoy-bor-rpc.publicnode.com",
+// 		"https://rpc-amoy.polygon.technology",
+// 	}
 
-	PolMainnetRPC = []string{
-		"https://polygon-bor-rpc.publicnode.com",
-		"https://polygon.drpc.org",
-		"https://poly.api.pocket.network",
-	}
+// 	AvaxMainnetRPC = []string{
+// 		"https://avalanche-c-chain-rpc.publicnode.com",
+// 	}
 
-	PolTestnetRPC = []string{
-		"https://polygon-amoy-bor-rpc.publicnode.com",
-		"https://rpc-amoy.polygon.technology",
-	}
+// 	AvaxTestnetRPC = []string{
+// 		"https://ava-testnet.public.blastapi.io/ext/bc/C/rpc",
+// 		"https://endpoints.omniatech.io/v1/avax/fuji/public",
+// 		"https://api.avax-test.network/ext/bc/C/rpc",
+// 	}
 
-	AvaxMainnetRPC = []string{
-		"https://avalanche-c-chain-rpc.publicnode.com",
-	}
+// 	BaseMainnetRPC = []string{
+// 		"https://mainnet.base.org",
+// 		"https://developer-access-mainnet.base.org",
+// 		"https://base-rpc.publicnode.com",
+// 	}
 
-	AvaxTestnetRPC = []string{
-		"https://ava-testnet.public.blastapi.io/ext/bc/C/rpc",
-		"https://endpoints.omniatech.io/v1/avax/fuji/public",
-		"https://api.avax-test.network/ext/bc/C/rpc",
-	}
+// 	BaseSepoliaRPC = []string{
+// 		"https://base-sepolia-rpc.publicnode.com",
+// 		"https://sepolia.base.org",
+// 		"https://base-sepolia.gateway.tenderly.co",
+// 	}
 
-	BaseMainnetRPC = []string{
-		"https://mainnet.base.org",
-		"https://developer-access-mainnet.base.org",
-		"https://base-rpc.publicnode.com",
-	}
+// 	XRPMainnetRPC = []string{
+// 		"https://s1.ripple.com:51234",
+// 		"https://xrplcluster.com",
+// 	}
 
-	BaseSepoliaRPC = []string{
-		"https://base-sepolia-rpc.publicnode.com",
-		"https://sepolia.base.org",
-		"https://base-sepolia.gateway.tenderly.co",
-	}
+// 	XRPTestnetRPC = []string{
+// 		"https://s.altnet.rippletest.net:51234",
+// 	}
+// )
 
-	XRPMainnetRPC = []string{
-		"https://s1.ripple.com:51234",
-		"https://xrplcluster.com",
-	}
-
-	XRPTestnetRPC = []string{
-		"https://s.altnet.rippletest.net:51234",
-	}
-)
-
-func GetAllRPCUrlByNetwork(chainId uint) []string {
+func GetAllRPCUrlByChainId(chainId uint) []string {
 	switch chainId {
 	case ETH_MAINNET:
-		return ETHMainnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.EthMainnet, ",")
 	case ETH_SEPOLIA:
-		return ETHSepoliaRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.EthSepolia, ",")
 	case OP_MAINNET:
-		return OPMainnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.OpMainnet, ",")
 	case OP_SEPOLIA:
-		return OPSepoliaRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.OpSepolia, ",")
 	case BSC_MAINNET:
-		return BSCMainnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.BscMainnet, ",")
 	case BSC_TESTNET:
-		return BSCTestnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.BscTestnet, ",")
 	case ARBITRUM_ONE:
-		return ArbitrumOneRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.ArbitrumOne, ",")
 	case ARBITRUM_NOVA:
-		return ArbitrumNovaRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.ArbitrumNova, ",")
 	case ARBITRUM_SEPOLIA:
-		return ArbitrumSepoliaRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.ArbitrumSepolia, ",")
 	case POL_MAINNET:
-		return PolMainnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.PolMainnet, ",")
 	case POL_TESTNET:
-		return PolTestnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.PolTestnet, ",")
 	case AVAX_MAINNET:
-		return AvaxMainnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.AvaxMainnet, ",")
 	case AVAX_TESTNET:
-		return AvaxTestnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.AvaxTestnet, ",")
 	case BASE_MAINNET:
-		return BaseMainnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.BaseMainnet, ",")
 	case BASE_SEPOLIA:
-		return BaseSepoliaRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.BaseSepolia, ",")
 	case SOL_MAINNET:
-		return SolanaMainnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.SolanaMainnet, ",")
 	case SOL_DEVNET:
-		return SolanaDevnetRpc
+		return strings.Split(global.NODE_CONFIG.Rpc.SolanaDevnet, ",")
 	case XRP_MAINNET:
-		return XRPMainnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.XrpMainnet, ",")
 	case XRP_TESTNET:
-		return XRPTestnetRPC
+		return strings.Split(global.NODE_CONFIG.Rpc.XrpTestnet, ",")
 	default:
-		return nil
+		panic("not support")
 	}
 }
 
-func GetGeneralRPCUrlByNetwork(chainId uint) string {
+// support inner tx(trace_debug)
+func GetAlchemyRPCUrlByChainId(chainId uint) string {
+	mainnet := IsMainnetSupport(chainId)
+	key := GetRandomAlchemyKeyByNetwork(mainnet)
+
 	switch chainId {
 	case ETH_MAINNET:
-		index := rand.IntN(len(ETHGeneralMainnetRPC))
-		return ETHGeneralMainnetRPC[index]
+		return "https://eth-mainnet.g.alchemy.com/v2/" + key
 	case ETH_SEPOLIA:
-		index := rand.IntN(len(ETHGeneralSepoliaRPC))
-		return ETHGeneralSepoliaRPC[index]
-	default:
-		return ""
-	}
-
-}
-
-func GetAlchemyRPCUrlByNetwork(chainId uint) string {
-	switch chainId {
-	case ETH_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return "https://eth-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
-	case ETH_SEPOLIA:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
-		return "https://eth-sepolia.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+		return "https://eth-sepolia.g.alchemy.com/v2/" + key
 	case BSC_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return "https://bnb-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
+		return "https://bnb-mainnet.g.alchemy.com/v2/" + key
 	case BSC_TESTNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
-		return "https://bnb-testnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+		return "https://bnb-testnet.g.alchemy.com/v2/" + key
 	case ARBITRUM_ONE:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return "https://arb-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
+		return "https://arb-mainnet.g.alchemy.com/v2/" + key
 	case ARBITRUM_NOVA:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return "https://arbnova-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
+		return "https://arbnova-mainnet.g.alchemy.com/v2/" + key
 	case ARBITRUM_SEPOLIA:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
-		return "https://arb-sepolia.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+		return "https://arb-sepolia.g.alchemy.com/v2/" + key
 	case OP_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return "https://opt-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
+		return "https://opt-mainnet.g.alchemy.com/v2/" + key
 	case OP_SEPOLIA:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
-		return "https://opt-sepolia.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+		return "https://opt-sepolia.g.alchemy.com/v2/" + key
 	case SOL_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return "https://solana-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
+		return "https://solana-mainnet.g.alchemy.com/v2/" + key
 	case SOL_DEVNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
-		return "https://solana-devnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+		return "https://solana-devnet.g.alchemy.com/v2/" + key
 	case POL_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return "https://polygon-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
+		return "https://polygon-mainnet.g.alchemy.com/v2/" + key
 	case POL_TESTNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
-		return "https://polygon-amoy.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+		return "https://polygon-amoy.g.alchemy.com/v2/" + key
 	case AVAX_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return "https://avax-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
+		return "https://avax-mainnet.g.alchemy.com/v2/" + key
 	case AVAX_TESTNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
-		return "https://avax-fuji.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+		return "https://avax-fuji.g.alchemy.com/v2/" + key
 	case BASE_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return "https://base-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
+		return "https://base-mainnet.g.alchemy.com/v2/" + key
 	case BASE_SEPOLIA:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
-		return "https://base-sepolia.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+		return "https://base-sepolia.g.alchemy.com/v2/" + key
 	default:
-		return ""
+		panic("not support")
 	}
-
 }
 
 func GetRealRpcByArray(ctx context.Context, rpcs []string) string {
@@ -264,91 +228,15 @@ func GetRealRpcByArray(ctx context.Context, rpcs []string) string {
 	return ""
 }
 
-func GetRPCUrlByNetwork(chainId uint) string {
-	switch chainId {
-	case ETH_MAINNET:
-		index := rand.IntN(len(ETHMainnetRPC))
-		return ETHMainnetRPC[index]
-	case ETH_SEPOLIA:
-		index := rand.IntN(len(ETHSepoliaRPC))
-		return ETHSepoliaRPC[index]
-	case BSC_MAINNET:
-		index := rand.IntN(len(BSCMainnetRPC))
-		return BSCMainnetRPC[index]
-	case BSC_TESTNET:
-		index := rand.IntN(len(BSCTestnetRPC))
-		return BSCTestnetRPC[index]
-	case ARBITRUM_ONE:
-		index := rand.IntN(len(ArbitrumOneRPC))
-		return ArbitrumOneRPC[index]
-	case ARBITRUM_NOVA:
-		index := rand.IntN(len(ArbitrumNovaRPC))
-		return ArbitrumNovaRPC[index]
-	case ARBITRUM_SEPOLIA:
-		index := rand.IntN(len(ArbitrumSepoliaRPC))
-		return ArbitrumSepoliaRPC[index]
-	case OP_MAINNET:
-		index := rand.IntN(len(OPMainnetRPC))
-		return OPMainnetRPC[index]
-	case OP_SEPOLIA:
-		index := rand.IntN(len(OPSepoliaRPC))
-		return OPSepoliaRPC[index]
-	case XRP_MAINNET:
-		index := rand.IntN(len(XRPMainnetRPC))
-		return XRPMainnetRPC[index]
-	case XRP_TESTNET:
-		index := rand.IntN(len(XRPTestnetRPC))
-		return XRPTestnetRPC[index]
-	case POL_MAINNET:
-		index := rand.IntN(len(PolMainnetRPC))
-		return PolMainnetRPC[index]
-	case POL_TESTNET:
-		index := rand.IntN(len(PolTestnetRPC))
-		return PolTestnetRPC[index]
-	case AVAX_MAINNET:
-		index := rand.IntN(len(AvaxMainnetRPC))
-		return AvaxMainnetRPC[index]
-	case AVAX_TESTNET:
-		index := rand.IntN(len(AvaxTestnetRPC))
-		return AvaxTestnetRPC[index]
-	case BASE_MAINNET:
-		index := rand.IntN(len(BaseMainnetRPC))
-		return BaseMainnetRPC[index]
-	case BASE_SEPOLIA:
-		index := rand.IntN(len(BaseSepoliaRPC))
-		return BaseSepoliaRPC[index]
-	case SOL_MAINNET:
-		index := rand.IntN(len(SolanaMainnetRPC))
-		return SolanaMainnetRPC[index]
-	case SOL_DEVNET:
-		index := rand.IntN(len(SolanaDevnetRpc))
-		return SolanaDevnetRpc[index]
-	default:
-		return ""
+func GetRPCUrlByChainId(chainId uint) string {
+	rpcs := GetAllRPCUrlByChainId(chainId)
+	if len(rpcs) == 0 {
+		panic("not support")
 	}
+	return rpcs[rand.IntN(len(rpcs))]
 }
 
-// get real inner tx(trace_debug) rpc url
-func GetInnerTxRPCUrlByNetwork(chainId uint) string {
-	switch chainId {
-	case ETH_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
-		return "https://eth-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")[index]
-	case ETH_SEPOLIA:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
-		return "https://eth-sepolia.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")[index]
-	case BSC_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
-		return "https://bnb-mainnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")[index]
-	case BSC_TESTNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
-		return "https://bnb-testnet.g.alchemy.com/v2/" + strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")[index]
-	default:
-		return ""
-	}
-}
-
-func GetRandomAlchemyKey(isMainnet bool) string {
+func GetRandomAlchemyKeyByNetwork(isMainnet bool) string {
 	if isMainnet {
 		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
 		return strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
@@ -358,7 +246,7 @@ func GetRandomAlchemyKey(isMainnet bool) string {
 	}
 }
 
-func GetRandomInnertxAlchemyKey(isMainnet bool) string {
+func GetRandomInnertxAlchemyKeyByNetwork(isMainnet bool) string {
 	if isMainnet {
 		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
 		return strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")[index]

@@ -34,7 +34,7 @@ func (n *NService) GetEthPendingTransactions(ctx context.Context, req request.Ge
 	var err error
 	var pendings []response.ClientTransaction
 
-	client.URL = constant.GetGeneralRPCUrlByNetwork(req.ChainId)
+	client.URL = constant.GetRPCUrlByChainId(req.ChainId)
 	payload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",
@@ -138,7 +138,7 @@ func (n *NService) GetEthTransactions(c *gin.Context, req request.GetEthTransact
 }
 
 func (n *NService) UpdateEthTransactionsByAlchemy(ctx context.Context, req request.GetEthTransactions) (err error) {
-	client.URL = constant.GetAlchemyRPCUrlByNetwork(req.ChainId)
+	client.URL = constant.GetAlchemyRPCUrlByChainId(req.ChainId)
 
 	var fromRpcAlchemyTxs response.RPCAlchemyTransactionDetails
 	var toRpcAlchemyTxs response.RPCAlchemyTransactionDetails

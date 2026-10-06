@@ -125,7 +125,7 @@ func GetTransactionSenderFromTx(tx *types.Transaction) (string, error) {
 }
 
 func SendEthTransfer(ctx context.Context, chainId uint, pri, pub, toAddress string, sendVal string) (hash string, err error) {
-	rpc := constant.GetRPCUrlByNetwork(chainId)
+	rpc := constant.GetRPCUrlByChainId(chainId)
 	if rpc == "" {
 		err = errors.New("chain not support")
 		return
@@ -147,7 +147,7 @@ func SendEthTransfer(ctx context.Context, chainId uint, pri, pub, toAddress stri
 }
 
 func SendEthTokenTransfer(ctx context.Context, chainId uint, pri, pub, toAddress, coin string, sendVal string) (hash string, err error) {
-	rpc := constant.GetRPCUrlByNetwork(chainId)
+	rpc := constant.GetRPCUrlByChainId(chainId)
 	if rpc == "" {
 		err = errors.New("chain not support")
 		return

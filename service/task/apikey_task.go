@@ -247,7 +247,7 @@ func testBchNodeKey(ctx context.Context) ([]string, float64) {
 
 func testLikeEthByChain(ctx context.Context, chainId uint) (status []string, successRate float64) {
 	var err error
-	allRpc := constant.GetAllRPCUrlByNetwork(chainId)
+	allRpc := constant.GetAllRPCUrlByChainId(chainId)
 	var successCount = 0
 	if len(allRpc) > 0 {
 		for _, v := range allRpc {
@@ -285,7 +285,7 @@ func testBtcByChain(ctx context.Context, chainId uint) (status []string, success
 	var totalNumber int
 	var successCount = 0
 
-	allAPiKey := constant.GetAllTatumAPiKey(chainId)
+	allAPiKey := constant.GetAllTatumAPIKeyByNetwork(chainId)
 	if len(allAPiKey) > 0 {
 		totalNumber += len(allAPiKey)
 		for _, v := range allAPiKey {
@@ -339,7 +339,7 @@ func testLtcByChain(ctx context.Context, chainId uint) (status []string, success
 	var totalNumber int
 	var successCount = 0
 
-	allAPiKey := constant.GetAllTatumAPiKey(chainId)
+	allAPiKey := constant.GetAllTatumAPIKeyByNetwork(chainId)
 	if len(allAPiKey) > 0 {
 		totalNumber += len(allAPiKey)
 		for _, v := range allAPiKey {
@@ -428,7 +428,7 @@ func testTronByChain(ctx context.Context, chainId uint) (status []string, succes
 func testSolByChain(ctx context.Context, chainId uint) (status []string, successRate float64) {
 	var successCount = 0
 
-	allRpc := constant.GetAllRPCUrlByNetwork(chainId)
+	allRpc := constant.GetAllRPCUrlByChainId(chainId)
 	if len(allRpc) > 0 {
 		for _, v := range allRpc {
 			client := rpc.New(v)
@@ -460,7 +460,7 @@ func testXrpByChain(ctx context.Context, chainId uint) (status []string, success
 	var err error
 	var successCount = 0
 
-	allRpc := constant.GetAllRPCUrlByNetwork(chainId)
+	allRpc := constant.GetAllRPCUrlByChainId(chainId)
 	if len(allRpc) > 0 {
 		for _, v := range allRpc {
 			client.URL = v

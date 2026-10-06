@@ -29,14 +29,14 @@ var (
 	XRPWsTestnetAPI = "https://s.altnet.rippletest.net:51234"
 )
 
-func GetBscscanUrlByNetwork(network uint) string {
+func GetBscScanUrlByNetwork(network uint) string {
 	switch network {
 	case BSC_MAINNET:
 		return BscscanMainnetAPI
 	case BSC_TESTNET:
 		return BscscanTestnetAPI
 	default:
-		return ""
+		panic("not support")
 	}
 }
 
@@ -51,7 +51,7 @@ func GetHttpUrlByNetwork(network uint) string {
 	case TON_TESTNET:
 		return TonTestnetAPI
 	default:
-		return ""
+		panic("not support")
 	}
 }
 
@@ -62,7 +62,7 @@ func GetBlcokStreamHttpUrlByNetwork(network uint) string {
 	case BTC_TESTNET:
 		return BlockStreamTestnetAPI
 	default:
-		return ""
+		panic("not support")
 	}
 }
 
@@ -73,7 +73,7 @@ func GetBlockStreamWebsiteTxUrlByNetwork(network uint) string {
 	case BTC_TESTNET:
 		return BlockStreamWebsiteTxTestnetUrl
 	default:
-		return ""
+		panic("not support")
 	}
 }
 
@@ -84,22 +84,16 @@ func GetSochainTxUrlByNetwork(network uint) string {
 	case LTC_TESTNET:
 		return LtcSochainTestnetUrl
 	default:
-		return ""
+		panic("not support")
 	}
-
 }
 
 func GetRandomHTTPKeyByNetwork(network uint) string {
-	switch network {
-	case TRON_MAINNET:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.TrongridMainnetKey, ",")))
-		return strings.Split(global.NODE_CONFIG.Key.TrongridMainnetKey, ",")[index]
-	case TRON_NILE:
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.TrongridNileKey, ",")))
-		return strings.Split(global.NODE_CONFIG.Key.TrongridNileKey, ",")[index]
-	default:
-		return ""
+	keys := GetAllHTTPKeyByNetwork(network)
+	if len(keys) == 0 {
+		panic("not support")
 	}
+	return keys[rand.IntN(len(keys))]
 }
 
 func GetAllHTTPKeyByNetwork(network uint) []string {
@@ -109,7 +103,7 @@ func GetAllHTTPKeyByNetwork(network uint) []string {
 	case TRON_NILE:
 		return strings.Split(global.NODE_CONFIG.Key.TrongridNileKey, ",")
 	default:
-		return nil
+		panic("not support")
 	}
 }
 
@@ -120,7 +114,7 @@ func TronGetBlockByNetwork(network uint) string {
 	case TRON_NILE:
 		return TrongridNileAPI + "/walletsolidity/getblock"
 	default:
-		return ""
+		panic("not support")
 	}
 }
 
@@ -131,7 +125,7 @@ func TronGetBlockByNumByNetwork(network uint) string {
 	case TRON_NILE:
 		return TrongridNileAPI + "/walletsolidity/getblockbynum"
 	default:
-		return ""
+		panic("not support")
 	}
 }
 
@@ -142,7 +136,7 @@ func TronGetTxByIdByNetwork(network uint) string {
 	case TRON_NILE:
 		return TrongridNileAPI + "/walletsolidity/gettransactionbyid"
 	default:
-		return ""
+		panic("not support")
 	}
 }
 
@@ -153,7 +147,7 @@ func TronValidateAddressByNetwork(network uint) string {
 	case TRON_NILE:
 		return TrongridNileAPI + "/wallet/validateaddress"
 	default:
-		return ""
+		panic("not support")
 	}
 }
 
@@ -164,7 +158,7 @@ func TronValidateContractAddressByNetwork(network uint) string {
 	case TRON_NILE:
 		return TrongridNileAPI + "/wallet/getcontract"
 	default:
-		return ""
+		panic("not support")
 	}
 }
 
@@ -175,6 +169,6 @@ func XrpWsByNetwork(network uint) string {
 	case XRP_TESTNET:
 		return XRPWsTestnetAPI
 	default:
-		return ""
+		panic("not support")
 	}
 }

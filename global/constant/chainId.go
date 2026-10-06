@@ -384,9 +384,9 @@ func IsAddressSupport(chainId uint, address string) bool {
 		return xrpCodec.IsValidAddress(address)
 	case BCH_MAINNET, BCH_TESTNET:
 		return BchValidateAddress(chainId, address)
+	default:
+		return false
 	}
-
-	return false
 }
 
 var (
@@ -414,7 +414,7 @@ func IsAddressContractSupport(ctx context.Context, chainId uint, address string)
 		AVAX_TESTNET,
 		BASE_MAINNET,
 		BASE_SEPOLIA:
-		client.URL = GetRPCUrlByNetwork(chainId)
+		client.URL = GetRPCUrlByChainId(chainId)
 		var rpcGeneral response.RPCGeneral
 		var jsonRpcRequest request.JsonRpcRequest
 		jsonRpcRequest.Id = 1
@@ -451,7 +451,6 @@ func IsAddressContractSupport(ctx context.Context, chainId uint, address string)
 		}
 		return false
 	}
-
 	return false
 }
 

@@ -118,7 +118,7 @@ func SweepXrpBlockchainTransactionCore(
 
 	var err error
 
-	client.URL = constant.GetRPCUrlByNetwork(chainId)
+	client.URL = constant.GetRPCUrlByChainId(chainId)
 	var rpcBlockDetail response.XrpscanBlockResponse
 	var jsonRpcRequest request.XrpJsonRpcRequest
 	jsonRpcRequest.Method = "ledger"
@@ -276,7 +276,7 @@ func handleXrpTransactionDetails(
 	publicKey *[]string,
 	txHash string,
 ) error {
-	client.URL = constant.GetRPCUrlByNetwork(chainId)
+	client.URL = constant.GetRPCUrlByChainId(chainId)
 	var rpcTransactionDetail response.XrpscanTransactionResponse
 	var jsonRpcRequest request.XrpJsonRpcRequest
 	jsonRpcRequest.Method = "tx"
@@ -415,7 +415,7 @@ func SweepXrpBlockchainPendingBlock(
 		return
 	}
 
-	client.URL = constant.GetRPCUrlByNetwork(chainId)
+	client.URL = constant.GetRPCUrlByChainId(chainId)
 	var rpcBlockDetail response.XrpscanBlockResponse
 	var jsonRpcRequest request.XrpJsonRpcRequest
 	jsonRpcRequest.Method = "ledger"

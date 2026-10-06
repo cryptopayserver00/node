@@ -38,7 +38,7 @@ func calcNumWorkers(sweepBlockHeight, cacheBlockHeight int64, maxWorkers int) in
 
 func SetupLatestBlockHeight(ctx context.Context, client NODE_Client.Client, chainId uint) {
 	var err error
-	client.URL = constant.GetRPCUrlByNetwork(chainId)
+	client.URL = constant.GetRPCUrlByChainId(chainId)
 	var rpcBlockInfo response.RPCBlockInfo
 	var jsonRpcRequest request.JsonRpcRequest
 	jsonRpcRequest.Id = 1
@@ -142,7 +142,7 @@ func SweepBlockchainTransactionCore(
 
 	var err error
 
-	client.URL = constant.GetRPCUrlByNetwork(chainId)
+	client.URL = constant.GetRPCUrlByChainId(chainId)
 	var rpcBlockDetail response.RPCBlockDetail
 	var jsonRpcRequest request.JsonRpcRequest
 	jsonRpcRequest.Id = 1
@@ -317,7 +317,7 @@ func handleTransactionDetails(
 ) error {
 	var err error
 
-	client.URL = constant.GetRPCUrlByNetwork(chainId)
+	client.URL = constant.GetRPCUrlByChainId(chainId)
 	var rpcDetail response.RPCTransactionDetail
 	var jsonRpcRequest request.JsonRpcRequest
 	jsonRpcRequest.Id = 1
@@ -513,7 +513,7 @@ func SweepBlockchainPendingBlock(
 
 	if false {
 		var rpcBlockDetail response.RPCBlockInnerDetail
-		client.URL = constant.GetInnerTxRPCUrlByNetwork(chainId)
+		client.URL = constant.GetAlchemyRPCUrlByChainId(chainId)
 		payload := map[string]any{
 			"id":      1,
 			"jsonrpc": "2.0",
@@ -644,7 +644,7 @@ func SweepBlockchainPendingBlock(
 
 		*retryBlockCount = make(map[int64]int)
 	} else {
-		client.URL = constant.GetRPCUrlByNetwork(chainId)
+		client.URL = constant.GetRPCUrlByChainId(chainId)
 		var rpcBlockDetail response.RPCBlockDetail
 		var jsonRpcRequest request.JsonRpcRequest
 		jsonRpcRequest.Id = 1
@@ -788,7 +788,7 @@ func SweepBlockchainTransactionCoreForEthereum(
 
 	var err error
 	var rpcBlockDetail response.RPCBlockInnerDetail
-	client.URL = constant.GetInnerTxRPCUrlByNetwork(chainId)
+	client.URL = constant.GetAlchemyRPCUrlByChainId(chainId)
 	payload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",
@@ -904,7 +904,7 @@ func handleInternalTransaction(ctx context.Context, client NODE_Client.Client, c
 	var err error
 
 	var infos response.RPCInnerTxInfo
-	client.URL = constant.GetInnerTxRPCUrlByNetwork(chainId)
+	client.URL = constant.GetAlchemyRPCUrlByChainId(chainId)
 	payload := map[string]any{
 		"id":      1,
 		"jsonrpc": "2.0",

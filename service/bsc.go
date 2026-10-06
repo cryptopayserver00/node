@@ -62,7 +62,7 @@ func (n *NService) GetBscTransactions(c *gin.Context, req request.GetBscTransact
 }
 
 func (n *NService) UpdateBscTransactionsByAlchemy(ctx context.Context, req request.GetBscTransactions) (err error) {
-	client.URL = constant.GetAlchemyRPCUrlByNetwork(req.ChainId)
+	client.URL = constant.GetAlchemyRPCUrlByChainId(req.ChainId)
 
 	var fromRpcAlchemyTxs response.RPCAlchemyTransactionDetails
 	var toRpcAlchemyTxs response.RPCAlchemyTransactionDetails
