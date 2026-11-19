@@ -181,17 +181,24 @@ func readBodyForLog(c *gin.Context) string {
 func CORS(allowOrigins []string) gin.HandlerFunc {
 	allowed := make(map[string]struct{}, len(allowOrigins))
 	for _, o := range allowOrigins {
+		o = strings.TrimSpace(o)
+		if o == "" {
+			continue
+		}
 		allowed[o] = struct{}{}
 	}
 
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		// if _, ok := allowed[origin]; ok {
-		c.Header("Access-Control-Allow-Origin", origin)
-		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, Sec-WSS-Token, Connection, Upgrade, X-Trace-Id")
-		// }
+		if origin != "" {
+			if _, ok := allowed[origin]; ok {
+				c.Header("Access-Control-Allow-Origin", origin)
+				c.Header("Access-Control-Allow-Credentials", "true")
+				c.Header("Vary", "Origin")
+				c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+				c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Token, Sec-WSS-Token, Connection, Upgrade, X-Trace-Id")
+			}
+		}
 
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)

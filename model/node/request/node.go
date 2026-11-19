@@ -45,24 +45,29 @@ type RevokeTelegramKey struct {
 	AuthKey string `json:"auth_key" form:"auth_key" binding:"required"`
 }
 
-// eth
-type GetEthTransactions struct {
+
+// GetChainTransactions 通用「按地址查交易」请求（EVM 及同类链）。
+type GetChainTransactions struct {
 	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
 	Address string `json:"address" form:"address" binding:"required"`
 	Asset   string `json:"asset" form:"asset"`
 }
+
+type GetEthTransactions = GetChainTransactions
+type GetBscTransactions = GetChainTransactions
+type GetXrpTransactions = GetChainTransactions
+type GetBchTransactions = GetChainTransactions
+type GetArbTransactions = GetChainTransactions
+type GetArbNovaTransactions = GetChainTransactions
+type GetAvaxTransactions = GetChainTransactions
+type GetPolTransactions = GetChainTransactions
+type GetBaseTransactions = GetChainTransactions
+type GetOpTransactions = GetChainTransactions
 
 // eth
 type GetEthPendingTransaction struct {
 	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
 	Hash    string `json:"hash" form:"hash" binding:"required"`
-}
-
-// bsc
-type GetBscTransactions struct {
-	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
-	Address string `json:"address" form:"address" binding:"required"`
-	Asset   string `json:"asset" form:"asset"`
 }
 
 // btc
@@ -180,58 +185,3 @@ type GetFreeCoin struct {
 	Amount  string `json:"amount" form:"amount"`
 }
 
-// xrp
-type GetXrpTransactions struct {
-	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
-	Address string `json:"address" form:"address" binding:"required"`
-	Asset   string `json:"asset" form:"asset"`
-}
-
-// bch
-type GetBchTransactions struct {
-	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
-	Address string `json:"address" form:"address" binding:"required"`
-	Asset   string `json:"asset" form:"asset"`
-}
-
-// arb
-type GetArbTransactions struct {
-	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
-	Address string `json:"address" form:"address" binding:"required"`
-	Asset   string `json:"asset" form:"asset"`
-}
-
-// arbnova
-type GetArbNovaTransactions struct {
-	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
-	Address string `json:"address" form:"address" binding:"required"`
-	Asset   string `json:"asset" form:"asset"`
-}
-
-// avax
-type GetAvaxTransactions struct {
-	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
-	Address string `json:"address" form:"address" binding:"required"`
-	Asset   string `json:"asset" form:"asset"`
-}
-
-// pol
-type GetPolTransactions struct {
-	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
-	Address string `json:"address" form:"address" binding:"required"`
-	Asset   string `json:"asset" form:"asset"`
-}
-
-// base
-type GetBaseTransactions struct {
-	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
-	Address string `json:"address" form:"address" binding:"required"`
-	Asset   string `json:"asset" form:"asset"`
-}
-
-// op
-type GetOpTransactions struct {
-	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
-	Address string `json:"address" form:"address" binding:"required"`
-	Asset   string `json:"asset" form:"asset"`
-}

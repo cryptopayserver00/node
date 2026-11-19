@@ -21,7 +21,7 @@ func Routers() *gin.Engine {
 		middleware.Recover(),
 		middleware.TraceId(),
 		middleware.Logger(),
-		middleware.CORS([]string{}),
+		middleware.CORS(global.NODE_CONFIG.Security.CorsAllowOrigins),
 	)
 
 	newRouter.MaxMultipartMemory = 1 << 20

@@ -71,6 +71,9 @@ func (n *NService) SaveOwnTx(ctx context.Context, req request.NotificationReques
 			NODE_MODEL:     common.NODE_MODEL{Status: 1},
 		}
 		if err := conn.Create(&ownTx).Error; err != nil {
+			if isDuplicateKeyErr(err) {
+				return nil // 唯一索引冲突视为已存在
+			}
 			return fmt.Errorf("create own tx failed, hash=%s: %w", req.Hash, err)
 		}
 		id, created = ownTx.ID, true

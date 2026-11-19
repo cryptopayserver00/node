@@ -8,6 +8,7 @@ import (
 
 type Server struct {
 	System           System           `mapstructure:"system" json:"system" yaml:"system"`
+	Security         Security         `mapstructure:"security" json:"security" yaml:"security"`
 	Redis            Redis            `mapstructure:"redis" json:"redis" yaml:"redis"`
 	Memcache         Memcache         `mapstructure:"memcache" json:"memcache" yaml:"memcache"`
 	Mysql            Mysql            `mapstructure:"mysql" json:"mysql" yaml:"mysql"`
@@ -19,6 +20,13 @@ type Server struct {
 	FreeCoin         FreeCoin         `mapstructure:"freecoin" json:"freecoin" yaml:"freecoin"`
 	Key              Key              `mapstructure:"key" json:"key" yaml:"key"`
 	Rpc              Rpc              `mapstructure:"rpc" json:"rpc" yaml:"rpc"`
+}
+
+// Security 服务间鉴权与跨域白名单。api-token 为空时受保护接口一律拒绝（fail-closed）。
+type Security struct {
+	ApiToken         string   `mapstructure:"api-token" json:"api-token" yaml:"api-token"`
+	CorsAllowOrigins []string `mapstructure:"cors-allow-origins" json:"cors-allow-origins" yaml:"cors-allow-origins"`
+	WsAllowOrigins   []string `mapstructure:"ws-allow-origins" json:"ws-allow-origins" yaml:"ws-allow-origins"`
 }
 
 type Rpc struct {
@@ -55,6 +63,9 @@ type Key struct {
 }
 
 type FreeCoin struct {
+	// Enabled 默认 false：未显式打开时拒绝 faucet，避免热钱包被任意打币。
+	Enabled     bool        `mapstructure:"enabled" json:"enabled" yaml:"enabled"`
+	MaxAmount   string      `mapstructure:"max-amount" json:"max-amount" yaml:"max-amount"`
 	Bitcoin     Bitcoin     `mapstructure:"bitcoin" json:"bitcoin" yaml:"bitcoin"`
 	Ethereum    Ethereum    `mapstructure:"ethereum" json:"ethereum" yaml:"ethereum"`
 	Solana      Solana      `mapstructure:"solana" json:"solana" yaml:"solana"`
@@ -125,6 +136,8 @@ type Wss struct {
 type Blockchain struct {
 	OpenSweepBlock bool `mapstructure:"open-sweep-block" json:"open-sweep-block" yaml:"open-sweep-block"`
 	SweepMainnet   bool `mapstructure:"sweep-mainnet" json:"sweep-mainnet" yaml:"sweep-mainnet"`
+	// InnerTx 开启后用 Alchemy debug_trace 扫内部转账（需配置 alchemy key）；默认 false。
+	InnerTx        bool `mapstructure:"inner-tx" json:"inner-tx" yaml:"inner-tx"`
 	Ethereum       bool `mapstructure:"ethereum" json:"ethereum" yaml:"ethereum"`
 	Bitcoin        bool `mapstructure:"bitcoin" json:"bitcoin" yaml:"bitcoin"`
 	Tron           bool `mapstructure:"tron" json:"tron" yaml:"tron"`

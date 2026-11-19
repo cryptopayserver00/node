@@ -12,9 +12,9 @@ import (
 	"node/model/node/response/tatum"
 	sweepUtils "node/sweep/utils"
 	"node/utils"
+	"node/utils/redisq"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
-	"slices"
 	"strings"
 	"time"
 )
@@ -80,8 +80,7 @@ func HandleBtcBlockTransactionsByTatum(
 					continue
 				}
 
-			outerCurrentTxLoop:
-				for i := 0; i < len(*publicKey); i++ {
+						for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Inputs) > 0 {
@@ -103,25 +102,12 @@ func HandleBtcBlockTransactionsByTatum(
 					}
 
 					if isMonitorTx {
-						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-						if err != nil {
+						if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.Hash); err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							time.Sleep(2 * time.Second)
 							return err
 						}
-
-						found := slices.Contains(redisTxs, transaction.Hash)
-						if found {
-							break outerCurrentTxLoop
-						} else {
-							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.Hash).Result()
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								time.Sleep(2 * time.Second)
-								return err
-							}
-							break
-						}
+						break
 					}
 				}
 			}
@@ -191,8 +177,7 @@ func HandleBtcBlockTransactionsByMempool(
 					continue
 				}
 
-			outerCurrentTxLoop:
-				for i := 0; i < len(*publicKey); i++ {
+						for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Vin) > 0 {
@@ -214,26 +199,12 @@ func HandleBtcBlockTransactionsByMempool(
 					}
 
 					if isMonitorTx {
-						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-						if err != nil {
+						if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.TxId); err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							time.Sleep(2 * time.Second)
 							return err
 						}
-
-						found := slices.Contains(redisTxs, transaction.TxId)
-						if found {
-							break outerCurrentTxLoop
-						} else {
-							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.TxId).Result()
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								time.Sleep(2 * time.Second)
-								return err
-							}
-
-							break
-						}
+						break
 					}
 				}
 			}
@@ -456,8 +427,7 @@ func HandleBtcPendingBlockByTatum(
 					continue
 				}
 
-			outerCurrentTxLoop:
-				for i := 0; i < len(*publicKey); i++ {
+						for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Inputs) > 0 {
@@ -479,26 +449,12 @@ func HandleBtcPendingBlockByTatum(
 					}
 
 					if isMonitorTx {
-						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-						if err != nil {
+						if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.Hash); err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							time.Sleep(2 * time.Second)
 							return err
 						}
-
-						found := slices.Contains(redisTxs, transaction.Hash)
-						if found {
-							break outerCurrentTxLoop
-						} else {
-							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.Hash).Result()
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								time.Sleep(2 * time.Second)
-								return err
-							}
-
-							break
-						}
+						break
 					}
 				}
 			}
@@ -569,8 +525,7 @@ func HandleBtcPendingBlockByMempool(
 					continue
 				}
 
-			outerCurrentTxLoop:
-				for i := 0; i < len(*publicKey); i++ {
+						for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Vin) > 0 {
@@ -592,26 +547,12 @@ func HandleBtcPendingBlockByMempool(
 					}
 
 					if isMonitorTx {
-						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-						if err != nil {
+						if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.TxId); err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							time.Sleep(2 * time.Second)
 							return err
 						}
-
-						found := slices.Contains(redisTxs, transaction.TxId)
-						if found {
-							break outerCurrentTxLoop
-						} else {
-							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.TxId).Result()
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								time.Sleep(2 * time.Second)
-								return err
-							}
-
-							break
-						}
+						break
 					}
 				}
 			}

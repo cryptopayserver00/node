@@ -8,6 +8,8 @@ import (
 	"node/global/constant"
 	"node/service"
 	"node/utils"
+	"node/utils/redisq"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -21,11 +23,25 @@ const (
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
+	CheckOrigin: checkWSOrigin,
+}
+
+func checkWSOrigin(r *http.Request) bool {
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	// 非浏览器客户端（无 Origin）在已通过 Sec-WSS-Token 中间件后允许升级
+	if origin == "" {
 		return true
-	},
-	// ReadBufferSize:  0,
-	// WriteBufferSize: 0,
+	}
+	allowedList := global.NODE_CONFIG.Security.WsAllowOrigins
+	if len(allowedList) == 0 {
+		allowedList = global.NODE_CONFIG.Security.CorsAllowOrigins
+	}
+	for _, allowed := range allowedList {
+		if strings.TrimSpace(allowed) == origin {
+			return true
+		}
+	}
+	return false
 }
 
 func (n *NodeApi) WsForTxInfo(c *gin.Context) {
@@ -114,34 +130,30 @@ func (n *NodeApi) WsForTxInfo(c *gin.Context) {
 }
 
 func crycleTask(ctx context.Context, conn *websocket.Conn) error {
-	// global.NODE_MUTEX.Lock()
-	// defer global.NODE_MUTEX.Unlock()
-
-	id, err := global.NODE_REDIS.LIndex(ctx, constant.WS_NOTIFICATION, 0).Result()
+	id, err := redisq.Pop(ctx, constant.WS_NOTIFICATION)
 	if err != nil {
-		return nil // 队列为空(redis.Nil)等，不算连接错误
+		return nil // 队列为空等，不算连接错误
 	}
 
 	tx, err := service.NodeService.GetOwnTxById(ctx, id)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
+		_ = redisq.Requeue(ctx, constant.WS_NOTIFICATION, id)
 		return nil
 	}
 
 	data, err := json.Marshal(tx)
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
+		_ = redisq.Requeue(ctx, constant.WS_NOTIFICATION, id)
 		return nil
 	}
 
 	conn.SetWriteDeadline(time.Now().Add(writeWait))
 	if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
 		global.NODE_LOG.Error(err.Error())
+		_ = redisq.Requeue(ctx, constant.WS_NOTIFICATION, id)
 		return err
-	}
-
-	if _, err = global.NODE_REDIS.LPop(ctx, constant.WS_NOTIFICATION).Result(); err != nil {
-		global.NODE_LOG.Error(err.Error())
 	}
 	return nil
 }

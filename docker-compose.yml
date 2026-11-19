@@ -10,9 +10,9 @@ services:
     command: ["-c", "config.yaml"]
     depends_on:
       redis:
-        condition: service_started
+        condition: service_healthy
       memcached:
-        condition: service_started
+        condition: service_healthy
     networks:
       - shared-network
 

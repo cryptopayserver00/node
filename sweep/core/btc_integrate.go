@@ -2,19 +2,18 @@ package core
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"node/global"
 	"node/global/constant"
 	"node/sweep/core/plugin"
 	"node/sweep/setup"
 	"node/utils"
+	"node/utils/redisq"
 	NODE_Client "node/utils/http"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -91,7 +90,7 @@ func SweepBtcBlockchainTransaction(
 				return
 			}
 			if err != nil {
-				if _, rpushErr := global.NODE_REDIS.RPush(ctx, constantPendingBlock, height).Result(); rpushErr != nil {
+				if _, rpushErr := redisq.EnqueueUnique(ctx, constantPendingBlock, strconv.FormatInt(height, 10)); rpushErr != nil {
 					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), rpushErr.Error()))
 				}
 			}
@@ -116,9 +115,9 @@ func SweepBtcBlockchainTransactionDetails(
 ) {
 	defer utils.HandlePanic()
 
-	txHash, err := global.NODE_REDIS.LIndex(ctx, constantPendingTransaction, 0).Result()
+	txHash, err := redisq.Pop(ctx, constantPendingTransaction)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if redisq.IsEmpty(err) {
 			time.Sleep(2 * time.Second)
 			return
 		}
@@ -143,7 +142,7 @@ func SweepBtcBlockchainTransactionDetails(
 		retryCount++
 		if retryCount >= setup.SweepThreshold {
 			global.NODE_LOG.Error(fmt.Sprintf("give up tx after retries: %s", txHash))
-			_, err = global.NODE_REDIS.LPop(ctx, constantPendingTransaction).Result()
+			err = redisq.Ack(ctx, constantPendingTransaction, txHash)
 			if err != nil {
 				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 				time.Sleep(2 * time.Second)
@@ -153,11 +152,12 @@ func SweepBtcBlockchainTransactionDetails(
 			return
 		}
 		(*txRetryCount)[txHash] = retryCount
+		_ = redisq.Requeue(ctx, constantPendingTransaction, txHash)
 		time.Sleep(2 * time.Second)
 		return
 	}
 
-	_, err = global.NODE_REDIS.LPop(ctx, constantPendingTransaction).Result()
+	err = redisq.Ack(ctx, constantPendingTransaction, txHash)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 		time.Sleep(2 * time.Second)
@@ -176,9 +176,9 @@ func SweepBtcBlockchainPendingBlock(
 ) {
 	defer utils.HandlePanic()
 
-	blockHeight, err := global.NODE_REDIS.LIndex(ctx, constantPendingBlock, 0).Result()
+	blockHeight, err := redisq.Pop(ctx, constantPendingBlock)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if redisq.IsEmpty(err) {
 			time.Sleep(2 * time.Second)
 			return
 		}
@@ -190,6 +190,7 @@ func SweepBtcBlockchainPendingBlock(
 	blockHeightInt, err := strconv.ParseInt(blockHeight, 10, 64)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		_ = redisq.Ack(ctx, constantPendingBlock, blockHeight)
 		return
 	}
 
@@ -209,7 +210,7 @@ func SweepBtcBlockchainPendingBlock(
 		retryCount++
 		if retryCount >= setup.SweepThreshold {
 			global.NODE_LOG.Error(fmt.Sprintf("give up block after retries: %d", blockHeightInt))
-			_, err = global.NODE_REDIS.LPop(ctx, constantPendingBlock).Result()
+			err = redisq.Ack(ctx, constantPendingBlock, blockHeight)
 			if err != nil {
 				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 				time.Sleep(2 * time.Second)
@@ -219,11 +220,12 @@ func SweepBtcBlockchainPendingBlock(
 			return
 		}
 		(*retryBlockCount)[blockHeightInt] = retryCount
+		_ = redisq.Requeue(ctx, constantPendingBlock, blockHeight)
 		time.Sleep(2 * time.Second)
 		return
 	}
 
-	_, err = global.NODE_REDIS.LPop(ctx, constantPendingBlock).Result()
+	err = redisq.Ack(ctx, constantPendingBlock, blockHeight)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 		time.Sleep(2 * time.Second)

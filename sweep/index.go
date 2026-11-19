@@ -3,6 +3,8 @@ package sweep
 import (
 	"context"
 	"node/global"
+	"node/global/constant"
+	"node/sweep/core"
 	"node/sweep/mainnet"
 	"node/sweep/setup"
 	"node/sweep/testnet"
@@ -13,19 +15,18 @@ func RunBlockSweep(ctx context.Context) {
 
 	if global.NODE_CONFIG.Blockchain.Ethereum {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepEthBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.ETH_MAINNET)
 		} else {
-			testnet.SweepEthSepoliaBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.ETH_SEPOLIA)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Bsc {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepBscBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.BSC_MAINNET)
 		} else {
-			testnet.SweepBscTestnetBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.BSC_TESTNET)
 		}
-
 	}
 
 	if global.NODE_CONFIG.Blockchain.Bitcoin {
@@ -54,23 +55,23 @@ func RunBlockSweep(ctx context.Context) {
 
 	if global.NODE_CONFIG.Blockchain.Op {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepOpBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.OP_MAINNET)
 		} else {
-			testnet.SweepOpSepoliaBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.OP_SEPOLIA)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.ArbitrumOne {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepArbitrumOneBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.ARBITRUM_ONE)
 		} else {
-			testnet.SweepArbitrumSepoliaBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.ARBITRUM_SEPOLIA)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.ArbitrumNova {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepArbitrumNovaBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.ARBITRUM_NOVA)
 		}
 	}
 
@@ -101,32 +102,30 @@ func RunBlockSweep(ctx context.Context) {
 	if global.NODE_CONFIG.Blockchain.Bch {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
 			mainnet.SweepBchBlockchain(ctx)
-		} else {
-			// testnet.SweepBchTestnetBlockchain(ctx)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Pol {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepPolBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.POL_MAINNET)
 		} else {
-			testnet.SweepPolTestnetBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.POL_TESTNET)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Avax {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepAvaxBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.AVAX_MAINNET)
 		} else {
-			testnet.SweepAvaxTestnetBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.AVAX_TESTNET)
 		}
 	}
 
 	if global.NODE_CONFIG.Blockchain.Base {
 		if global.NODE_CONFIG.Blockchain.SweepMainnet {
-			mainnet.SweepBaseBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.BASE_MAINNET)
 		} else {
-			testnet.SweepBaseSepoliaBlockchain(ctx)
+			core.RunEVMSweep(ctx, constant.BASE_SEPOLIA)
 		}
 	}
 }

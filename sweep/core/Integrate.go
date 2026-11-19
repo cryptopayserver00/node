@@ -11,7 +11,7 @@ import (
 	"node/sweep/setup"
 	"node/sweep/utils/erc20"
 	"node/utils"
-	"slices"
+	"node/utils/redisq"
 	"strconv"
 	"sync"
 	"time"
@@ -19,8 +19,6 @@ import (
 	sweepUtils "node/sweep/utils"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
-
-	"github.com/redis/go-redis/v9"
 )
 
 const maxWorkers = 10
@@ -110,13 +108,13 @@ func SweepBlockchainTransaction(
 			defer utils.HandlePanic()
 
 			var err error
-			if false {
+			if global.NODE_CONFIG.Blockchain.InnerTx {
 				err = SweepBlockchainTransactionCoreForEthereum(ctx, client, chainId, publicKey, height, constantSweepBlock, constantPendingBlock, constantPendingTransaction)
 			} else {
 				err = SweepBlockchainTransactionCore(ctx, client, chainId, publicKey, height, constantSweepBlock, constantPendingBlock, constantPendingTransaction)
 			}
 			if err != nil {
-				if _, rpushErr := global.NODE_REDIS.RPush(ctx, constantPendingBlock, height).Result(); rpushErr != nil {
+				if _, rpushErr := redisq.EnqueueUnique(ctx, constantPendingBlock, strconv.FormatInt(height, 10)); rpushErr != nil {
 					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), rpushErr.Error()))
 				}
 			}
@@ -171,6 +169,7 @@ func SweepBlockchainTransactionCore(
 	}
 
 	if sweepBlockHeight == int64(height) {
+		monitorSet := utils.BuildHexAddressSet(*publicKey)
 		if len(rpcBlockDetail.Result.Transactions) > 0 {
 			for _, transaction := range rpcBlockDetail.Result.Transactions {
 
@@ -196,15 +195,7 @@ func SweepBlockchainTransactionCore(
 					continue
 				}
 
-			outerCurrentTxLoop:
-				for i := 0; i < len(*publicKey); i++ {
-					for _, j := range matchArray {
-						if utils.HexToAddress((*publicKey)[i]) == utils.HexToAddress(j) {
-							isMonitorTx = true
-							break outerCurrentTxLoop
-						}
-					}
-				}
+			isMonitorTx = utils.MatchHexAddressSet(monitorSet, matchArray...)
 
 				if isMonitorTx {
 					var rpcReceipt response.RPCReceiptTransactionDetail
@@ -224,22 +215,10 @@ func SweepBlockchainTransactionCore(
 						continue
 					}
 
-					redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-					if err != nil {
+					if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.Hash); err != nil {
 						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 						time.Sleep(2 * time.Second)
 						return err
-					}
-
-					found := slices.Contains(redisTxs, transaction.Hash)
-
-					if !found {
-						_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.Hash).Result()
-						if err != nil {
-							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							time.Sleep(2 * time.Second)
-							return err
-						}
 					}
 				}
 			}
@@ -263,9 +242,9 @@ func SweepBlockchainTransactionDetails(
 ) {
 	defer utils.HandlePanic()
 
-	txHash, err := global.NODE_REDIS.LIndex(ctx, constantPendingTransaction, 0).Result()
+	txHash, err := redisq.Pop(ctx, constantPendingTransaction)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if redisq.IsEmpty(err) {
 			time.Sleep(2 * time.Second)
 			return
 		}
@@ -285,23 +264,22 @@ func SweepBlockchainTransactionDetails(
 		retryCount++
 		if retryCount >= setup.SweepThreshold {
 			global.NODE_LOG.Error(fmt.Sprintf("give up tx after retries: %s", txHash))
-			_, err = global.NODE_REDIS.LPop(ctx, constantPendingTransaction).Result() // 或挪到死信队列而不是直接丢弃
-			if err != nil {
-				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-				time.Sleep(2 * time.Second)
-				return
+			if ackErr := redisq.Ack(ctx, constantPendingTransaction, txHash); ackErr != nil {
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), ackErr.Error()))
 			}
 			delete(*txRetryCount, txHash)
 			return
 		}
 		(*txRetryCount)[txHash] = retryCount
+		if rqErr := redisq.Requeue(ctx, constantPendingTransaction, txHash); rqErr != nil {
+			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), rqErr.Error()))
+		}
 		time.Sleep(2 * time.Second)
 		return
 	}
 
-	_, err = global.NODE_REDIS.LPop(ctx, constantPendingTransaction).Result()
-	if err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+	if ackErr := redisq.Ack(ctx, constantPendingTransaction, txHash); ackErr != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), ackErr.Error()))
 		time.Sleep(2 * time.Second)
 		return
 	}
@@ -360,7 +338,7 @@ func handleTransactionDetails(
 	notifyRequest.Chain = chainId
 	notifyRequest.BlockTimestamp = int(blockTimeStamp) * 1000
 
-	if false {
+	if global.NODE_CONFIG.Blockchain.InnerTx {
 		err = handleInternalTransaction(ctx, client, chainId, publicKey, notifyRequest, rpcDetail)
 	} else {
 		err = handleOrdinaryTransaction(ctx, chainId, publicKey, notifyRequest, rpcDetail.Result.From, rpcDetail.Result.To, rpcDetail.Result.Hash, rpcDetail.Result.Input, rpcDetail.Result.Value)
@@ -371,6 +349,7 @@ func handleTransactionDetails(
 
 func handleOrdinaryTransaction(ctx context.Context, chainId uint, publicKey *[]string, notifyRequest request.NotificationRequest, from, to, hash, input, value string) error {
 	isProcess := false
+	monitorSet := utils.BuildHexAddressSet(*publicKey)
 
 	var (
 		isSupportContract bool
@@ -411,30 +390,25 @@ func handleOrdinaryTransaction(ctx context.Context, chainId uint, publicKey *[]s
 		notifyRequest.Token = contractName
 		notifyRequest.Amount = utils.CalculateBalance(transactionValue, decimals)
 
-		for _, v := range *publicKey {
-			if utils.HexToAddress(fromAddress) == utils.HexToAddress(v) {
-				notifyRequest.TransactType = "send"
-				notifyRequest.Address = v
-
-				err = notification.NotificationRequest(ctx, notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return err
-				}
-				isProcess = true
+		fromNorm := utils.HexToAddress(fromAddress)
+		toNorm := utils.HexToAddress(decodeToAddress)
+		if _, ok := monitorSet[fromNorm]; ok {
+			notifyRequest.TransactType = "send"
+			notifyRequest.Address = fromNorm
+			if err = notification.NotificationRequest(ctx, notifyRequest); err != nil {
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				return err
 			}
-
-			if utils.HexToAddress(decodeToAddress) == utils.HexToAddress(v) {
-				notifyRequest.TransactType = "receive"
-				notifyRequest.Address = v
-
-				err = notification.NotificationRequest(ctx, notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return err
-				}
-				isProcess = true
+			isProcess = true
+		}
+		if _, ok := monitorSet[toNorm]; ok {
+			notifyRequest.TransactType = "receive"
+			notifyRequest.Address = toNorm
+			if err = notification.NotificationRequest(ctx, notifyRequest); err != nil {
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				return err
 			}
+			isProcess = true
 		}
 
 	} else {
@@ -449,31 +423,25 @@ func handleOrdinaryTransaction(ctx context.Context, chainId uint, publicKey *[]s
 		notifyRequest.Amount = utils.CalculateBalance(value, decimals)
 		notifyRequest.Token = contractName
 
-		for _, v := range *publicKey {
-			if utils.HexToAddress(fromAddress) == utils.HexToAddress(v) {
-
-				notifyRequest.TransactType = "send"
-				notifyRequest.Address = v
-
-				err = notification.NotificationRequest(ctx, notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return err
-				}
-				isProcess = true
+		fromNorm := utils.HexToAddress(fromAddress)
+		toNorm := utils.HexToAddress(toAddress)
+		if _, ok := monitorSet[fromNorm]; ok {
+			notifyRequest.TransactType = "send"
+			notifyRequest.Address = fromNorm
+			if err = notification.NotificationRequest(ctx, notifyRequest); err != nil {
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				return err
 			}
-
-			if utils.HexToAddress(toAddress) == utils.HexToAddress(v) {
-				notifyRequest.TransactType = "receive"
-				notifyRequest.Address = v
-
-				err = notification.NotificationRequest(ctx, notifyRequest)
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-					return err
-				}
-				isProcess = true
+			isProcess = true
+		}
+		if _, ok := monitorSet[toNorm]; ok {
+			notifyRequest.TransactType = "receive"
+			notifyRequest.Address = toNorm
+			if err = notification.NotificationRequest(ctx, notifyRequest); err != nil {
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				return err
 			}
+			isProcess = true
 		}
 	}
 
@@ -494,9 +462,9 @@ func SweepBlockchainPendingBlock(
 ) {
 	defer utils.HandlePanic()
 
-	blockHeight, err := global.NODE_REDIS.LIndex(ctx, constantPendingBlock, 0).Result()
+	blockHeight, err := redisq.Pop(ctx, constantPendingBlock)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if redisq.IsEmpty(err) {
 			time.Sleep(2 * time.Second)
 			return
 		}
@@ -508,10 +476,21 @@ func SweepBlockchainPendingBlock(
 	blockHeightInt, err := strconv.ParseInt(blockHeight, 10, 64)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		_ = redisq.Ack(ctx, constantPendingBlock, blockHeight)
 		return
 	}
 
-	if false {
+	monitorSet := utils.BuildHexAddressSet(*publicKey)
+	finished := false
+	defer func() {
+		if !finished {
+			if rqErr := redisq.Requeue(ctx, constantPendingBlock, blockHeight); rqErr != nil {
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> requeue pending block: %s", constant.GetChainName(chainId), rqErr.Error()))
+			}
+		}
+	}()
+
+	if global.NODE_CONFIG.Blockchain.InnerTx {
 		var rpcBlockDetail response.RPCBlockInnerDetail
 		client.URL = constant.GetAlchemyRPCUrlByChainId(chainId)
 		payload := map[string]any{
@@ -586,15 +565,7 @@ func SweepBlockchainPendingBlock(
 					continue
 				}
 
-			outerETHCurrentTxPool:
-				for i := 0; i < len(*publicKey); i++ {
-					for _, j := range matchArray {
-						if utils.HexToAddress((*publicKey)[i]) == utils.HexToAddress(j) {
-							isMonitorTx = true
-							break outerETHCurrentTxPool
-						}
-					}
-				}
+			isMonitorTx = utils.MatchHexAddressSet(monitorSet, matchArray...)
 
 				if isMonitorTx {
 					var rpcReceipt response.RPCReceiptTransactionDetail
@@ -615,32 +586,20 @@ func SweepBlockchainPendingBlock(
 						continue
 					}
 
-					redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-					if err != nil {
+					if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.Hash); err != nil {
 						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 						time.Sleep(2 * time.Second)
 						return
-					}
-
-					found := slices.Contains(redisTxs, transaction.Hash)
-
-					if !found {
-						_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.Hash).Result()
-						if err != nil {
-							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-							time.Sleep(2 * time.Second)
-							return
-						}
 					}
 				}
 			}
 		}
 
-		_, err = global.NODE_REDIS.LPop(ctx, constantPendingBlock).Result()
-		if err != nil {
-			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		if ackErr := redisq.Ack(ctx, constantPendingBlock, blockHeight); ackErr != nil {
+			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), ackErr.Error()))
 			time.Sleep(2 * time.Second)
 		}
+		finished = true
 
 		*retryBlockCount = make(map[int64]int)
 	} else {
@@ -699,15 +658,7 @@ func SweepBlockchainPendingBlock(
 						continue
 					}
 
-				outerCurrentTxLoop:
-					for i := 0; i < len(*publicKey); i++ {
-						for _, j := range matchArray {
-							if utils.HexToAddress((*publicKey)[i]) == utils.HexToAddress(j) {
-								isMonitorTx = true
-								break outerCurrentTxLoop
-							}
-						}
-					}
+				isMonitorTx = utils.MatchHexAddressSet(monitorSet, matchArray...)
 
 					if isMonitorTx {
 						var rpcReceipt response.RPCReceiptTransactionDetail
@@ -727,33 +678,21 @@ func SweepBlockchainPendingBlock(
 							continue
 						}
 
-						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-						if err != nil {
+						if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.Hash); err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							time.Sleep(2 * time.Second)
 							return
-						}
-
-						found := slices.Contains(redisTxs, transaction.Hash)
-
-						if !found {
-							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.Hash).Result()
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								time.Sleep(2 * time.Second)
-								return
-							}
 						}
 					}
 				}
 			}
 
-			_, err = global.NODE_REDIS.LPop(ctx, constantPendingBlock).Result()
-			if err != nil {
-				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+			if ackErr := redisq.Ack(ctx, constantPendingBlock, blockHeight); ackErr != nil {
+				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), ackErr.Error()))
 				time.Sleep(2 * time.Second)
 				return
 			}
+			finished = true
 			delete(*retryBlockCount, blockHeightInt)
 		} else {
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), fmt.Sprintf("Not the same height of block: %d - %d", blockHeightInt, height)))
@@ -762,17 +701,18 @@ func SweepBlockchainPendingBlock(
 			retryCount++
 			if retryCount >= setup.SweepThreshold {
 				global.NODE_LOG.Error(fmt.Sprintf("give up block after retries: %d", blockHeightInt))
-				_, err = global.NODE_REDIS.LPop(ctx, constantPendingBlock).Result()
-				if err != nil {
-					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+				if ackErr := redisq.Ack(ctx, constantPendingBlock, blockHeight); ackErr != nil {
+					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), ackErr.Error()))
 					time.Sleep(2 * time.Second)
 					return
 				}
+				finished = true
 				delete(*retryBlockCount, blockHeightInt)
 				return
 			}
 			(*retryBlockCount)[blockHeightInt] = retryCount
 			time.Sleep(2 * time.Second)
+			// defer 会 Requeue
 		}
 	}
 }
@@ -814,6 +754,7 @@ func SweepBlockchainTransactionCoreForEthereum(
 		return err
 	}
 
+	monitorSet := utils.BuildHexAddressSet(*publicKey)
 	if len(rpcBlockDetail.Result) > 0 {
 		for _, transaction := range rpcBlockDetail.Result {
 			isMonitorTx := false
@@ -848,15 +789,7 @@ func SweepBlockchainTransactionCoreForEthereum(
 				continue
 			}
 
-		outerCurrentTxLoop:
-			for i := 0; i < len(*publicKey); i++ {
-				for _, j := range matchArray {
-					if utils.HexToAddress((*publicKey)[i]) == utils.HexToAddress(j) {
-						isMonitorTx = true
-						break outerCurrentTxLoop
-					}
-				}
-			}
+		isMonitorTx = utils.MatchHexAddressSet(monitorSet, matchArray...)
 
 			if isMonitorTx {
 				var rpcReceipt response.RPCReceiptTransactionDetail
@@ -877,21 +810,10 @@ func SweepBlockchainTransactionCoreForEthereum(
 					continue
 				}
 
-				redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-				if err != nil {
+				if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.Hash); err != nil {
 					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 					time.Sleep(2 * time.Second)
 					return err
-				}
-
-				found := slices.Contains(redisTxs, transaction.Hash)
-				if !found {
-					_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.Hash).Result()
-					if err != nil {
-						global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-						time.Sleep(2 * time.Second)
-						return err
-					}
 				}
 			}
 		}

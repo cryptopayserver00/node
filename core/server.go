@@ -19,6 +19,9 @@ import (
 )
 
 func RunWindowsServer() {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	if global.NODE_CONFIG.System.UseInit {
 		if err := service.NodeService.InitChainList(); err != nil {
 			global.NODE_LOG.Error(err.Error())
@@ -35,20 +38,17 @@ func RunWindowsServer() {
 	}
 
 	if global.NODE_CONFIG.Blockchain.OpenSweepBlock {
-		sweep.RunBlockSweep(context.Background())
+		sweep.RunBlockSweep(ctx)
 	}
 
 	if global.NODE_CONFIG.System.UseTask {
-		task.RunTask(context.Background())
+		task.RunTask(ctx)
 	}
 
 	router := initialize.Routers()
 
 	address := fmt.Sprintf(":%d", global.NODE_CONFIG.System.Addr)
 	server := initServer(address, router)
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
 
 	go func() {
 		global.NODE_LOG.Info("server run success", zap.String("address", address))
@@ -58,7 +58,6 @@ func RunWindowsServer() {
 	}()
 
 	<-ctx.Done()
-	stop()
 	global.NODE_LOG.Info("shutting down server...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

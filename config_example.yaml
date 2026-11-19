@@ -1,7 +1,7 @@
 # system configuration
 system:
   env: debug # debug | release | test
-  addr: 0000
+  addr: 8080
   db-type: mysql
   use-redis: true
   use-memcache: true
@@ -12,9 +12,18 @@ system:
   iplimit-time: 3600
   router-prefix: "api"
 
+# 服务间鉴权与跨域。api-token / sec-wss-token 为空时受保护接口与 WS 会直接拒绝。
+security:
+  api-token: "change-me"
+  cors-allow-origins:
+    - "http://localhost:3000"
+  ws-allow-origins:
+    - "http://localhost:3000"
+
 blockchain:
   open-sweep-block: true
   sweep-mainnet: true
+  inner-tx: false
   ethereum: true
   bitcoin: true
   tron: true
@@ -43,7 +52,7 @@ telegram:
   tx-inform-channel-id:
 
 wss:
-  sec-wss-token:
+  sec-wss-token: "change-me-wss"
 
 zap:
   level: info
@@ -81,6 +90,9 @@ mysql:
   engine:
 
 freecoin:
+  # 生产务必保持 false；仅测试网 faucet 场景显式打开，并配合 api-token + max-amount
+  enabled: false
+  max-amount: "0.01"
   bitcoin:
     public_key: ""
     private_key: ""

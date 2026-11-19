@@ -16,6 +16,9 @@ type Client struct {
 	Headers map[string]string
 	client  http.Client
 	Timeout time.Duration
+	// OnSuccess / OnFailure 可选，用于 RPC 健康池记账。
+	OnSuccess func(url string)
+	OnFailure func(url string)
 }
 
 // doRequest 是三个导出方法共用的核心逻辑：构造 header、发送请求、
@@ -28,20 +31,36 @@ func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 
 	response, err := c.client.Do(req)
 	if err != nil {
+		c.reportFailure()
 		return nil, fmt.Errorf("failed to connect the %s: %w", c.URL, err)
 	}
 	defer response.Body.Close()
 
 	data, err := io.ReadAll(response.Body)
 	if err != nil {
+		c.reportFailure()
 		return nil, fmt.Errorf("failed to read response body from %s: %w", c.URL, err)
 	}
 
 	if response.StatusCode != http.StatusOK {
+		c.reportFailure()
 		return nil, fmt.Errorf("unexpected status %d from %s, body: %s", response.StatusCode, c.URL, string(data))
 	}
 
+	c.reportSuccess()
 	return data, nil
+}
+
+func (c *Client) reportSuccess() {
+	if c.OnSuccess != nil {
+		c.OnSuccess(c.URL)
+	}
+}
+
+func (c *Client) reportFailure() {
+	if c.OnFailure != nil {
+		c.OnFailure(c.URL)
+	}
 }
 
 // HTTPGet 发送 GET 请求，并将响应体反序列化为 JSON 写入 dest（dest 必须是指针）。

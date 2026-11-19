@@ -2,16 +2,15 @@ package core
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"node/global"
 	"node/global/constant"
 	"node/sweep/setup"
 	"node/utils"
+	"node/utils/redisq"
 	NODE_Client "node/utils/http"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 )
 
 func SetupTonLatestBlockHeight(ctx context.Context, client NODE_Client.Client, chainId uint) {
@@ -53,9 +52,9 @@ func SweepTonBlockchainTransactionDetails(
 ) {
 	defer utils.HandlePanic()
 
-	txHash, err := global.NODE_REDIS.LIndex(ctx, constantPendingTransaction, 0).Result()
+	txHash, err := redisq.Pop(ctx, constantPendingTransaction)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if redisq.IsEmpty(err) {
 			time.Sleep(2 * time.Second)
 			return
 		}
@@ -78,9 +77,9 @@ func SweepTonBlockchainPendingBlock(
 ) {
 	defer utils.HandlePanic()
 
-	// blockHeight, err := global.NODE_REDIS.LIndex(ctx, constantPendingBlock, 0).Result()
+	// blockHeight, err := redisq.Pop(ctx, constantPendingBlock)
 	// if err != nil {
-	// 	if errors.Is(err, redis.Nil) {
+	// 	if redisq.IsEmpty(err) {
 	// 		time.Sleep(2 * time.Second)
 	// 		return
 	// 	}

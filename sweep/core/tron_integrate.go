@@ -13,15 +13,14 @@ import (
 	sweepUtils "node/sweep/utils"
 	"node/sweep/utils/tron"
 	"node/utils"
+	"node/utils/redisq"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
-	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 )
 
 func SetupTronLatestBlockHeight(ctx context.Context, client NODE_Client.Client, chainId uint) {
@@ -88,7 +87,7 @@ func SweepTronBlockchainTransaction(
 			defer utils.HandlePanic()
 
 			if err := SweepTronBlockchainTransactionCore(ctx, client, chainId, publicKey, height, constantSweepBlock, constantPendingBlock, constantPendingTransaction); err != nil {
-				if _, rpushErr := global.NODE_REDIS.RPush(ctx, constantPendingBlock, height).Result(); rpushErr != nil {
+				if _, rpushErr := redisq.EnqueueUnique(ctx, constantPendingBlock, strconv.FormatInt(height, 10)); rpushErr != nil {
 					global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), rpushErr.Error()))
 				}
 			}
@@ -175,8 +174,7 @@ func SweepTronBlockchainTransactionCore(
 
 				isMonitorTx := false
 
-			outerCurrentTxLoop:
-
+		
 				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx = tron.IsHandleTransaction(
 						chainId,
@@ -189,25 +187,12 @@ func SweepTronBlockchainTransactionCore(
 					)
 
 					if isMonitorTx {
-						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-						if err != nil {
+						if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.TxID); err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							time.Sleep(2 * time.Second)
 							return err
 						}
-
-						found := slices.Contains(redisTxs, transaction.TxID)
-						if found {
-							break outerCurrentTxLoop
-						} else {
-							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.TxID).Result()
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								time.Sleep(2 * time.Second)
-								return err
-							}
-							break
-						}
+						break
 					}
 				}
 			}
@@ -231,9 +216,9 @@ func SweepTronBlockchainTransactionDetails(
 ) {
 	defer utils.HandlePanic()
 
-	txHash, err := global.NODE_REDIS.LIndex(ctx, constantPendingTransaction, 0).Result()
+	txHash, err := redisq.Pop(ctx, constantPendingTransaction)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if redisq.IsEmpty(err) {
 			time.Sleep(2 * time.Second)
 			return
 		}
@@ -253,7 +238,7 @@ func SweepTronBlockchainTransactionDetails(
 		retryCount++
 		if retryCount >= setup.SweepThreshold {
 			global.NODE_LOG.Error(fmt.Sprintf("give up tx after retries: %s", txHash))
-			_, err = global.NODE_REDIS.LPop(ctx, constantPendingTransaction).Result()
+			err = redisq.Ack(ctx, constantPendingTransaction, txHash)
 			if err != nil {
 				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 				time.Sleep(2 * time.Second)
@@ -263,11 +248,12 @@ func SweepTronBlockchainTransactionDetails(
 			return
 		}
 		(*txRetryCount)[txHash] = retryCount
+		_ = redisq.Requeue(ctx, constantPendingTransaction, txHash)
 		time.Sleep(2 * time.Second)
 		return
 	}
 
-	_, err = global.NODE_REDIS.LPop(ctx, constantPendingTransaction).Result()
+	err = redisq.Ack(ctx, constantPendingTransaction, txHash)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 		time.Sleep(2 * time.Second)
@@ -516,9 +502,9 @@ func SweepTronBlockchainPendingBlock(
 ) {
 	defer utils.HandlePanic()
 
-	blockHeight, err := global.NODE_REDIS.LIndex(ctx, constantPendingBlock, 0).Result()
+	blockHeight, err := redisq.Pop(ctx, constantPendingBlock)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if redisq.IsEmpty(err) {
 			time.Sleep(2 * time.Second)
 			return
 		}
@@ -530,6 +516,7 @@ func SweepTronBlockchainPendingBlock(
 	blockHeightInt, err := strconv.ParseInt(blockHeight, 10, 64)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
+		_ = redisq.Ack(ctx, constantPendingBlock, blockHeight)
 		return
 	}
 
@@ -593,8 +580,7 @@ func SweepTronBlockchainPendingBlock(
 
 				isMonitorTx := false
 
-			outerCurrentTxLoop:
-
+		
 				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx = tron.IsHandleTransaction(
 						chainId,
@@ -607,29 +593,17 @@ func SweepTronBlockchainPendingBlock(
 					)
 
 					if isMonitorTx {
-						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-						if err != nil {
+						if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.TxID); err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							return
 						}
-
-						found := slices.Contains(redisTxs, transaction.TxID)
-						if found {
-							break outerCurrentTxLoop
-						} else {
-							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.TxID).Result()
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								return
-							}
-							break
-						}
+						break
 					}
 				}
 			}
 		}
 
-		_, err = global.NODE_REDIS.LPop(ctx, constantPendingBlock).Result()
+		err = redisq.Ack(ctx, constantPendingBlock, blockHeight)
 		if err != nil {
 			global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 			time.Sleep(2 * time.Second)
@@ -643,7 +617,7 @@ func SweepTronBlockchainPendingBlock(
 		retryCount++
 		if retryCount >= setup.SweepThreshold {
 			global.NODE_LOG.Error(fmt.Sprintf("give up block after retries: %d", blockHeightInt))
-			_, err = global.NODE_REDIS.LPop(ctx, constantPendingBlock).Result()
+			err = redisq.Ack(ctx, constantPendingBlock, blockHeight)
 			if err != nil {
 				global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 				time.Sleep(2 * time.Second)

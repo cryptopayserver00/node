@@ -115,48 +115,60 @@ import (
 // 	}
 // )
 
+func splitRPCList(raw string) []string {
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if u := strings.TrimSpace(p); u != "" {
+			out = append(out, u)
+		}
+	}
+	return out
+}
+
 func GetAllRPCUrlByChainId(chainId uint) []string {
 	switch chainId {
 	case ETH_MAINNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.EthMainnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.EthMainnet)
 	case ETH_SEPOLIA:
-		return strings.Split(global.NODE_CONFIG.Rpc.EthSepolia, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.EthSepolia)
 	case OP_MAINNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.OpMainnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.OpMainnet)
 	case OP_SEPOLIA:
-		return strings.Split(global.NODE_CONFIG.Rpc.OpSepolia, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.OpSepolia)
 	case BSC_MAINNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.BscMainnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.BscMainnet)
 	case BSC_TESTNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.BscTestnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.BscTestnet)
 	case ARBITRUM_ONE:
-		return strings.Split(global.NODE_CONFIG.Rpc.ArbitrumOne, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.ArbitrumOne)
 	case ARBITRUM_NOVA:
-		return strings.Split(global.NODE_CONFIG.Rpc.ArbitrumNova, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.ArbitrumNova)
 	case ARBITRUM_SEPOLIA:
-		return strings.Split(global.NODE_CONFIG.Rpc.ArbitrumSepolia, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.ArbitrumSepolia)
 	case POL_MAINNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.PolMainnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.PolMainnet)
 	case POL_TESTNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.PolTestnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.PolTestnet)
 	case AVAX_MAINNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.AvaxMainnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.AvaxMainnet)
 	case AVAX_TESTNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.AvaxTestnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.AvaxTestnet)
 	case BASE_MAINNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.BaseMainnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.BaseMainnet)
 	case BASE_SEPOLIA:
-		return strings.Split(global.NODE_CONFIG.Rpc.BaseSepolia, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.BaseSepolia)
 	case SOL_MAINNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.SolanaMainnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.SolanaMainnet)
 	case SOL_DEVNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.SolanaDevnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.SolanaDevnet)
 	case XRP_MAINNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.XrpMainnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.XrpMainnet)
 	case XRP_TESTNET:
-		return strings.Split(global.NODE_CONFIG.Rpc.XrpTestnet, ",")
+		return splitRPCList(global.NODE_CONFIG.Rpc.XrpTestnet)
 	default:
-		panic("not support")
+		global.NODE_LOG.Error("GetAllRPCUrlByChainId: unsupported chainId")
+		return nil
 	}
 }
 
@@ -164,6 +176,10 @@ func GetAllRPCUrlByChainId(chainId uint) []string {
 func GetAlchemyRPCUrlByChainId(chainId uint) string {
 	mainnet := IsMainnetSupport(chainId)
 	key := GetRandomAlchemyKeyByNetwork(mainnet)
+	if key == "" {
+		global.NODE_LOG.Error("GetAlchemyRPCUrlByChainId: alchemy key not configured")
+		return ""
+	}
 
 	switch chainId {
 	case ETH_MAINNET:
@@ -201,7 +217,8 @@ func GetAlchemyRPCUrlByChainId(chainId uint) string {
 	case BASE_SEPOLIA:
 		return "https://base-sepolia.g.alchemy.com/v2/" + key
 	default:
-		panic("not support")
+		global.NODE_LOG.Error("GetAlchemyRPCUrlByChainId: unsupported chainId")
+		return ""
 	}
 }
 
@@ -229,29 +246,31 @@ func GetRealRpcByArray(ctx context.Context, rpcs []string) string {
 }
 
 func GetRPCUrlByChainId(chainId uint) string {
-	rpcs := GetAllRPCUrlByChainId(chainId)
-	if len(rpcs) == 0 {
-		panic("not support")
+	url := getRPCPool(chainId).pick()
+	if url == "" {
+		global.NODE_LOG.Error("GetRPCUrlByChainId: no rpc configured")
 	}
-	return rpcs[rand.IntN(len(rpcs))]
+	return url
+}
+
+func pickCSV(raw string) string {
+	parts := splitRPCList(raw)
+	if len(parts) == 0 {
+		return ""
+	}
+	return parts[rand.IntN(len(parts))]
 }
 
 func GetRandomAlchemyKeyByNetwork(isMainnet bool) string {
 	if isMainnet {
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")))
-		return strings.Split(global.NODE_CONFIG.Key.AlchemyMainnetKey, ",")[index]
-	} else {
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")))
-		return strings.Split(global.NODE_CONFIG.Key.AlchemyTestnetKey, ",")[index]
+		return pickCSV(global.NODE_CONFIG.Key.AlchemyMainnetKey)
 	}
+	return pickCSV(global.NODE_CONFIG.Key.AlchemyTestnetKey)
 }
 
 func GetRandomInnertxAlchemyKeyByNetwork(isMainnet bool) string {
 	if isMainnet {
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")))
-		return strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey, ",")[index]
-	} else {
-		index := rand.IntN(len(strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")))
-		return strings.Split(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey, ",")[index]
+		return pickCSV(global.NODE_CONFIG.Key.AlchemyInnerTxMainnetKey)
 	}
+	return pickCSV(global.NODE_CONFIG.Key.AlchemyInnerTxTestnetKey)
 }

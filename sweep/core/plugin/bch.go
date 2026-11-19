@@ -11,9 +11,9 @@ import (
 	"node/model/node/response/mempool"
 	sweepUtils "node/sweep/utils"
 	"node/utils"
+	"node/utils/redisq"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
-	"slices"
 	"strings"
 	"time"
 )
@@ -87,8 +87,7 @@ func HandleBchBlockTransactionsByMempool(
 					continue
 				}
 
-			outerCurrentTxLoop:
-				for i := 0; i < len(*publicKey); i++ {
+						for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Vin) > 0 {
@@ -110,27 +109,12 @@ func HandleBchBlockTransactionsByMempool(
 					}
 
 					if isMonitorTx {
-						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-						if err != nil {
+						if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.TxId); err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							time.Sleep(2 * time.Second)
 							return err
 						}
-
-						found := slices.Contains(redisTxs, transaction.TxId)
-						if found {
-							break outerCurrentTxLoop
-
-						} else {
-							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.TxId).Result()
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								time.Sleep(2 * time.Second)
-								return err
-							}
-
-							break
-						}
+						break
 					}
 				}
 			}
@@ -288,8 +272,7 @@ func HandleBchPendingBlockByMempool(
 					continue
 				}
 
-			outerCurrentTxLoop:
-				for i := 0; i < len(*publicKey); i++ {
+						for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Vin) > 0 {
@@ -311,26 +294,12 @@ func HandleBchPendingBlockByMempool(
 					}
 
 					if isMonitorTx {
-						redisTxs, err := global.NODE_REDIS.LRange(ctx, constantPendingTransaction, 0, -1).Result()
-						if err != nil {
+						if _, err = redisq.EnqueueUnique(ctx, constantPendingTransaction, transaction.TxId); err != nil {
 							global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 							time.Sleep(2 * time.Second)
 							return err
 						}
-
-						found := slices.Contains(redisTxs, transaction.TxId)
-						if found {
-							break outerCurrentTxLoop
-						} else {
-							_, err = global.NODE_REDIS.RPush(ctx, constantPendingTransaction, transaction.TxId).Result()
-							if err != nil {
-								global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-								time.Sleep(2 * time.Second)
-								return err
-							}
-
-							break
-						}
+						break
 					}
 				}
 			}
