@@ -6,6 +6,8 @@ import (
 	"node/global"
 	"node/model"
 	"os"
+
+	sweepUtils "node/sweep/utils"
 )
 
 func (n *NService) InitChainList() (err error) {
@@ -13,7 +15,14 @@ func (n *NService) InitChainList() (err error) {
 		global.NODE_LOG.Info(err.Error())
 		return
 	}
-
+	if err = SyncAssetsFromChainList(); err != nil {
+		global.NODE_LOG.Error(err.Error())
+		return
+	}
+	if err = sweepUtils.ReloadContractIndexFromAssets(); err != nil {
+		global.NODE_LOG.Error(err.Error())
+		return
+	}
 	return nil
 }
 

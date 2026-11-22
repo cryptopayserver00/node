@@ -24,6 +24,7 @@ blockchain:
   open-sweep-block: true
   sweep-mainnet: true
   inner-tx: false
+  notify-mode: legacy # legacy=扫到即推送 | confirmed=确认后再推送
   ethereum: true
   bitcoin: true
   tron: true
@@ -44,6 +45,14 @@ blockchain-plugin:
   bitcoin: "tatum" # tatum | mempool
   litecoin: "tatum" # tatum | mempool
   bitcoincash: "mempool" # tatum | mempool
+
+# 资金事件 HTTP 回调。签名头：X-CryptoPay-Signature = sha256=HMAC(secret, timestamp + "." + body)
+webhook:
+  enabled: false
+  urls:
+    - "https://example.com/hooks/crypto"
+  secret: "change-me-webhook-secret"
+  timeout-seconds: 10
 
 telegram:
   inform-bot-link:

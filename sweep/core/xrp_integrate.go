@@ -11,9 +11,9 @@ import (
 	"node/model/node/response"
 	"node/sweep/setup"
 	"node/utils"
-	"node/utils/redisq"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
+	"node/utils/redisq"
 	"strconv"
 	"strings"
 	"sync"
@@ -100,10 +100,7 @@ func SweepXrpBlockchainTransaction(
 
 	wg.Wait()
 	*sweepBlockHeight = end + 1
-	if _, err := global.NODE_REDIS.Set(ctx, constantSweepBlock, *sweepBlockHeight, 0).Result(); err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
-	}
+	setup.PersistSweepProgress(ctx, chainId, *sweepBlockHeight, constantSweepBlock)
 }
 
 func SweepXrpBlockchainTransactionCore(
@@ -301,6 +298,7 @@ func handleXrpTransactionDetails(
 		return err
 	}
 	notifyRequest.BlockTimestamp = int(timestamp.Unix()) * 1000
+	notifyRequest.BlockNumber = int64(rpcTransactionDetail.Result.LedgerIndex)
 	notifyRequest.FromAddress = rpcTransactionDetail.Result.TxJson.Account
 	notifyRequest.ToAddress = rpcTransactionDetail.Result.TxJson.Destination
 

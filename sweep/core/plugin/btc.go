@@ -12,9 +12,9 @@ import (
 	"node/model/node/response/tatum"
 	sweepUtils "node/sweep/utils"
 	"node/utils"
-	"node/utils/redisq"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
+	"node/utils/redisq"
 	"strings"
 	"time"
 )
@@ -80,7 +80,7 @@ func HandleBtcBlockTransactionsByTatum(
 					continue
 				}
 
-						for i := 0; i < len(*publicKey); i++ {
+				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Inputs) > 0 {
@@ -177,7 +177,7 @@ func HandleBtcBlockTransactionsByMempool(
 					continue
 				}
 
-						for i := 0; i < len(*publicKey); i++ {
+				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Vin) > 0 {
@@ -247,6 +247,7 @@ func HandleBtcTransactionDetailsByTatum(
 	notifyRequest.Hash = bitcoinTxResponse.Hash
 	notifyRequest.Chain = chainId
 	notifyRequest.BlockTimestamp = bitcoinTxResponse.Time * 1000
+	notifyRequest.BlockNumber = int64(bitcoinTxResponse.BlockNumber)
 
 	if len(bitcoinTxResponse.Inputs) == 0 || len(bitcoinTxResponse.Outputs) == 0 {
 		return errors.New("not support")
@@ -265,12 +266,13 @@ func HandleBtcTransactionDetailsByTatum(
 			notifyRequest.FromAddress = input.Coin.Address
 			notifyRequest.Token = contractName
 
-			for _, output := range bitcoinTxResponse.Outputs {
+			for outIdx, output := range bitcoinTxResponse.Outputs {
 				if strings.EqualFold(output.Address, notifyRequest.FromAddress) {
 					continue
 				}
 
 				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
+				notifyRequest.SetTransferIndex(outIdx)
 				for _, v := range *publicKey {
 					notifyRequest.Address = v
 					notifyRequest.ToAddress = output.Address
@@ -335,6 +337,7 @@ func HandleBtcTransactionDetailsByMempool(
 	notifyRequest.Hash = bitcoinTxResponse.TxId
 	notifyRequest.Chain = chainId
 	notifyRequest.BlockTimestamp = bitcoinTxResponse.Status.BlockTime * 1000
+	notifyRequest.BlockNumber = int64(bitcoinTxResponse.Status.Blockeight)
 
 	if len(bitcoinTxResponse.Vin) == 0 || len(bitcoinTxResponse.Vout) == 0 {
 		return errors.New("not support")
@@ -353,12 +356,13 @@ func HandleBtcTransactionDetailsByMempool(
 			notifyRequest.FromAddress = input.Prevout.Scriptpubkey_address
 			notifyRequest.Token = contractName
 
-			for _, output := range bitcoinTxResponse.Vout {
+			for outIdx, output := range bitcoinTxResponse.Vout {
 				if strings.EqualFold(output.Scriptpubkey_address, notifyRequest.FromAddress) {
 					continue
 				}
 
 				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
+				notifyRequest.SetTransferIndex(outIdx)
 				for _, v := range *publicKey {
 					notifyRequest.Address = v
 					notifyRequest.ToAddress = output.Scriptpubkey_address
@@ -427,7 +431,7 @@ func HandleBtcPendingBlockByTatum(
 					continue
 				}
 
-						for i := 0; i < len(*publicKey); i++ {
+				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Inputs) > 0 {
@@ -525,7 +529,7 @@ func HandleBtcPendingBlockByMempool(
 					continue
 				}
 
-						for i := 0; i < len(*publicKey); i++ {
+				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Vin) > 0 {

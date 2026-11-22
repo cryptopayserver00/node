@@ -16,27 +16,46 @@ import (
 	"gorm.io/gorm"
 )
 
-// 去重键：所有参与比较的字段拼接后哈希，作为锁名
-func dedupeKey(req request.NotificationRequest) string {
-	raw := fmt.Sprintf("%v|%s|%s|%s|%s|%s|%v|%v|%v",
-		req.Chain, req.Hash, req.Address, req.FromAddress, req.ToAddress,
-		req.Token, req.TransactType, req.Amount, req.BlockTimestamp)
+// BuildTransferKey 生成事件幂等键，与唯一索引一致。
+func BuildTransferKey(req request.NotificationRequest) string {
+	if req.HasTransferIndex {
+		return fmt.Sprintf("idx:%d", req.TransferIndex)
+	}
+	raw := fmt.Sprintf("%s|%s|%s|%s",
+		strings.ToLower(req.FromAddress),
+		strings.ToLower(req.ToAddress),
+		req.Amount,
+		strings.ToLower(req.TransactType),
+	)
 	sum := sha256.Sum256([]byte(raw))
-	return hex.EncodeToString(sum[:]) // 64 字符，符合 GET_LOCK 长度限制
+	return "fp:" + hex.EncodeToString(sum[:16])
+}
+
+func dedupeLockKey(req request.NotificationRequest, transferKey string) string {
+	raw := fmt.Sprintf("%d|%s|%s|%s|%s|%s",
+		req.Chain, req.Hash, req.Address, req.TransactType, req.Token, transferKey)
+	sum := sha256.Sum256([]byte(raw))
+	return hex.EncodeToString(sum[:])
 }
 
 func (n *NService) SaveOwnTx(ctx context.Context, req request.NotificationRequest) (id uint, created bool, err error) {
 	if !constant.IsNetworkSupport(req.Chain) {
 		return 0, false, errors.New("do not support network")
 	}
+	if req.Hash == "" || req.Address == "" || req.TransactType == "" {
+		return 0, false, errors.New("invalid transfer event fields")
+	}
+	// 零金额不作为有效资金事件（保留显式非空 amount 的业务数据）
+	if req.Amount == "" || req.Amount == "0" || req.Amount == "0.0" || req.Amount == "0.00" {
+		return 0, false, nil
+	}
 
-	lockKey := dedupeKey(req)
+	transferKey := BuildTransferKey(req)
+	lockKey := dedupeLockKey(req, transferKey)
 
 	err = global.NODE_DB.WithContext(ctx).Connection(func(conn *gorm.DB) error {
-		// 关键：转成会话，避免 Select/Where/Model 在多次调用间残留
 		conn = conn.Session(&gorm.Session{})
 
-		// GET_LOCK / RELEASE_LOCK 必须在同一连接
 		var got int
 		if err := conn.Raw("SELECT GET_LOCK(?,5)", lockKey).Scan(&got).Error; err != nil {
 			return fmt.Errorf("get lock failed: %w", err)
@@ -45,17 +64,17 @@ func (n *NService) SaveOwnTx(ctx context.Context, req request.NotificationReques
 			return errors.New("acquire lock timeout")
 		}
 		defer func() {
-			// 即使 ctx 已取消也要释放锁，否则锁会一直挂在这个连接上
 			_ = conn.Session(&gorm.Session{Context: context.WithoutCancel(ctx)}).
 				Exec("SELECT RELEASE_LOCK(?)", lockKey).Error
 		}()
 
-		exists, err := n.hasOwnTx(conn, req)
+		exists, existID, err := n.hasOwnTx(conn, req, transferKey)
 		if err != nil {
 			return fmt.Errorf("check own tx exists failed: %w", err)
 		}
 		if exists {
-			return nil // 已存在，created=false
+			id = existID
+			return nil
 		}
 
 		ownTx := model.OwnTransaction{
@@ -68,11 +87,18 @@ func (n *NService) SaveOwnTx(ctx context.Context, req request.NotificationReques
 			TransactType:   req.TransactType,
 			Amount:         req.Amount,
 			BlockTimestamp: req.BlockTimestamp,
+			BlockNumber:    req.BlockNumber,
+			TransferIndex:  req.TransferIndex,
+			TransferKey:    transferKey,
+			Confirmations:  0,
+			TxStatus:       model.TxStatusDetected,
 			NODE_MODEL:     common.NODE_MODEL{Status: 1},
 		}
 		if err := conn.Create(&ownTx).Error; err != nil {
 			if isDuplicateKeyErr(err) {
-				return nil // 唯一索引冲突视为已存在
+				_, existID, _ = n.hasOwnTx(conn, req, transferKey)
+				id = existID
+				return nil
 			}
 			return fmt.Errorf("create own tx failed, hash=%s: %w", req.Hash, err)
 		}
@@ -82,16 +108,20 @@ func (n *NService) SaveOwnTx(ctx context.Context, req request.NotificationReques
 	return id, created, err
 }
 
-// 存在性检查：用 conn 以便在锁所在的同一连接上执行
-func (n *NService) hasOwnTx(conn *gorm.DB, req request.NotificationRequest) (bool, error) {
-	var one int
-	err := conn.Model(&model.OwnTransaction{}).
-		Select("1").
-		Where("chain_id = ? AND hash = ? AND address = ? AND from_address = ? AND to_address = ? AND token = ? AND transact_type = ? AND amount = ? AND block_timestamp = ?",
-			req.Chain, req.Hash, req.Address, req.FromAddress, req.ToAddress, req.Token, req.TransactType, req.Amount, req.BlockTimestamp).
+func (n *NService) hasOwnTx(conn *gorm.DB, req request.NotificationRequest, transferKey string) (bool, uint, error) {
+	var row model.OwnTransaction
+	err := conn.Select("id").
+		Where("chain_id = ? AND hash = ? AND address = ? AND transact_type = ? AND token = ? AND transfer_key = ?",
+			req.Chain, req.Hash, req.Address, req.TransactType, req.Token, transferKey).
 		Limit(1).
-		Scan(&one).Error
-	return one == 1, err
+		Take(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, 0, nil
+	}
+	if err != nil {
+		return false, 0, err
+	}
+	return true, row.ID, nil
 }
 
 func (n *NService) GetOwnTxById(ctx context.Context, id string) (findOwnTx model.OwnTransaction, err error) {
@@ -109,12 +139,12 @@ func (n *NService) GetTransactionsByChainAndAddress(ctx context.Context, req req
 
 	if req.ChainIds != "" {
 		chainIds := strings.Split(req.ChainIds, ",")
-		db.Where("chain_id IN (?)", chainIds)
+		db = db.Where("chain_id IN (?)", chainIds)
 	}
 
 	if req.Addresses != "" {
 		addresses := strings.Split(req.Addresses, ",")
-		db.Where("from_address IN (?) OR to_address IN (?)", addresses, addresses)
+		db = db.Where("from_address IN (?) OR to_address IN (?) OR address IN (?)", addresses, addresses, addresses)
 	}
 
 	if err := db.Count(&total).Order("created_at desc").Offset(offset).Limit(limit).Find(&txs).Error; err != nil {

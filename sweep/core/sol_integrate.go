@@ -11,8 +11,8 @@ import (
 	"node/model/node/request"
 	"node/sweep/setup"
 	"node/utils"
-	"node/utils/redisq"
 	"node/utils/notification"
+	"node/utils/redisq"
 	"strconv"
 	"sync"
 	"time"
@@ -91,10 +91,7 @@ func SweepSolBlockchainTransaction(
 
 	wg.Wait()
 	*sweepBlockHeight = end + 1
-	if _, err := global.NODE_REDIS.Set(ctx, constantSweepBlock, *sweepBlockHeight, 0).Result(); err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
-	}
+	setup.PersistSweepProgress(ctx, chainId, *sweepBlockHeight, constantSweepBlock)
 }
 
 func SweepSolBlockchainTransactionCore(
@@ -377,6 +374,7 @@ func handleSolTransactionDetails(
 
 	notifyRequest.Hash = transaction.Signatures[0].String()
 	notifyRequest.Chain = chainId
+	notifyRequest.BlockNumber = int64(transactionResult.Slot)
 
 	if transactionResult.BlockTime != nil {
 		notifyRequest.BlockTimestamp = int(transactionResult.BlockTime.Time().Unix()) * 1000
@@ -384,7 +382,7 @@ func handleSolTransactionDetails(
 
 	isProcess := false
 
-	for _, inst := range transaction.Message.Instructions {
+	for ixIdx, inst := range transaction.Message.Instructions {
 
 		if int(inst.ProgramIDIndex) >= len(transaction.Message.AccountKeys) {
 			continue
@@ -406,6 +404,7 @@ func handleSolTransactionDetails(
 				notifyRequest.FromAddress = from.String()
 				notifyRequest.ToAddress = to.String()
 				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(amount)), 9)
+				notifyRequest.SetTransferIndex(ixIdx)
 
 				for _, v := range *publicKey {
 					targetAddress := solana.MustPublicKeyFromBase58(v)
@@ -474,6 +473,7 @@ func handleSolTransactionDetails(
 				notifyRequest.ToAddress = toOwner.String()
 				notifyRequest.Token = contractName
 				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(amount)), decimals)
+				notifyRequest.SetTransferIndex(ixIdx)
 				from = fromOwner
 				to = toOwner
 			case 12:
@@ -501,6 +501,7 @@ func handleSolTransactionDetails(
 				notifyRequest.ToAddress = toOwner.String()
 				notifyRequest.Token = contractName
 				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(amount)), decimals)
+				notifyRequest.SetTransferIndex(ixIdx)
 				from = fromOwner
 				to = toOwner
 			default:

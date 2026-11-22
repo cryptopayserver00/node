@@ -4,16 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"node/config"
 	"node/global"
-	"node/global/constant"
 	"node/model/node/request"
+	"node/outbox"
 	"node/service"
 	"node/utils"
-	NODE_Client "node/utils/http"
-)
-
-var (
-	client NODE_Client.Client
 )
 
 func NotificationRequest(ctx context.Context, req request.NotificationRequest) error {
@@ -40,12 +36,21 @@ func handleNotification(ctx context.Context, req request.NotificationRequest) er
 	}
 
 	if !created {
-		global.NODE_LOG.Info(fmt.Sprintf("own tx already existed, skip, hash: %s", req.Hash))
+		if ownId == 0 {
+			global.NODE_LOG.Info(fmt.Sprintf("own tx skipped (empty/zero amount), hash: %s", req.Hash))
+		} else {
+			global.NODE_LOG.Info(fmt.Sprintf("own tx already existed, skip, hash: %s", req.Hash))
+		}
 		return nil
 	}
 
-	if err := global.NODE_REDIS.RPush(ctx, constant.WS_NOTIFICATION, ownId).Err(); err != nil {
-		return fmt.Errorf("RPush WS_NOTIFICATION failed, ownId=%d: %w", ownId, err)
+	if global.NODE_CONFIG.Blockchain.EffectiveNotifyMode() == config.NotifyModeConfirmed {
+		global.NODE_LOG.Info(fmt.Sprintf("own tx saved, defer notify until confirmed, id=%d hash=%s", ownId, req.Hash))
+		return nil
+	}
+
+	if err := outbox.EnqueueOwnTx(ctx, ownId); err != nil {
+		return fmt.Errorf("enqueue notification failed, ownId=%d: %w", ownId, err)
 	}
 
 	return nil

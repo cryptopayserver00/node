@@ -12,9 +12,9 @@ import (
 	"node/model/node/response/tatum"
 	sweepUtils "node/sweep/utils"
 	"node/utils"
-	"node/utils/redisq"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
+	"node/utils/redisq"
 	"strconv"
 	"strings"
 	"time"
@@ -80,7 +80,7 @@ func HandleLtcBlockTransactionsByTatum(
 					continue
 				}
 
-						for i := 0; i < len(*publicKey); i++ {
+				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Inputs) > 0 {
@@ -177,7 +177,7 @@ func HandleLtcBlockTransactionsByMempool(
 					continue
 				}
 
-						for i := 0; i < len(*publicKey); i++ {
+				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Vin) > 0 {
@@ -261,6 +261,7 @@ func HandleLtcTransactionDetailsByTatum(
 		litecoinTxResponse.Time *= 1000
 	}
 	notifyRequest.BlockTimestamp = litecoinTxResponse.Time
+	notifyRequest.BlockNumber = int64(litecoinTxResponse.BlockNumber)
 
 	isProcess := false
 
@@ -269,12 +270,13 @@ func HandleLtcTransactionDetailsByTatum(
 
 			notifyRequest.FromAddress = input.Coin.Address
 
-			for _, output := range litecoinTxResponse.Outputs {
+			for outIdx, output := range litecoinTxResponse.Outputs {
 				if strings.EqualFold(output.Address, notifyRequest.FromAddress) {
 					continue
 				}
 
 				notifyRequest.Amount = output.Value
+				notifyRequest.SetTransferIndex(outIdx)
 				for _, v := range *publicKey {
 					notifyRequest.Address = v
 					notifyRequest.ToAddress = output.Address
@@ -339,6 +341,7 @@ func HandleLtcTransactionDetailsByMempool(
 	notifyRequest.Hash = litecoinTxResponse.TxId
 	notifyRequest.Chain = chainId
 	notifyRequest.BlockTimestamp = litecoinTxResponse.Status.BlockTime * 1000
+	notifyRequest.BlockNumber = int64(litecoinTxResponse.Status.Blockeight)
 
 	if len(litecoinTxResponse.Vin) == 0 || len(litecoinTxResponse.Vout) == 0 {
 		return errors.New("not support")
@@ -357,12 +360,13 @@ func HandleLtcTransactionDetailsByMempool(
 
 			notifyRequest.FromAddress = input.Prevout.Scriptpubkey_address
 
-			for _, output := range litecoinTxResponse.Vout {
+			for outIdx, output := range litecoinTxResponse.Vout {
 				if strings.EqualFold(output.Scriptpubkey_address, notifyRequest.FromAddress) {
 					continue
 				}
 
 				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
+				notifyRequest.SetTransferIndex(outIdx)
 				for _, v := range *publicKey {
 					notifyRequest.Address = v
 					notifyRequest.ToAddress = output.Scriptpubkey_address
@@ -432,7 +436,7 @@ func HandleLtcPendingBlockByTatum(
 					continue
 				}
 
-						for i := 0; i < len(*publicKey); i++ {
+				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Inputs) > 0 {
@@ -530,7 +534,7 @@ func HandleLtcPendingBlockByMempool(
 					continue
 				}
 
-						for i := 0; i < len(*publicKey); i++ {
+				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Vin) > 0 {

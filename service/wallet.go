@@ -29,7 +29,7 @@ func (n *NService) BulkStorageUserWallets(c *gin.Context, wallets request.BulkSt
 
 	err = global.NODE_DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, v := range wallets.BulkStorage {
-			created, saveErr := n.saveWalletDB(tx, v.ChainId, v.Address)
+			_, saveErr := n.saveWalletDB(tx, v.ChainId, v.Address, v.AccountRef, v.WatchFromHeight)
 			if saveErr != nil {
 				global.NODE_LOG.Error(fmt.Sprintf(
 					"BulkStorageUserWallets saveWallet failed, chainId=%d, address=%s, err=%v",
@@ -37,12 +37,7 @@ func (n *NService) BulkStorageUserWallets(c *gin.Context, wallets request.BulkSt
 				))
 				return fmt.Errorf("chain_id=%d address=%s: %w", v.ChainId, v.Address, saveErr)
 			}
-			if created {
-				pendingRedis = append(pendingRedis, v)
-			} else {
-				// 已存在也确保 Redis 同步（提交后执行）
-				pendingRedis = append(pendingRedis, v)
-			}
+			pendingRedis = append(pendingRedis, v)
 		}
 		return nil
 	})
@@ -66,7 +61,7 @@ func (n *NService) BulkStorageUserWallets(c *gin.Context, wallets request.BulkSt
 
 func (n *NService) StoreUserWallet(c *gin.Context, wallet request.StoreUserWallet) (err error) {
 	ctx := c.Request.Context()
-	return n.saveWallet(ctx, global.NODE_DB.WithContext(ctx), wallet.ChainId, wallet.Address)
+	return n.saveWallet(ctx, global.NODE_DB.WithContext(ctx), wallet.ChainId, wallet.Address, wallet.AccountRef, wallet.WatchFromHeight)
 }
 
 func (n *NService) HasWalletByChainIdAndAddress(ctx context.Context, chainId uint, address string) (hasWallet bool, err error) {
@@ -82,8 +77,8 @@ func (n *NService) hasWallet(tx *gorm.DB, chainId uint, address string) (bool, e
 	return count > 0, nil
 }
 
-// saveWalletDB 只写库，返回是否新插入。
-func (n *NService) saveWalletDB(tx *gorm.DB, chainId uint, address string) (created bool, err error) {
+// saveWalletDB 只写库，返回是否新插入。已存在时会更新 account_ref / watch_from_height。
+func (n *NService) saveWalletDB(tx *gorm.DB, chainId uint, address, accountRef string, watchFromHeight int64) (created bool, err error) {
 	if !constant.IsNetworkSupport(chainId) {
 		return false, errors.New("do not support the network")
 	}
@@ -92,19 +87,34 @@ func (n *NService) saveWalletDB(tx *gorm.DB, chainId uint, address string) (crea
 		return false, fmt.Errorf("do not support wallet address: id: %d, address: %s", chainId, address)
 	}
 
-	hasWallet, err := n.hasWallet(tx, chainId, address)
-	if err != nil {
-		return false, err
-	}
-	if hasWallet {
+	var existing model.Wallet
+	findErr := tx.Where("chain_id = ? AND address = ?", chainId, address).Take(&existing).Error
+	if findErr == nil {
+		updates := map[string]any{}
+		if accountRef != "" {
+			updates["account_ref"] = accountRef
+		}
+		if watchFromHeight > 0 {
+			updates["watch_from_height"] = watchFromHeight
+		}
+		if len(updates) > 0 {
+			if err = tx.Model(&existing).Updates(updates).Error; err != nil {
+				return false, err
+			}
+		}
 		return false, nil
+	}
+	if !errors.Is(findErr, gorm.ErrRecordNotFound) {
+		return false, findErr
 	}
 
 	saveWallet := model.Wallet{
-		Address:     address,
-		ChainId:     chainId,
-		NetworkName: constant.GetChainName(chainId),
-		NODE_MODEL:  common.NODE_MODEL{Status: 1},
+		Address:         address,
+		ChainId:         chainId,
+		NetworkName:     constant.GetChainName(chainId),
+		AccountRef:      accountRef,
+		WatchFromHeight: watchFromHeight,
+		NODE_MODEL:      common.NODE_MODEL{Status: 1},
 	}
 	if err = tx.Create(&saveWallet).Error; err != nil {
 		if isDuplicateKeyErr(err) {
@@ -115,8 +125,8 @@ func (n *NService) saveWalletDB(tx *gorm.DB, chainId uint, address string) (crea
 	return true, nil
 }
 
-func (n *NService) saveWallet(ctx context.Context, tx *gorm.DB, chainId uint, address string) (err error) {
-	_, err = n.saveWalletDB(tx, chainId, address)
+func (n *NService) saveWallet(ctx context.Context, tx *gorm.DB, chainId uint, address, accountRef string, watchFromHeight int64) (err error) {
+	_, err = n.saveWalletDB(tx, chainId, address, accountRef, watchFromHeight)
 	if err != nil {
 		return err
 	}

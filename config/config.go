@@ -17,9 +17,18 @@ type Server struct {
 	BlockchainPlugin BlockchainPlugin `mapstructure:"blockchain-plugin" json:"blockchain-plugin" yaml:"blockchain-plugin"`
 	Telegram         Telegram         `mapstructure:"telegram" json:"telegram" yaml:"telegram"`
 	Wss              Wss              `mapstructure:"wss" json:"wss" yaml:"wss"`
+	Webhook          Webhook          `mapstructure:"webhook" json:"webhook" yaml:"webhook"`
 	FreeCoin         FreeCoin         `mapstructure:"freecoin" json:"freecoin" yaml:"freecoin"`
 	Key              Key              `mapstructure:"key" json:"key" yaml:"key"`
 	Rpc              Rpc              `mapstructure:"rpc" json:"rpc" yaml:"rpc"`
+}
+
+// Webhook 资金事件 HTTP 回调。secret 用于 HMAC-SHA256 签名。
+type Webhook struct {
+	Enabled        bool     `mapstructure:"enabled" json:"enabled" yaml:"enabled"`
+	Urls           []string `mapstructure:"urls" json:"urls" yaml:"urls"`
+	Secret         string   `mapstructure:"secret" json:"secret" yaml:"secret"`
+	TimeoutSeconds int      `mapstructure:"timeout-seconds" json:"timeout-seconds" yaml:"timeout-seconds"`
 }
 
 // Security 服务间鉴权与跨域白名单。api-token 为空时受保护接口一律拒绝（fail-closed）。
@@ -137,22 +146,38 @@ type Blockchain struct {
 	OpenSweepBlock bool `mapstructure:"open-sweep-block" json:"open-sweep-block" yaml:"open-sweep-block"`
 	SweepMainnet   bool `mapstructure:"sweep-mainnet" json:"sweep-mainnet" yaml:"sweep-mainnet"`
 	// InnerTx 开启后用 Alchemy debug_trace 扫内部转账（需配置 alchemy key）；默认 false。
-	InnerTx        bool `mapstructure:"inner-tx" json:"inner-tx" yaml:"inner-tx"`
-	Ethereum       bool `mapstructure:"ethereum" json:"ethereum" yaml:"ethereum"`
-	Bitcoin        bool `mapstructure:"bitcoin" json:"bitcoin" yaml:"bitcoin"`
-	Tron           bool `mapstructure:"tron" json:"tron" yaml:"tron"`
-	Bsc            bool `mapstructure:"bsc" json:"bsc" yaml:"bsc"`
-	Litecoin       bool `mapstructure:"litecoin" json:"litecoin" yaml:"litecoin"`
-	Op             bool `mapstructure:"op" json:"op" yaml:"op"`
-	ArbitrumOne    bool `mapstructure:"arbitrum-one" json:"arbitrum-one" yaml:"arbitrum-one"`
-	ArbitrumNova   bool `mapstructure:"arbitrum-nova" json:"arbitrum-nova" yaml:"arbitrum-nova"`
-	Solana         bool `mapstructure:"solana" json:"solana" yaml:"solana"`
-	Ton            bool `mapstructure:"ton" json:"ton" yaml:"ton"`
-	Xrp            bool `mapstructure:"xrp" json:"xrp" yaml:"xrp"`
-	Bch            bool `mapstructure:"bch" json:"bch" yaml:"bch"`
-	Pol            bool `mapstructure:"pol" json:"pol" yaml:"pol"`
-	Avax           bool `mapstructure:"avax" json:"avax" yaml:"avax"`
-	Base           bool `mapstructure:"base" json:"base" yaml:"base"`
+	InnerTx bool `mapstructure:"inner-tx" json:"inner-tx" yaml:"inner-tx"`
+	// NotifyMode: legacy=扫到即推送；confirmed=达到确认数后再推送。默认 legacy。
+	NotifyMode   string `mapstructure:"notify-mode" json:"notify-mode" yaml:"notify-mode"`
+	Ethereum     bool   `mapstructure:"ethereum" json:"ethereum" yaml:"ethereum"`
+	Bitcoin      bool   `mapstructure:"bitcoin" json:"bitcoin" yaml:"bitcoin"`
+	Tron         bool   `mapstructure:"tron" json:"tron" yaml:"tron"`
+	Bsc          bool   `mapstructure:"bsc" json:"bsc" yaml:"bsc"`
+	Litecoin     bool   `mapstructure:"litecoin" json:"litecoin" yaml:"litecoin"`
+	Op           bool   `mapstructure:"op" json:"op" yaml:"op"`
+	ArbitrumOne  bool   `mapstructure:"arbitrum-one" json:"arbitrum-one" yaml:"arbitrum-one"`
+	ArbitrumNova bool   `mapstructure:"arbitrum-nova" json:"arbitrum-nova" yaml:"arbitrum-nova"`
+	Solana       bool   `mapstructure:"solana" json:"solana" yaml:"solana"`
+	Ton          bool   `mapstructure:"ton" json:"ton" yaml:"ton"`
+	Xrp          bool   `mapstructure:"xrp" json:"xrp" yaml:"xrp"`
+	Bch          bool   `mapstructure:"bch" json:"bch" yaml:"bch"`
+	Pol          bool   `mapstructure:"pol" json:"pol" yaml:"pol"`
+	Avax         bool   `mapstructure:"avax" json:"avax" yaml:"avax"`
+	Base         bool   `mapstructure:"base" json:"base" yaml:"base"`
+}
+
+const (
+	NotifyModeLegacy    = "legacy"
+	NotifyModeConfirmed = "confirmed"
+)
+
+func (b Blockchain) EffectiveNotifyMode() string {
+	switch strings.ToLower(strings.TrimSpace(b.NotifyMode)) {
+	case NotifyModeConfirmed:
+		return NotifyModeConfirmed
+	default:
+		return NotifyModeLegacy
+	}
 }
 
 type BlockchainPlugin struct {

@@ -85,6 +85,42 @@ func buildContractIndex() {
 	}
 }
 
+// ReloadContractIndexFromAssets 用 DB 资产表重建内存索引（DB 优先于 JSON）。
+func ReloadContractIndexFromAssets() error {
+	if global.NODE_DB == nil {
+		return nil
+	}
+	var assets []model.Asset
+	if err := global.NODE_DB.Where("enabled = ? AND status = ?", true, 1).Find(&assets).Error; err != nil {
+		return err
+	}
+	if len(assets) == 0 {
+		return nil
+	}
+
+	idx := make(map[uint]map[string]model.Coin)
+	for _, a := range assets {
+		coin := model.Coin{
+			Symbol:     a.Symbol,
+			Decimals:   a.Decimals,
+			Contract:   a.Contract,
+			IsMainCoin: a.IsNative,
+		}
+		key, ok := normalizeContractKey(a.ChainId, a.Contract, a.IsNative)
+		if !ok {
+			continue
+		}
+		if _, exists := idx[a.ChainId]; !exists {
+			idx[a.ChainId] = make(map[string]model.Coin)
+		}
+		idx[a.ChainId][key] = coin
+	}
+
+	contractIndexOnce.Do(func() {}) // ensure Once 已触发，避免后续 Do 覆盖
+	contractIndex = idx
+	return nil
+}
+
 func IsChainJoinSweep(chainId uint) bool {
 	if chainId == 0 {
 		return false

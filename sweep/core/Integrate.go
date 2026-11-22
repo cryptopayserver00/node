@@ -123,10 +123,7 @@ func SweepBlockchainTransaction(
 
 	wg.Wait()
 	*sweepBlockHeight = end + 1
-	if _, err := global.NODE_REDIS.Set(ctx, constantSweepBlock, *sweepBlockHeight, 0).Result(); err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
-	}
+	setup.PersistSweepProgress(ctx, chainId, *sweepBlockHeight, constantSweepBlock)
 }
 
 func SweepBlockchainTransactionCore(
@@ -337,6 +334,9 @@ func handleTransactionDetails(
 	notifyRequest.Hash = rpcDetail.Result.Hash
 	notifyRequest.Chain = chainId
 	notifyRequest.BlockTimestamp = int(blockTimeStamp) * 1000
+	if blockNum, bnErr := utils.HexStringToUint64(rpcDetail.Result.BlockNumber); bnErr == nil {
+		notifyRequest.BlockNumber = int64(blockNum)
+	}
 
 	if global.NODE_CONFIG.Blockchain.InnerTx {
 		err = handleInternalTransaction(ctx, client, chainId, publicKey, notifyRequest, rpcDetail)

@@ -23,6 +23,11 @@ func (mRouter *MainRouter) InitRouter(Router *gin.RouterGroup) {
 		protected.POST("bulkStoreUserWallet", apiHandler.BulkStoreUserWallet)
 		protected.GET("getTransactionsByChainAndAddress", apiHandler.GetTransactionsByChainAndAddress)
 		protected.GET("coinFree", apiHandler.GetFreeCoin)
+		protected.GET("listAssets", apiHandler.ListAssets)
+		protected.POST("upsertAsset", apiHandler.UpsertAsset)
+		protected.POST("setAssetEnabled", apiHandler.SetAssetEnabled)
+		protected.GET("opsStatus", apiHandler.GetOpsStatus)
+		protected.POST("retryFailedOutbox", apiHandler.RetryFailedOutbox)
 	}
 
 	ws := Router.Group("/")

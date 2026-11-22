@@ -13,14 +13,13 @@ import (
 	sweepUtils "node/sweep/utils"
 	"node/sweep/utils/tron"
 	"node/utils"
-	"node/utils/redisq"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
+	"node/utils/redisq"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
 )
 
 func SetupTronLatestBlockHeight(ctx context.Context, client NODE_Client.Client, chainId uint) {
@@ -96,10 +95,7 @@ func SweepTronBlockchainTransaction(
 
 	wg.Wait()
 	*sweepBlockHeight = end + 1
-	if _, err := global.NODE_REDIS.Set(ctx, constantSweepBlock, *sweepBlockHeight, 0).Result(); err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
-	}
+	setup.PersistSweepProgress(ctx, chainId, *sweepBlockHeight, constantSweepBlock)
 }
 
 func SweepTronBlockchainTransactionCore(
@@ -174,7 +170,6 @@ func SweepTronBlockchainTransactionCore(
 
 				isMonitorTx := false
 
-		
 				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx = tron.IsHandleTransaction(
 						chainId,
@@ -302,6 +297,7 @@ func handleTronTransactionDetails(
 	notifyRequest.Hash = txResponse.TxID
 	notifyRequest.Chain = chainId
 	notifyRequest.BlockTimestamp = txResponse.RawData.Timestamp
+	notifyRequest.BlockNumber = int64(txResponse.BlockNumber)
 
 	contractType := txResponse.RawData.Contract[0].Type
 
@@ -580,7 +576,6 @@ func SweepTronBlockchainPendingBlock(
 
 				isMonitorTx := false
 
-		
 				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx = tron.IsHandleTransaction(
 						chainId,

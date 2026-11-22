@@ -11,9 +11,9 @@ import (
 	"node/model/node/response/mempool"
 	sweepUtils "node/sweep/utils"
 	"node/utils"
-	"node/utils/redisq"
 	NODE_Client "node/utils/http"
 	"node/utils/notification"
+	"node/utils/redisq"
 	"strings"
 	"time"
 )
@@ -87,7 +87,7 @@ func HandleBchBlockTransactionsByMempool(
 					continue
 				}
 
-						for i := 0; i < len(*publicKey); i++ {
+				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Vin) > 0 {
@@ -154,6 +154,7 @@ func HandleBchTransactionDetailsByMempool(
 	notifyRequest.Hash = bitcoincashTxResponse.TxId
 	notifyRequest.Chain = chainId
 	notifyRequest.BlockTimestamp = bitcoincashTxResponse.Status.BlockTime * 1000
+	notifyRequest.BlockNumber = int64(bitcoincashTxResponse.Status.Blockeight)
 
 	if len(bitcoincashTxResponse.Vin) == 0 || len(bitcoincashTxResponse.Vout) == 0 {
 		return errors.New("not support")
@@ -172,12 +173,13 @@ func HandleBchTransactionDetailsByMempool(
 			notifyRequest.FromAddress = input.Prevout.Scriptpubkey_address
 			notifyRequest.Token = contractName
 
-			for _, output := range bitcoincashTxResponse.Vout {
+			for outIdx, output := range bitcoincashTxResponse.Vout {
 				if strings.EqualFold(output.Scriptpubkey_address, notifyRequest.FromAddress) {
 					continue
 				}
 
 				notifyRequest.Amount = utils.CalculateBalance(big.NewInt(int64(output.Value)), decimals)
+				notifyRequest.SetTransferIndex(outIdx)
 				for _, v := range *publicKey {
 					notifyRequest.Address = v
 					notifyRequest.ToAddress = output.Scriptpubkey_address
@@ -272,7 +274,7 @@ func HandleBchPendingBlockByMempool(
 					continue
 				}
 
-						for i := 0; i < len(*publicKey); i++ {
+				for i := 0; i < len(*publicKey); i++ {
 					isMonitorTx := false
 
 					if len(transaction.Vin) > 0 {

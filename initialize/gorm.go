@@ -20,10 +20,18 @@ func Gorm() *gorm.DB {
 
 func RegisterTables() {
 	db := global.NODE_DB
+
+	if err := migrateTransferEventSchema(db); err != nil {
+		global.NODE_LOG.Error("db: migrate transfer events failed", zap.Error(err))
+		os.Exit(0)
+	}
+
 	if err := db.AutoMigrate(
 		model.Wallet{},
-		// model.Transaction{},
 		model.OwnTransaction{},
+		model.SweepCursor{},
+		model.Asset{},
+		model.NotificationOutbox{},
 	); err != nil {
 		global.NODE_LOG.Error("db: register table failed", zap.Error(err))
 		os.Exit(0)

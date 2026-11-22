@@ -1,8 +1,30 @@
 package request
 
 type StoreUserWallet struct {
-	Address string `json:"address" form:"address" binding:"required"`
-	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Address         string `json:"address" form:"address" binding:"required"`
+	ChainId         uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	AccountRef      string `json:"account_ref" form:"account_ref"`
+	WatchFromHeight int64  `json:"watch_from_height" form:"watch_from_height"`
+}
+
+type UpsertAssetRequest struct {
+	ChainId  uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Contract string `json:"contract" form:"contract"`
+	Symbol   string `json:"symbol" form:"symbol" binding:"required"`
+	Decimals int    `json:"decimals" form:"decimals" binding:"required"`
+	Standard string `json:"standard" form:"standard"`
+	IsNative bool   `json:"is_native" form:"is_native"`
+	Enabled  *bool  `json:"enabled" form:"enabled"`
+}
+
+type ListAssetsRequest struct {
+	ChainId uint `json:"chain_id" form:"chain_id"`
+}
+
+type SetAssetEnabledRequest struct {
+	ChainId  uint   `json:"chain_id" form:"chain_id" binding:"required"`
+	Contract string `json:"contract" form:"contract"`
+	Enabled  bool   `json:"enabled" form:"enabled"`
 }
 
 type BulkStoreUserWallet struct {
@@ -44,7 +66,6 @@ type SendMessageToTelegram struct {
 type RevokeTelegramKey struct {
 	AuthKey string `json:"auth_key" form:"auth_key" binding:"required"`
 }
-
 
 // GetChainTransactions 通用「按地址查交易」请求（EVM 及同类链）。
 type GetChainTransactions struct {
@@ -184,4 +205,3 @@ type GetFreeCoin struct {
 	Coin    string `json:"coin" form:"coin" binding:"required"`
 	Amount  string `json:"amount" form:"amount"`
 }
-

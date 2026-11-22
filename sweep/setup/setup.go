@@ -7,6 +7,7 @@ import (
 	"node/global"
 	"node/global/constant"
 	"node/model"
+	"node/model/common"
 	"node/sweep/utils"
 	"strconv"
 
@@ -195,7 +196,6 @@ var (
 	BaseSepoliaSweepBlockHeight  int64
 )
 
-
 func SetupPublicKey(ctx context.Context) {
 	var err error
 	for _, v := range SweepPublicKeyArray {
@@ -244,6 +244,9 @@ func SetupLatestBlockHeight(ctx context.Context, chainId uint, blockNumber int64
 		return
 	}
 	*st.Latest = blockNumber
+	persistSweepCursor(ctx, chainId, func(c *model.SweepCursor) {
+		c.TipHeight = blockNumber
+	})
 }
 
 func SetupCacheBlockHeight(ctx context.Context, chainId uint) {
@@ -257,7 +260,14 @@ func SetupCacheBlockHeight(ctx context.Context, chainId uint) {
 	cacheBlockHeightString, err := global.NODE_REDIS.Get(ctx, st.CacheKey).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			*st.Cache = *st.Latest
+			if cursor, ok := loadSweepCursor(ctx, chainId); ok && cursor.CacheHeight > 0 {
+				*st.Cache = cursor.CacheHeight
+			} else {
+				*st.Cache = *st.Latest
+			}
+			if *st.Cache > 0 {
+				_, _ = global.NODE_REDIS.Set(ctx, st.CacheKey, *st.Cache, 0).Result()
+			}
 		} else {
 			global.NODE_LOG.Error(err.Error())
 		}
@@ -280,15 +290,50 @@ func SetupSweepBlockHeight(ctx context.Context, chainId uint) {
 	sweepBlockHeightString, err := global.NODE_REDIS.Get(ctx, st.SweepKey).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			*st.Sweep = *st.Cache
+			if cursor, ok := loadSweepCursor(ctx, chainId); ok && cursor.SweepHeight > 0 {
+				*st.Sweep = cursor.SweepHeight
+			} else {
+				*st.Sweep = *st.Cache
+			}
+			if *st.Sweep > 0 {
+				_, _ = global.NODE_REDIS.Set(ctx, st.SweepKey, *st.Sweep, 0).Result()
+			}
 		} else {
 			global.NODE_LOG.Error(err.Error())
+			return
 		}
+	} else {
+		*st.Sweep, err = strconv.ParseInt(sweepBlockHeightString, 10, 64)
+		if err != nil {
+			global.NODE_LOG.Error(err.Error())
+		}
+	}
+	applyWatchFromHeight(ctx, chainId, st)
+}
+
+// applyWatchFromHeight：若钱包配置了 watch_from_height，扫块起点不能高于该值（需要回扫历史）。
+func applyWatchFromHeight(ctx context.Context, chainId uint, st *ChainState) {
+	if global.NODE_DB == nil || st == nil {
 		return
 	}
-	*st.Sweep, err = strconv.ParseInt(sweepBlockHeightString, 10, 64)
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
+	var minWatch int64
+	err := global.NODE_DB.WithContext(ctx).Model(&model.Wallet{}).
+		Select("MIN(watch_from_height)").
+		Where("chain_id = ? AND watch_from_height > 0 AND deleted_at IS NULL", chainId).
+		Scan(&minWatch).Error
+	if err != nil || minWatch <= 0 {
+		return
+	}
+	if *st.Sweep == 0 || *st.Sweep > minWatch {
+		global.NODE_LOG.Info(fmt.Sprintf(
+			"apply watch_from_height: chain=%d sweep %d -> %d",
+			chainId, *st.Sweep, minWatch,
+		))
+		*st.Sweep = minWatch
+		_, _ = global.NODE_REDIS.Set(ctx, st.SweepKey, minWatch, 0).Result()
+		persistSweepCursor(ctx, chainId, func(c *model.SweepCursor) {
+			c.SweepHeight = minWatch
+		})
 	}
 }
 
@@ -325,6 +370,10 @@ func UpdateCacheBlockHeight(ctx context.Context, chainId uint) {
 	if _, err := global.NODE_REDIS.Set(ctx, st.CacheKey, *st.Latest, 0).Result(); err != nil {
 		global.NODE_LOG.Error(err.Error())
 	}
+	persistSweepCursor(ctx, chainId, func(c *model.SweepCursor) {
+		c.TipHeight = *st.Latest
+		c.CacheHeight = *st.Cache
+	})
 }
 
 func UpdateSweepBlockHeight(ctx context.Context, chainId uint) {
@@ -340,6 +389,81 @@ func UpdateSweepBlockHeight(ctx context.Context, chainId uint) {
 	}
 	*st.Sweep = *st.Cache
 	if _, err := global.NODE_REDIS.Set(ctx, st.SweepKey, *st.Cache, 0).Result(); err != nil {
+		global.NODE_LOG.Error(err.Error())
+	}
+	persistSweepCursor(ctx, chainId, func(c *model.SweepCursor) {
+		c.CacheHeight = *st.Cache
+		c.SweepHeight = *st.Sweep
+	})
+}
+
+// PersistSweepProgress 扫块推进后同步 Redis + DB 水位。
+func PersistSweepProgress(ctx context.Context, chainId uint, sweepHeight int64, redisSweepKey string) {
+	if sweepHeight <= 0 || !utils.IsChainJoinSweep(chainId) {
+		return
+	}
+	st, ok := GetChainState(chainId)
+	if ok {
+		*st.Sweep = sweepHeight
+	}
+	if _, err := global.NODE_REDIS.Set(ctx, redisSweepKey, sweepHeight, 0).Result(); err != nil {
+		global.NODE_LOG.Error(err.Error())
+	}
+	persistSweepCursor(ctx, chainId, func(c *model.SweepCursor) {
+		c.SweepHeight = sweepHeight
+		if st, ok := GetChainState(chainId); ok {
+			c.TipHeight = *st.Latest
+			c.CacheHeight = *st.Cache
+		}
+	})
+	tip := sweepHeight
+	if st, ok := GetChainState(chainId); ok && *st.Latest > 0 {
+		tip = *st.Latest
+	}
+	UpdateConfirmations(ctx, chainId, tip)
+}
+
+func loadSweepCursor(ctx context.Context, chainId uint) (model.SweepCursor, bool) {
+	var cursor model.SweepCursor
+	err := global.NODE_DB.WithContext(ctx).Where("chain_id = ?", chainId).Take(&cursor).Error
+	if err != nil {
+		return model.SweepCursor{}, false
+	}
+	return cursor, true
+}
+
+func persistSweepCursor(ctx context.Context, chainId uint, mutate func(*model.SweepCursor)) {
+	if global.NODE_DB == nil {
+		return
+	}
+	var cursor model.SweepCursor
+	err := global.NODE_DB.WithContext(ctx).Where("chain_id = ?", chainId).Take(&cursor).Error
+	if err != nil {
+		cursor = model.SweepCursor{
+			ChainId:     chainId,
+			NetworkName: constant.GetChainName(chainId),
+			NODE_MODEL:  common.NODE_MODEL{Status: 1},
+		}
+		mutate(&cursor)
+		if createErr := global.NODE_DB.WithContext(ctx).Create(&cursor).Error; createErr != nil {
+			// 并发创建时改为更新
+			_ = global.NODE_DB.WithContext(ctx).Where("chain_id = ?", chainId).
+				Assign(map[string]any{
+					"tip_height":   cursor.TipHeight,
+					"cache_height": cursor.CacheHeight,
+					"sweep_height": cursor.SweepHeight,
+					"network_name": cursor.NetworkName,
+				}).FirstOrCreate(&model.SweepCursor{ChainId: chainId}).Error
+		}
+		return
+	}
+	mutate(&cursor)
+	if err := global.NODE_DB.WithContext(ctx).Model(&cursor).Updates(map[string]any{
+		"tip_height":   cursor.TipHeight,
+		"cache_height": cursor.CacheHeight,
+		"sweep_height": cursor.SweepHeight,
+		"network_name": constant.GetChainName(chainId),
+	}).Error; err != nil {
 		global.NODE_LOG.Error(err.Error())
 	}
 }
@@ -373,5 +497,20 @@ func GetBlockHeight(ctx context.Context, chainId uint) (string, string, string, 
 	latestBlockHeightString, _ := global.NODE_REDIS.Get(ctx, st.LatestKey).Result()
 	cacheBlockHeightString, _ := global.NODE_REDIS.Get(ctx, st.CacheKey).Result()
 	sweepBlockHeightString, _ := global.NODE_REDIS.Get(ctx, st.SweepKey).Result()
+
+	// Redis 缺失时回退 DB 水位
+	if latestBlockHeightString == "" || cacheBlockHeightString == "" || sweepBlockHeightString == "" {
+		if cursor, ok := loadSweepCursor(ctx, chainId); ok {
+			if latestBlockHeightString == "" && cursor.TipHeight > 0 {
+				latestBlockHeightString = strconv.FormatInt(cursor.TipHeight, 10)
+			}
+			if cacheBlockHeightString == "" && cursor.CacheHeight > 0 {
+				cacheBlockHeightString = strconv.FormatInt(cursor.CacheHeight, 10)
+			}
+			if sweepBlockHeightString == "" && cursor.SweepHeight > 0 {
+				sweepBlockHeightString = strconv.FormatInt(cursor.SweepHeight, 10)
+			}
+		}
+	}
 	return latestBlockHeightString, cacheBlockHeightString, sweepBlockHeightString, nil
 }

@@ -92,10 +92,7 @@ func SweepBchBlockchainTransaction(
 
 	wg.Wait()
 	*sweepBlockHeight = end + 1
-	if _, err := global.NODE_REDIS.Set(ctx, constantSweepBlock, *sweepBlockHeight, 0).Result(); err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
-		return
-	}
+	setup.PersistSweepProgress(ctx, chainId, *sweepBlockHeight, constantSweepBlock)
 }
 
 func SweepBchBlockchainTransactionDetails(

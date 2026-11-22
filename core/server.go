@@ -31,6 +31,7 @@ func RunWindowsServer() {
 
 	if global.NODE_CONFIG.System.UseRedis {
 		initialize.Redis()
+		task.RunOutboxRetry(ctx)
 	}
 
 	if global.NODE_CONFIG.System.UseMemcache {
