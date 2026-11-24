@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"node/global"
@@ -316,23 +317,25 @@ func applyWatchFromHeight(ctx context.Context, chainId uint, st *ChainState) {
 	if global.NODE_DB == nil || st == nil {
 		return
 	}
-	var minWatch int64
+	// 无匹配行时 MIN() 返回 NULL，不能直接 Scan 到 int64
+	var minWatch sql.NullInt64
 	err := global.NODE_DB.WithContext(ctx).Model(&model.Wallet{}).
 		Select("MIN(watch_from_height)").
 		Where("chain_id = ? AND watch_from_height > 0 AND deleted_at IS NULL", chainId).
 		Scan(&minWatch).Error
-	if err != nil || minWatch <= 0 {
+	if err != nil || !minWatch.Valid || minWatch.Int64 <= 0 {
 		return
 	}
-	if *st.Sweep == 0 || *st.Sweep > minWatch {
+	height := minWatch.Int64
+	if *st.Sweep == 0 || *st.Sweep > height {
 		global.NODE_LOG.Info(fmt.Sprintf(
 			"apply watch_from_height: chain=%d sweep %d -> %d",
-			chainId, *st.Sweep, minWatch,
+			chainId, *st.Sweep, height,
 		))
-		*st.Sweep = minWatch
-		_, _ = global.NODE_REDIS.Set(ctx, st.SweepKey, minWatch, 0).Result()
+		*st.Sweep = height
+		_, _ = global.NODE_REDIS.Set(ctx, st.SweepKey, height, 0).Result()
 		persistSweepCursor(ctx, chainId, func(c *model.SweepCursor) {
-			c.SweepHeight = minWatch
+			c.SweepHeight = height
 		})
 	}
 }
