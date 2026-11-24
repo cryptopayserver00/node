@@ -1,0 +1,34 @@
+# git / IDE
+.git
+.gitignore
+.idea
+.vscode
+*.iml
+*.sw?
+.DS_Store
+
+# local env / secrets — 运行时挂载，不要打进镜像
+.env
+.env.*
+config.yaml
+
+# 构建与部署无关
+Dockerfile
+docker-compose*.yml
+Makefile
+README.md
+**/*.md
+
+# 本地产物 / 日志 / 调试
+log/
+**/log/
+latest_log
+gva
+__debug_bin*
+*.exe
+*.test
+coverage.*
+*.out
+
+# 可选：本地 json 若很大且运行时挂载，可取消下一行注释
+# json/
