@@ -20,6 +20,10 @@ security:
   ws-allow-origins:
     - "http://localhost:3000"
 
+# CoinGecko 价格源（逗号分隔多个 demo key）
+coingecko:
+  api-key: "CG-xxx"
+
 blockchain:
   open-sweep-block: true
   sweep-mainnet: true
@@ -132,6 +136,10 @@ freecoin:
     public_key: ""
     private_key: ""
     mnemonic: ""
+
+coingecko:
+  # comma-separated CoinGecko demo API keys
+  api-key: ""
 
 key:
   trongrid_mainnet_key: ""

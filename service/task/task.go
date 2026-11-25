@@ -12,6 +12,7 @@ var (
 
 func RunTask(ctx context.Context) {
 	go RunApiKeyTestTask(ctx)
+	go RunCoingeckoTask(ctx)
 	// go RunDailyReportTask(ctx)
 	// go RunGetPendingTxNumberTask(ctx)
 }

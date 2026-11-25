@@ -39,6 +39,9 @@ func Routers() *gin.Engine {
 		Group.GET("/health", func(c *gin.Context) {
 			c.JSON(http.StatusOK, "ok")
 		})
+		Group.HEAD("/health", func(c *gin.Context) {
+			c.Status(http.StatusOK)
+		})
 
 		MainRouter.InitRouter(Group)
 	}

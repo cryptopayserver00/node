@@ -21,6 +21,12 @@ type Server struct {
 	FreeCoin         FreeCoin         `mapstructure:"freecoin" json:"freecoin" yaml:"freecoin"`
 	Key              Key              `mapstructure:"key" json:"key" yaml:"key"`
 	Rpc              Rpc              `mapstructure:"rpc" json:"rpc" yaml:"rpc"`
+	Coingecko        Coingecko        `mapstructure:"coingecko" json:"coingecko" yaml:"coingecko"`
+}
+
+// Coingecko 价格源。api-key 支持逗号分隔多个 demo key，任务会随机轮询。
+type Coingecko struct {
+	ApiKey string `mapstructure:"api-key" json:"api-key" yaml:"api-key"`
 }
 
 // Webhook 资金事件 HTTP 回调。secret 用于 HMAC-SHA256 签名。

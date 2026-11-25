@@ -32,6 +32,8 @@ func RunWindowsServer() {
 	if global.NODE_CONFIG.System.UseRedis {
 		initialize.Redis()
 		task.RunOutboxRetry(ctx)
+		// Shared market-price cache for deshop / cryptopayserver (strand not wired yet).
+		go task.RunCoingeckoTask(ctx)
 	}
 
 	if global.NODE_CONFIG.System.UseMemcache {

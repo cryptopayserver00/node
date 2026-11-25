@@ -23,6 +23,7 @@ func (mRouter *MainRouter) InitRouter(Router *gin.RouterGroup) {
 		protected.POST("bulkStoreUserWallet", apiHandler.BulkStoreUserWallet)
 		protected.GET("getTransactionsByChainAndAddress", apiHandler.GetTransactionsByChainAndAddress)
 		protected.GET("coinFree", apiHandler.GetFreeCoin)
+		protected.GET("cryptoPrice", apiHandler.GetCryptoPrice)
 		protected.GET("listAssets", apiHandler.ListAssets)
 		protected.POST("upsertAsset", apiHandler.UpsertAsset)
 		protected.POST("setAssetEnabled", apiHandler.SetAssetEnabled)
