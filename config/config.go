@@ -79,7 +79,10 @@ type Key struct {
 
 type FreeCoin struct {
 	// Enabled 默认 false：未显式打开时拒绝 faucet，避免热钱包被任意打币。
-	Enabled     bool        `mapstructure:"enabled" json:"enabled" yaml:"enabled"`
+	Enabled bool `mapstructure:"enabled" json:"enabled" yaml:"enabled"`
+	// MaxUsd 单次领取上限（约等值 USD），按币种现价换算成币数量；稳定币≈面值。
+	MaxUsd string `mapstructure:"max-usd" json:"max-usd" yaml:"max-usd"`
+	// MaxAmount 兼容旧配置：绝对币数量上限。若同时配置了 MaxUsd，以 MaxUsd 为准。
 	MaxAmount   string      `mapstructure:"max-amount" json:"max-amount" yaml:"max-amount"`
 	Bitcoin     Bitcoin     `mapstructure:"bitcoin" json:"bitcoin" yaml:"bitcoin"`
 	Ethereum    Ethereum    `mapstructure:"ethereum" json:"ethereum" yaml:"ethereum"`

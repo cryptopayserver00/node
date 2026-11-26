@@ -22,7 +22,7 @@ func (n *NodeApi) GetAvaxTransactions(c *gin.Context) {
 		return
 	}
 
-	result, err := service.NodeService.GetAvaxTransactions(tx)
+	result, err := service.NodeService.GetAvaxTransactions(c.Request.Context(), tx)
 	if err != nil {
 		res = common.FailWithDetailed(common.Error, err.Error(), result)
 		c.JSON(http.StatusOK, res)
@@ -30,6 +30,5 @@ func (n *NodeApi) GetAvaxTransactions(c *gin.Context) {
 	}
 
 	res = common.OkWithDetailed(common.Success, "Request data successful", result)
-
 	c.JSON(http.StatusOK, res)
 }

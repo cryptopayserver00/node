@@ -26,6 +26,8 @@ var (
 	SOL      = "SOL"
 	TON      = "TON"
 	AVAX     = "AVAX"
+	XRP      = "XRP"
+	BCH      = "BCH"
 
 	SWAP = "SWAP"
 )

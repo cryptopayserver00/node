@@ -186,6 +186,7 @@ type GetSplTransactions struct {
 type GetTonTransactions struct {
 	ChainId uint   `json:"chain_id" form:"chain_id" binding:"required"`
 	Address string `json:"address" form:"address" binding:"required"`
+	Asset   string `json:"asset" form:"asset"`
 }
 
 type GetTonCoinTransactions struct {

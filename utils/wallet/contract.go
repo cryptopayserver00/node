@@ -2,14 +2,26 @@ package wallet
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"node/sweep/utils/erc20"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+)
+
+const (
+	// Post-Glamsterdam (Sepolia 2026-10-06+): first transfer to a never-used
+	// account needs ~204_600 gas. Keep a floor above that when estimate fails.
+	evmNativeGasFloor = uint64(250_000)
+	evmTokenGasFloor  = uint64(350_000)
+	evmGasBufferPct   = uint64(20) // +20% on estimate
+	evmReceiptWait    = 60 * time.Second
+	evmReceiptPoll    = 2 * time.Second
 )
 
 func CallWalletTransactionCore(ctx context.Context, chainId uint, rpc, fromPrivateKey, fromPublicKey, toPublicKey string, ethValue *big.Int, data []byte, gasLimit uint64) (hash string, err error) {
@@ -31,20 +43,11 @@ func CallWalletTransactionCore(ctx context.Context, chainId uint, rpc, fromPriva
 	fromAddress := common.HexToAddress(fromPublicKey)
 	toAddress := common.HexToAddress(toPublicKey)
 
-	// nonce
+	if ethValue == nil {
+		ethValue = big.NewInt(0)
+	}
+
 	nonce, err := client.PendingNonceAt(ctx, fromAddress)
-	if err != nil {
-		return
-	}
-
-	// eth_gasPrice
-	gasPrice, err := client.SuggestGasPrice(ctx)
-	if err != nil {
-		return
-	}
-
-	// eth_maxPriorityFeePerGas
-	gasTipCap, err := client.SuggestGasTipCap(ctx)
 	if err != nil {
 		return
 	}
@@ -54,30 +57,110 @@ func CallWalletTransactionCore(ctx context.Context, chainId uint, rpc, fromPriva
 		return
 	}
 
-	var signedTx *types.Transaction
+	gasLimit = resolveEvmGasLimit(ctx, client, fromAddress, toAddress, ethValue, data, gasLimit)
+	tipCap, feeCap, err := resolveEvmFees(ctx, client)
+	if err != nil {
+		return
+	}
 
 	tx := types.NewTx(&types.DynamicFeeTx{
-		ChainID:    useChainId,
-		Nonce:      nonce,
-		GasTipCap:  gasTipCap,
-		GasFeeCap:  gasPrice,
-		Gas:        gasLimit,
-		To:         &toAddress,
-		Value:      ethValue,
-		Data:       data,
-		AccessList: nil,
+		ChainID:   useChainId,
+		Nonce:     nonce,
+		GasTipCap: tipCap,
+		GasFeeCap: feeCap,
+		Gas:       gasLimit,
+		To:        &toAddress,
+		Value:     ethValue,
+		Data:      data,
 	})
-	signedTx, err = types.SignTx(tx, types.NewLondonSigner(useChainId), privateKey)
+	signedTx, err := types.SignTx(tx, types.NewLondonSigner(useChainId), privateKey)
 	if err != nil {
 		return
 	}
 
-	err = client.SendTransaction(ctx, signedTx)
-	if err != nil {
+	if err = client.SendTransaction(ctx, signedTx); err != nil {
 		return
 	}
 
-	return signedTx.Hash().Hex(), nil
+	hash = signedTx.Hash().Hex()
+
+	// Wait briefly so callers (freecoin) don't treat an on-chain failure as success.
+	if receipt, waitErr := waitEvmReceipt(ctx, client, signedTx.Hash(), evmReceiptWait); waitErr == nil {
+		if receipt.Status != types.ReceiptStatusSuccessful {
+			return hash, fmt.Errorf("transaction failed on-chain (status=0, gasUsed=%d/%d): %s", receipt.GasUsed, gasLimit, hash)
+		}
+	}
+
+	return hash, nil
+}
+
+func resolveEvmGasLimit(ctx context.Context, client *ethclient.Client, from, to common.Address, value *big.Int, data []byte, gasLimit uint64) uint64 {
+	estimated, err := client.EstimateGas(ctx, ethereum.CallMsg{
+		From:  from,
+		To:    &to,
+		Value: value,
+		Data:  data,
+	})
+	if err == nil && estimated > 0 {
+		buffered := estimated + estimated*evmGasBufferPct/100
+		if gasLimit == 0 || buffered > gasLimit {
+			return buffered
+		}
+		return gasLimit
+	}
+
+	if gasLimit > 0 {
+		return gasLimit
+	}
+	if len(data) == 0 {
+		return evmNativeGasFloor
+	}
+	return evmTokenGasFloor
+}
+
+func resolveEvmFees(ctx context.Context, client *ethclient.Client) (tipCap, feeCap *big.Int, err error) {
+	tipCap, err = client.SuggestGasTipCap(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	if tipCap == nil || tipCap.Sign() <= 0 {
+		tipCap = big.NewInt(1)
+	}
+
+	suggest, suggestErr := client.SuggestGasPrice(ctx)
+	header, headerErr := client.HeaderByNumber(ctx, nil)
+
+	feeCap = new(big.Int).Set(tipCap)
+	if headerErr == nil && header != nil && header.BaseFee != nil {
+		// feeCap = 2*baseFee + tip — survives one base-fee bump.
+		feeCap = new(big.Int).Mul(header.BaseFee, big.NewInt(2))
+		feeCap.Add(feeCap, tipCap)
+	}
+	if suggestErr == nil && suggest != nil && suggest.Cmp(feeCap) > 0 {
+		feeCap = new(big.Int).Set(suggest)
+	}
+	if feeCap.Cmp(tipCap) < 0 {
+		feeCap = new(big.Int).Set(tipCap)
+	}
+	return tipCap, feeCap, nil
+}
+
+func waitEvmReceipt(ctx context.Context, client *ethclient.Client, txHash common.Hash, timeout time.Duration) (*types.Receipt, error) {
+	deadline := time.Now().Add(timeout)
+	for {
+		receipt, err := client.TransactionReceipt(ctx, txHash)
+		if err == nil {
+			return receipt, nil
+		}
+		if time.Now().After(deadline) {
+			return nil, fmt.Errorf("timeout waiting for receipt %s", txHash.Hex())
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(evmReceiptPoll):
+		}
+	}
 }
 
 func CallContractCore(ctx context.Context, rpc, contractAddress, contractFunc string, args ...any) (map[string]any, error) {
@@ -129,34 +212,8 @@ func GetEthBalanceByAddress(ctx context.Context, rpc, address string) (balance *
 	return balance, nil
 }
 
-func GetTransactionReceiptByHash(ctx context.Context, rpc, hash string) (tx *types.Receipt, err error) {
-	client, err := ethclient.Dial(rpc)
-	if err != nil {
-		return
-	}
-	defer client.Close()
-
-	receipt, err := client.TransactionReceipt(ctx, common.HexToHash(hash))
-	if err != nil {
-		return
-	}
-
-	return receipt, nil
-}
-
-func GetTransactionByHash(ctx context.Context, rpc, hash string) (tx *types.Transaction, isPending bool, err error) {
-	client, err := ethclient.Dial(rpc)
-	if err != nil {
-		return
-	}
-	defer client.Close()
-
-	transaction, isPending, err := client.TransactionByHash(ctx, common.HexToHash((hash)))
-	if err != nil {
-		return
-	}
-
-	return transaction, isPending, nil
+func GetTokenBalanceByAddress(ctx context.Context, rpc, address, tokenAddress string) (balance *big.Int, err error) {
+	return CallTokenBalanceOf(ctx, rpc, address, tokenAddress)
 }
 
 // nonce

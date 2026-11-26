@@ -22,7 +22,7 @@ func (n *NodeApi) GetSolanaTransactions(c *gin.Context) {
 		return
 	}
 
-	result, err := service.NodeService.GetSolanaTransactions(tx)
+	result, err := service.NodeService.GetSolanaTransactions(c.Request.Context(), tx)
 	if err != nil {
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
@@ -30,7 +30,6 @@ func (n *NodeApi) GetSolanaTransactions(c *gin.Context) {
 	}
 
 	res = common.OkWithDetailed(common.Success, "Request data successful", result)
-
 	c.JSON(http.StatusOK, res)
 }
 
@@ -46,7 +45,7 @@ func (n *NodeApi) GetSolTransactions(c *gin.Context) {
 		return
 	}
 
-	result, err := service.NodeService.GetSolTransactions(tx)
+	result, err := service.NodeService.GetSolTransactions(c.Request.Context(), tx)
 	if err != nil {
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
@@ -54,7 +53,6 @@ func (n *NodeApi) GetSolTransactions(c *gin.Context) {
 	}
 
 	res = common.OkWithDetailed(common.Success, "Request data successful", result)
-
 	c.JSON(http.StatusOK, res)
 }
 
@@ -70,7 +68,7 @@ func (n *NodeApi) GetSplTransactions(c *gin.Context) {
 		return
 	}
 
-	result, err := service.NodeService.GetSplTransactions(tx)
+	result, err := service.NodeService.GetSplTransactions(c.Request.Context(), tx)
 	if err != nil {
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
@@ -78,6 +76,5 @@ func (n *NodeApi) GetSplTransactions(c *gin.Context) {
 	}
 
 	res = common.OkWithDetailed(common.Success, "Request data successful", result)
-
 	c.JSON(http.StatusOK, res)
 }

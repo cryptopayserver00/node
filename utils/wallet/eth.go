@@ -131,10 +131,7 @@ func SendEthTransfer(ctx context.Context, chainId uint, pri, pub, toAddress stri
 		return
 	}
 
-	var (
-		gasLimit uint64 = 21000
-		decimals int    = 18
-	)
+	const decimals = 18
 
 	sendValue, err := utils.FormatToOriginalValue(sendVal, decimals)
 	if err != nil {
@@ -142,7 +139,18 @@ func SendEthTransfer(ctx context.Context, chainId uint, pri, pub, toAddress stri
 		return "", err
 	}
 
-	hash, err = CallEthTransfer(ctx, chainId, rpc, pri, pub, toAddress, sendValue, gasLimit)
+	// Pre-check native balance (value only; gas is paid on top).
+	if bal, balErr := GetEthBalanceByAddress(ctx, rpc, pub); balErr != nil {
+		global.NODE_LOG.Error(balErr.Error())
+	} else if bal != nil && bal.Cmp(sendValue) < 0 {
+		return "", fmt.Errorf(
+			"faucet wallet insufficient native balance on chain %d (need %s, have %s)",
+			chainId, sendVal, utils.CalculateBalance(bal, decimals),
+		)
+	}
+
+	// gasLimit=0 → CallWalletTransactionCore estimates (Glamsterdam: new accounts need ~204600).
+	hash, err = CallEthTransfer(ctx, chainId, rpc, pri, pub, toAddress, sendValue, 0)
 	return
 }
 
@@ -158,16 +166,23 @@ func SendEthTokenTransfer(ctx context.Context, chainId uint, pri, pub, toAddress
 		return "", errors.New("contract address not found")
 	}
 
-	var (
-		gasLimit uint64 = 96000
-	)
-
 	sendValue, err := utils.FormatToOriginalValue(sendVal, decimals)
 	if err != nil {
 		global.NODE_LOG.Error(fmt.Sprintf("%s -> %s", constant.GetChainName(chainId), err.Error()))
 		return "", err
 	}
 
-	hash, err = CallTokenTransfer(ctx, chainId, rpc, pri, pub, toAddress, contractAddress, sendValue, gasLimit)
+	bal, balErr := CallTokenBalanceOf(ctx, rpc, pub, contractAddress)
+	if balErr != nil {
+		global.NODE_LOG.Error(balErr.Error())
+	} else if bal != nil && bal.Cmp(sendValue) < 0 {
+		return "", fmt.Errorf(
+			"faucet wallet insufficient %s balance on chain %d (need %s, have %s)",
+			coin, chainId, sendVal, utils.CalculateBalance(bal, decimals),
+		)
+	}
+
+	// gasLimit=0 → core estimates with buffer / token floor.
+	hash, err = CallTokenTransfer(ctx, chainId, rpc, pri, pub, toAddress, contractAddress, sendValue, 0)
 	return
 }

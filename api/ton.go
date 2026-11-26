@@ -22,7 +22,7 @@ func (n *NodeApi) GetTonTransactions(c *gin.Context) {
 		return
 	}
 
-	result, err := service.NodeService.GetTonTransactions(tx)
+	result, err := service.NodeService.GetTonTransactions(c.Request.Context(), tx)
 	if err != nil {
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
@@ -30,7 +30,6 @@ func (n *NodeApi) GetTonTransactions(c *gin.Context) {
 	}
 
 	res = common.OkWithDetailed(common.Success, "Request data successful", result)
-
 	c.JSON(http.StatusOK, res)
 }
 
@@ -46,7 +45,7 @@ func (n *NodeApi) GetTonCoinTransactions(c *gin.Context) {
 		return
 	}
 
-	result, err := service.NodeService.GetTonCoinTransactions(tx)
+	result, err := service.NodeService.GetTonCoinTransactions(c.Request.Context(), tx)
 	if err != nil {
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
@@ -54,7 +53,6 @@ func (n *NodeApi) GetTonCoinTransactions(c *gin.Context) {
 	}
 
 	res = common.OkWithDetailed(common.Success, "Request data successful", result)
-
 	c.JSON(http.StatusOK, res)
 }
 
@@ -70,7 +68,7 @@ func (n *NodeApi) GetTon20Transactions(c *gin.Context) {
 		return
 	}
 
-	result, err := service.NodeService.GetTon20Transactions(tx)
+	result, err := service.NodeService.GetTon20Transactions(c.Request.Context(), tx)
 	if err != nil {
 		res = common.FailWithMessage(err.Error())
 		c.JSON(http.StatusOK, res)
@@ -78,6 +76,5 @@ func (n *NodeApi) GetTon20Transactions(c *gin.Context) {
 	}
 
 	res = common.OkWithDetailed(common.Success, "Request data successful", result)
-
 	c.JSON(http.StatusOK, res)
 }

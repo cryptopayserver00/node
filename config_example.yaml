@@ -103,9 +103,10 @@ mysql:
   engine:
 
 freecoin:
-  # 生产务必保持 false；仅测试网 faucet 场景显式打开，并配合 api-token + max-amount
+  # 生产务必保持 false；仅测试网 faucet 场景显式打开，并配合 api-token + max-usd
   enabled: false
-  max-amount: "0.01"
+  # 单次领取约等值 USD 上限（按币种现价换算；USDT/USDC 等稳定币≈面值）
+  max-usd: "100"
   bitcoin:
     public_key: ""
     private_key: ""

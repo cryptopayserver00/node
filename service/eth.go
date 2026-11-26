@@ -13,7 +13,6 @@ import (
 	sweepUtils "node/sweep/utils"
 	"node/sweep/utils/erc20"
 	"node/utils"
-	"sort"
 	"strings"
 	"time"
 
@@ -29,6 +28,10 @@ var (
 	// tx-pending-chainId-hash
 	constantOnePendingTransactionHistory = "tx-pending-%d-%s"
 )
+
+func memcacheEnabled() bool {
+	return global.NODE_MEMCACHE != nil
+}
 
 func (n *NService) GetEthPendingTransactions(ctx context.Context, req request.GetEthTransactions) ([]response.ClientTransaction, error) {
 	var err error
@@ -62,14 +65,16 @@ func (n *NService) GetEthPendingTransactions(ctx context.Context, req request.Ge
 		}
 
 		// save pending tx to nosql
-		err = global.NODE_MEMCACHE.Set(&memcache.Item{
-			Key:        fmt.Sprintf(constantOnePendingTransactionHistory, req.ChainId, txInfo.Hash),
-			Value:      byteTxs,
-			Expiration: 86400,
-		})
-		if err != nil {
-			global.NODE_LOG.Error(err.Error())
-			return nil, err
+		if memcacheEnabled() {
+			err = global.NODE_MEMCACHE.Set(&memcache.Item{
+				Key:        fmt.Sprintf(constantOnePendingTransactionHistory, req.ChainId, txInfo.Hash),
+				Value:      byteTxs,
+				Expiration: 86400,
+			})
+			if err != nil {
+				global.NODE_LOG.Error(err.Error())
+				return nil, err
+			}
 		}
 
 		pendings = append(pendings, model)
@@ -79,6 +84,10 @@ func (n *NService) GetEthPendingTransactions(ctx context.Context, req request.Ge
 
 func (n *NService) GetEthPendingTransaction(req request.GetEthPendingTransaction) (response.RPCTransaction, error) {
 	var tx response.RPCTransaction
+
+	if !memcacheEnabled() {
+		return tx, nil
+	}
 
 	item, err := global.NODE_MEMCACHE.Get(fmt.Sprintf(constantOnePendingTransactionHistory, req.ChainId, req.Hash))
 	if err != nil {
@@ -98,47 +107,40 @@ func (n *NService) GetEthPendingTransaction(req request.GetEthPendingTransaction
 func (n *NService) GetEthTransactions(c *gin.Context, req request.GetEthTransactions) ([]response.ClientTransaction, error) {
 	ctx := c.Request.Context()
 
-	if err := n.UpdateEthTransactionsByAlchemy(ctx, req); err != nil {
-		global.NODE_LOG.Error(err.Error())
+	// Prefer free Blockscout explorer; fall back to Alchemy when available.
+	txs, err := n.GetEvmTransactionsByExplorer(ctx, req.ChainId, req.Address, req.Asset)
+	if err == nil {
+		return txs, nil
+	}
+	global.NODE_LOG.Error(fmt.Sprintf("eth explorer txs failed: %v", err))
+
+	if alchemyErr := n.UpdateEthTransactionsByAlchemy(ctx, req); alchemyErr != nil {
+		global.NODE_LOG.Error(alchemyErr.Error())
+		return []response.ClientTransaction{}, nil
 	}
 
-	item, err := global.NODE_MEMCACHE.Get(fmt.Sprintf(constantTransactionHistory, req.ChainId, req.Address))
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return nil, nil
+	if !memcacheEnabled() {
+		return []response.ClientTransaction{}, nil
 	}
 
-	var txs, filterTxs []response.ClientTransaction
-
-	err = json.Unmarshal(item.Value, &txs)
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return nil, err
+	item, cacheErr := global.NODE_MEMCACHE.Get(fmt.Sprintf(constantTransactionHistory, req.ChainId, req.Address))
+	if cacheErr != nil {
+		global.NODE_LOG.Error(cacheErr.Error())
+		return []response.ClientTransaction{}, nil
 	}
 
-	for _, v := range txs {
-		if req.Asset == "" {
-			filterTxs = append(filterTxs, v)
-		} else if v.Asset == req.Asset {
-			filterTxs = append(filterTxs, v)
-		}
+	var cached []response.ClientTransaction
+	if uErr := json.Unmarshal(item.Value, &cached); uErr != nil {
+		return nil, uErr
 	}
-
-	sort.Slice(filterTxs, func(i, j int) bool {
-		if filterTxs[i].BlockTimestamp == 0 && filterTxs[j].BlockTimestamp != 0 {
-			return true
-		} else if filterTxs[i].BlockTimestamp != 0 && filterTxs[j].BlockTimestamp == 0 {
-			return false
-		} else {
-			return filterTxs[i].BlockTimestamp > filterTxs[j].BlockTimestamp
-		}
-	})
-
-	return filterTxs, nil
+	return filterAndSortEvmTxs(cached, req.Asset), nil
 }
 
 func (n *NService) UpdateEthTransactionsByAlchemy(ctx context.Context, req request.GetEthTransactions) (err error) {
 	client.URL = constant.GetAlchemyRPCUrlByChainId(req.ChainId)
+	if client.URL == "" {
+		return errors.New("alchemy rpc url is empty")
+	}
 
 	var fromRpcAlchemyTxs response.RPCAlchemyTransactionDetails
 	var toRpcAlchemyTxs response.RPCAlchemyTransactionDetails
@@ -219,6 +221,10 @@ func (n *NService) UpdateEthTransactionsByAlchemy(ctx context.Context, req reque
 	if err != nil {
 		global.NODE_LOG.Error(err.Error())
 		return
+	}
+
+	if !memcacheEnabled() {
+		return nil
 	}
 
 	err = global.NODE_MEMCACHE.Set(&memcache.Item{
