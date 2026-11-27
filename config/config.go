@@ -75,6 +75,11 @@ type Key struct {
 	AlchemyInnerTxTestnetKey string `mapstructure:"alchemy_inner_tx_testnet_key" json:"alchemy_inner_tx_testnet_key" yaml:"alchemy_inner_tx_testnet_key"`
 	TatumMainnetKey          string `mapstructure:"tatum_mainnet_key" json:"tatum_mainnet_key" yaml:"tatum_mainnet_key"`
 	TatumTestnetKey          string `mapstructure:"tatum_testnet_key" json:"tatum_testnet_key" yaml:"tatum_testnet_key"`
+	// EtherscanApiKey Etherscan API V2 key(s), comma-separated. Free tier covers
+	// mainnet + testnets (e.g. Sepolia) via https://api.etherscan.io/v2/api?chainid=…
+	EtherscanApiKey string `mapstructure:"etherscan_api_key" json:"etherscan_api_key" yaml:"etherscan_api_key"`
+	// ToncenterApiKey optional TonCenter v2 key (https://toncenter.com) for higher rate limits.
+	ToncenterApiKey string `mapstructure:"toncenter_api_key" json:"toncenter_api_key" yaml:"toncenter_api_key"`
 }
 
 type FreeCoin struct {

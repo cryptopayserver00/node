@@ -18,20 +18,24 @@ import (
 	"strings"
 	"time"
 
+	binarycodec "github.com/Peersyst/xrpl-go/binary-codec"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/btcutil/hdkeychain"
 	"github.com/btcsuite/btcd/chaincfg"
 	"golang.org/x/crypto/pbkdf2"
+
+	sweepUtils "node/sweep/utils"
 )
 
 // ---------------------------------------------------------------------------
 // XRP Ledger（原生 XRP 的 Payment）
 //
-//  - 助记词：BIP39 英文词表 -> BIP44 路径 m/44'/144'/0'/0/0（secp256k1），与 xrpl.js 的
-//    Wallet.fromMnemonic、Ledger、Trust Wallet 等一致。Xaman 的 family seed (s...) 不是助记词，
-//    不在此支持。
+//  - 密钥 secret 支持三种形式：
+//      1) BIP39 助记词 -> BIP44 m/44'/144'/0'/0/0（与 xrpl.js Wallet.fromMnemonic 一致）
+//      2) XRPL family seed（s... / sEd...）-> ripple-keypairs 派生（faucet 常用）
+//      3) 32 字节私钥 hex（可选 0x 前缀）
 //  - 交易按 XRPL 规范二进制编码（字段按 类型码、字段码 排序），签名哈希为 SHA512Half("STX\0"+数据)。
 //  - 编码与 xrpl-py 的 encode / encode_for_signing / get_hash 逐字节比对过（见测试）。
 // ---------------------------------------------------------------------------
@@ -133,8 +137,14 @@ func xrpDecodeAddress(s string) ([]byte, error) {
 }
 
 // ---------------------------------------------------------------------------
-// 密钥：助记词 -> m/44'/144'/0'/0/0
+// 密钥：助记词 / family seed / hex
 // ---------------------------------------------------------------------------
+
+var (
+	xrpSeedVersionSecp = []byte{0x21}
+	xrpSeedVersionEd   = []byte{0x01, 0xe1, 0x4b}
+	xrpSecpOrder, _    = new(big.Int).SetString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
+)
 
 func xrpKeyFromMnemonic(mnemonic string) (*btcec.PrivateKey, error) {
 	words := strings.Fields(mnemonic)
@@ -158,16 +168,145 @@ func xrpKeyFromMnemonic(mnemonic string) (*btcec.PrivateKey, error) {
 	return key.ECPrivKey()
 }
 
-// xrpParseKey 返回私钥、压缩公钥和 20 字节账户 ID。pub 可选：公钥 hex 或 r... 地址。
-func xrpParseKey(mnemonic, pub string) (*btcec.PrivateKey, []byte, []byte, error) {
-	priv, err := xrpKeyFromMnemonic(mnemonic)
+func xrpDecodeFamilySeed(seed string) (entropy []byte, ed25519 bool, err error) {
+	raw, err := xrpB58Decode(strings.TrimSpace(seed))
+	if err != nil {
+		return nil, false, fmt.Errorf("invalid xrp family seed: %w", err)
+	}
+	if len(raw) < 5 {
+		return nil, false, errors.New("invalid xrp family seed: too short")
+	}
+	payload, checksum := raw[:len(raw)-4], raw[len(raw)-4:]
+	if !bytes.Equal(xrpChecksum(payload), checksum) {
+		return nil, false, errors.New("invalid xrp family seed: bad checksum")
+	}
+	switch {
+	case bytes.HasPrefix(payload, xrpSeedVersionEd):
+		ent := payload[len(xrpSeedVersionEd):]
+		if len(ent) != 16 {
+			return nil, false, fmt.Errorf("ed25519 family seed expects 16-byte entropy, got %d", len(ent))
+		}
+		return ent, true, nil
+	case bytes.HasPrefix(payload, xrpSeedVersionSecp):
+		ent := payload[len(xrpSeedVersionSecp):]
+		if len(ent) != 16 {
+			return nil, false, fmt.Errorf("secp256k1 family seed expects 16-byte entropy, got %d", len(ent))
+		}
+		return ent, false, nil
+	default:
+		return nil, false, errors.New("unsupported xrp family seed version")
+	}
+}
+
+func xrpU32BE(v uint32) []byte {
+	b := make([]byte, 4)
+	binary.BigEndian.PutUint32(b, v)
+	return b
+}
+
+// xrpDeriveScalar mirrors ripple-keypairs deriveScalar:
+//   hash = SHA512(bytes [|| discrim_u32] || i_u32); take first 256 bits in (0, n).
+func xrpDeriveScalar(bytesIn []byte, discrim *uint32) (*big.Int, error) {
+	for i := uint32(0); ; i++ {
+		h := sha512.New()
+		h.Write(bytesIn)
+		if discrim != nil {
+			h.Write(xrpU32BE(*discrim))
+		}
+		h.Write(xrpU32BE(i))
+		sum := h.Sum(nil)[:32]
+		bi := new(big.Int).SetBytes(sum)
+		if bi.Sign() > 0 && bi.Cmp(xrpSecpOrder) < 0 {
+			return bi, nil
+		}
+		if i == 0xffffffff {
+			break
+		}
+	}
+	return nil, errors.New("failed to derive valid secp256k1 scalar from seed")
+}
+
+// xrpKeyFromFamilySeed implements ripple-keypairs secp256k1 derivation (account index 0).
+// Ed25519 family seeds (sEd...) are rejected — Payment signing here is secp256k1-only.
+func xrpKeyFromFamilySeed(seed string) (*btcec.PrivateKey, error) {
+	entropy, isEd, err := xrpDecodeFamilySeed(seed)
+	if err != nil {
+		return nil, err
+	}
+	if isEd {
+		return nil, errors.New("ed25519 family seed (sEd...) is not supported for XRP payments here; use secp256k1 seed or mnemonic")
+	}
+
+	rootScalar, err := xrpDeriveScalar(entropy, nil)
+	if err != nil {
+		return nil, err
+	}
+	rootPriv, _ := btcec.PrivKeyFromBytes(pad32(rootScalar.Bytes()))
+	rootPub := rootPriv.PubKey().SerializeCompressed()
+
+	accountIndex := uint32(0)
+	accScalar, err := xrpDeriveScalar(rootPub, &accountIndex)
+	if err != nil {
+		return nil, err
+	}
+	final := new(big.Int).Add(rootScalar, accScalar)
+	final.Mod(final, xrpSecpOrder)
+	if final.Sign() == 0 {
+		return nil, errors.New("derived xrp private key is zero")
+	}
+	priv, _ := btcec.PrivKeyFromBytes(pad32(final.Bytes()))
+	return priv, nil
+}
+
+func xrpKeyFromHex(hexKey string) (*btcec.PrivateKey, error) {
+	s := strings.TrimSpace(hexKey)
+	s = strings.TrimPrefix(strings.TrimPrefix(s, "0x"), "0X")
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return nil, fmt.Errorf("invalid xrp private key hex: %w", err)
+	}
+	if len(b) != 32 {
+		return nil, fmt.Errorf("xrp private key hex must be 32 bytes, got %d", len(b))
+	}
+	priv, _ := btcec.PrivKeyFromBytes(b)
+	return priv, nil
+}
+
+// xrpKeyFromSecret accepts BIP39 mnemonic, XRPL family seed (s...), or 32-byte hex private key.
+func xrpKeyFromSecret(secret string) (*btcec.PrivateKey, error) {
+	secret = strings.TrimSpace(secret)
+	if secret == "" {
+		return nil, errors.New("empty xrp secret")
+	}
+	if words := strings.Fields(secret); len(words) >= 12 {
+		return xrpKeyFromMnemonic(secret)
+	}
+	if strings.HasPrefix(secret, "s") {
+		return xrpKeyFromFamilySeed(secret)
+	}
+	return xrpKeyFromHex(secret)
+}
+
+func pad32(b []byte) []byte {
+	if len(b) >= 32 {
+		return b[len(b)-32:]
+	}
+	out := make([]byte, 32)
+	copy(out[32-len(b):], b)
+	return out
+}
+
+// xrpParseKey 返回私钥、压缩公钥和 20 字节账户 ID。
+// secret：BIP39 助记词 / family seed / hex；pub 可选：公钥 hex 或 r... 地址。
+func xrpParseKey(secret, pub string) (*btcec.PrivateKey, []byte, []byte, error) {
+	priv, err := xrpKeyFromSecret(secret)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	pk := priv.PubKey().SerializeCompressed()
 	id := btcutil.Hash160(pk)
 	if pub = strings.TrimSpace(pub); pub != "" && !matchPubKeyHex(pub, pk) && pub != xrpEncodeAddress(id) {
-		return nil, nil, nil, errors.New("public key does not match mnemonic")
+		return nil, nil, nil, errors.New("public key does not match xrp secret")
 	}
 	return priv, pk, id, nil
 }
@@ -347,17 +486,18 @@ func xrpUint(s string) (uint64, error) { return strconv.ParseUint(s, 10, 64) }
 // 构造 + 签名
 // ---------------------------------------------------------------------------
 
-// BuildXrpTransfer 构造并签名 XRP 转账，不广播。mnemonic 为 BIP39 助记词；amount 为 XRP（十进制字符串）。
+// BuildXrpTransfer 构造并签名 XRP 转账，不广播。
+// secret 为 BIP39 助记词 / XRPL family seed / hex 私钥；amount 为 XRP（十进制字符串）。
 // toAddress 为经典地址 (r...)；暂不支持 X-address 和目标标签。
-func BuildXrpTransfer(ctx context.Context, chainId uint, mnemonic, pub, toAddress, amount string) (*XrpTransferResult, error) {
+func BuildXrpTransfer(ctx context.Context, chainId uint, secret, pub, toAddress, amount string) (*XrpTransferResult, error) {
 	rpc, err := getXrpRPC(chainId)
 	if err != nil {
 		return nil, err
 	}
-	return buildXrpTransfer(ctx, rpc, mnemonic, pub, toAddress, amount)
+	return buildXrpTransfer(ctx, rpc, secret, pub, toAddress, amount)
 }
 
-func buildXrpTransfer(ctx context.Context, rpc, mnemonic, pub, toAddress, amount string) (*XrpTransferResult, error) {
+func buildXrpTransfer(ctx context.Context, rpc, secret, pub, toAddress, amount string) (*XrpTransferResult, error) {
 	bi, err := parseDecimal(amount, xrpDecimals)
 	if err != nil {
 		return nil, err
@@ -367,7 +507,7 @@ func buildXrpTransfer(ctx context.Context, rpc, mnemonic, pub, toAddress, amount
 	}
 	drops := bi.Uint64()
 
-	priv, pubKey, fromID, err := xrpParseKey(mnemonic, pub)
+	priv, pubKey, fromID, err := xrpParseKey(secret, pub)
 	if err != nil {
 		return nil, err
 	}
@@ -464,18 +604,37 @@ func buildXrpTransfer(ctx context.Context, rpc, mnemonic, pub, toAddress, amount
 // 返回只表示节点接受了交易（tesSUCCESS 或进入队列），不代表已被验证进账本。
 // ---------------------------------------------------------------------------
 
-func SendXrpTransfer(ctx context.Context, chainId uint, mnemonic, pub, toAddress, amount string) (hash string, err error) {
+func SendXrpTransfer(ctx context.Context, chainId uint, secret, pub, toAddress, amount string) (hash string, err error) {
 	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
 	rpc, err := getXrpRPC(chainId)
 	if err != nil {
 		return "", err
 	}
-	res, err := buildXrpTransfer(ctx, rpc, mnemonic, pub, toAddress, amount)
+	res, err := buildXrpTransfer(ctx, rpc, secret, pub, toAddress, amount)
 	if err != nil {
 		return "", err
 	}
+	return submitXrpBlob(ctx, rpc, res)
+}
 
+// SendXrpTokenTransfer issues/sends an XRPL IOU (e.g. USDT) from the freecoin account.
+// For faucet use the freecoin address should be the token issuer (see ChainList contract).
+func SendXrpTokenTransfer(ctx context.Context, chainId uint, secret, pub, toAddress, coin, amount string) (hash string, err error) {
+	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+	rpc, err := getXrpRPC(chainId)
+	if err != nil {
+		return "", err
+	}
+	res, err := buildXrpTokenTransfer(ctx, rpc, chainId, secret, pub, toAddress, coin, amount)
+	if err != nil {
+		return "", err
+	}
+	return submitXrpBlob(ctx, rpc, res)
+}
+
+func submitXrpBlob(ctx context.Context, rpc string, res *XrpTransferResult) (string, error) {
 	var sub struct {
 		EngineResult  string `json:"engine_result"`
 		EngineMessage string `json:"engine_result_message"`
@@ -493,4 +652,138 @@ func SendXrpTransfer(ctx context.Context, chainId uint, mnemonic, pub, toAddress
 		return "", fmt.Errorf("txid mismatch: local=%s node=%s", res.TxID, sub.TxJSON.Hash)
 	}
 	return res.TxID, nil
+}
+
+// xrpCurrencyCode matches cryptopayserver ToXrpCurrencyCode (3-char ASCII or 40-hex).
+func xrpCurrencyCode(symbol string) (string, error) {
+	s := strings.TrimSpace(symbol)
+	if s == "" {
+		return "", errors.New("empty currency symbol")
+	}
+	if len(s) == 3 {
+		return strings.ToUpper(s), nil
+	}
+	b := make([]byte, 20)
+	copy(b, []byte(s))
+	if b[0] == 0x00 {
+		b[0] = 0x01
+	}
+	return strings.ToUpper(hex.EncodeToString(b)), nil
+}
+
+func buildXrpTokenTransfer(ctx context.Context, rpc string, chainId uint, secret, pub, toAddress, coin, amount string) (*XrpTransferResult, error) {
+	ok, symbol, issuer, _ := sweepUtils.GetContractInfoByChainIdAndSymbol(chainId, coin)
+	if !ok || strings.TrimSpace(issuer) == "" {
+		return nil, fmt.Errorf("unsupported xrp token %s on chain %d", coin, chainId)
+	}
+	currency, err := xrpCurrencyCode(symbol)
+	if err != nil {
+		return nil, err
+	}
+	value := strings.TrimSpace(amount)
+	if value == "" {
+		return nil, errors.New("invalid token amount")
+	}
+	if _, ok := new(big.Rat).SetString(value); !ok {
+		return nil, errors.New("invalid token amount")
+	}
+
+	priv, pubKey, fromID, err := xrpParseKey(secret, pub)
+	if err != nil {
+		return nil, err
+	}
+	from := xrpEncodeAddress(fromID)
+	if !strings.EqualFold(from, strings.TrimSpace(issuer)) {
+		return nil, fmt.Errorf("freecoin account %s is not the issuer %s for %s; update ChainList contract", from, issuer, symbol)
+	}
+	if _, err := xrpDecodeAddress(toAddress); err != nil {
+		return nil, err
+	}
+	if strings.EqualFold(from, toAddress) {
+		return nil, errors.New("sender and recipient are the same address")
+	}
+
+	var fee struct {
+		Drops struct {
+			OpenLedgerFee string `json:"open_ledger_fee"`
+			BaseFee       string `json:"base_fee"`
+		} `json:"drops"`
+	}
+	if err := xrpRPC(ctx, rpc, "fee", map[string]any{}, &fee); err != nil {
+		return nil, err
+	}
+	feeDrops, err := xrpUint(fee.Drops.OpenLedgerFee)
+	if err != nil {
+		if feeDrops, err = xrpUint(fee.Drops.BaseFee); err != nil {
+			return nil, errors.New("fee: node returned no usable fee")
+		}
+	}
+	if feeDrops > xrpMaxFeeDrops {
+		return nil, fmt.Errorf("network fee %d drops exceeds safety cap %d", feeDrops, xrpMaxFeeDrops)
+	}
+
+	acc, err := xrpAccount(ctx, rpc, from)
+	if err != nil {
+		return nil, err
+	}
+	if acc == nil {
+		return nil, fmt.Errorf("sender account %s is not activated on this network", from)
+	}
+	dest, err := xrpAccount(ctx, rpc, toAddress)
+	if err != nil {
+		return nil, err
+	}
+	if dest == nil {
+		return nil, fmt.Errorf("recipient %s is not activated; claim native XRP first", toAddress)
+	}
+
+	var cur struct {
+		Index uint32 `json:"ledger_current_index"`
+	}
+	if err := xrpRPC(ctx, rpc, "ledger_current", map[string]any{}, &cur); err != nil {
+		return nil, err
+	}
+
+	txJSON := map[string]any{
+		"TransactionType":    "Payment",
+		"Account":            from,
+		"Destination":        toAddress,
+		"Fee":                strconv.FormatUint(feeDrops, 10),
+		"Sequence":           acc.Sequence,
+		"LastLedgerSequence": cur.Index + xrpLedgerWindow,
+		"SigningPubKey":      strings.ToUpper(hex.EncodeToString(pubKey)),
+		"Amount": map[string]any{
+			"currency": currency,
+			"issuer":   issuer,
+			"value":    value,
+		},
+		"Flags": uint32(xrpFlagsDefault),
+	}
+
+	signingHex, err := binarycodec.EncodeForSigning(txJSON)
+	if err != nil {
+		return nil, fmt.Errorf("encode for signing: %w", err)
+	}
+	signingBytes, err := hex.DecodeString(signingHex)
+	if err != nil {
+		return nil, err
+	}
+	sig := ecdsa.Sign(priv, sha512Half(signingBytes)).Serialize()
+	txJSON["TxnSignature"] = strings.ToUpper(hex.EncodeToString(sig))
+
+	blobHex, err := binarycodec.Encode(txJSON)
+	if err != nil {
+		return nil, fmt.Errorf("encode tx: %w", err)
+	}
+	blob, err := hex.DecodeString(blobHex)
+	if err != nil {
+		return nil, err
+	}
+	txid := sha512Half(append(xrpU32(xrpPrefixTxID), blob...))
+	return &XrpTransferResult{
+		TxBlob: strings.ToUpper(blobHex),
+		TxID:   strings.ToUpper(hex.EncodeToString(txid)),
+		Fee:    int64(feeDrops),
+		From:   from,
+	}, nil
 }

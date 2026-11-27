@@ -54,17 +54,17 @@ type explorerTokenTx struct {
 	ContractAddress string `json:"contractAddress"`
 }
 
-// GetEvmTransactionsByExplorer fetches native + ERC20 transfers via free
-// etherscan-compatible explorers (Blockscout / Routescan). Results are returned
-// directly and optionally cached in memcache when enabled.
+// GetEvmTransactionsByExplorer fetches native + ERC20 transfers via
+// etherscan-compatible explorers (Etherscan V2 → Blockscout → Routescan).
+// Ordinary JSON-RPC cannot list address history; an indexer API is required.
 func (n *NService) GetEvmTransactionsByExplorer(
 	ctx context.Context,
 	chainId uint,
 	address string,
 	asset string,
 ) ([]response.ClientTransaction, error) {
-	if constant.GetExplorerAPIBaseByChainId(chainId) == "" {
-		return nil, fmt.Errorf("no free explorer configured for chain %d", chainId)
+	if len(constant.GetExplorerAPIBasesByChainId(chainId)) == 0 {
+		return nil, fmt.Errorf("no explorer configured for chain %d", chainId)
 	}
 
 	cacheKey := fmt.Sprintf(constantTransactionHistory, chainId, strings.ToLower(address))
@@ -87,7 +87,7 @@ func (n *NService) GetEvmTransactionsByExplorer(
 			_ = global.NODE_MEMCACHE.Set(&memcache.Item{
 				Key:        cacheKey,
 				Value:      raw,
-				Expiration: 120, // short TTL — explorer data changes often
+				Expiration: 300, // longer TTL to reduce explorer 429 storms
 			})
 		}
 	}
@@ -100,14 +100,42 @@ func (n *NService) fetchEvmExplorerTransactions(
 	chainId uint,
 	address string,
 ) ([]response.ClientTransaction, error) {
+	bases := constant.GetExplorerAPIBasesByChainId(chainId)
+	if len(bases) == 0 {
+		return nil, errors.New("no explorer base configured")
+	}
+
+	var lastErr error
+	for _, base := range bases {
+		all, err := n.fetchEvmExplorerTransactionsFromBase(ctx, chainId, address, base)
+		if err != nil {
+			lastErr = err
+			global.NODE_LOG.Error(fmt.Sprintf("explorer chain=%d base=%s: %v", chainId, base, err))
+			continue
+		}
+		return all, nil
+	}
+
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, errors.New("explorer returned no usable transaction data")
+}
+
+func (n *NService) fetchEvmExplorerTransactionsFromBase(
+	ctx context.Context,
+	chainId uint,
+	address string,
+	base string,
+) ([]response.ClientTransaction, error) {
 	var all []response.ClientTransaction
 
-	normalURL := constant.GetExplorerTxListURL(chainId, address, 1, 50)
-	tokenURL := constant.GetExplorerTokenTxURL(chainId, address, 1, 50)
+	normalURL := constant.BuildExplorerTxListURL(base, address, 1, 50)
+	tokenURL := constant.BuildExplorerTokenTxURL(base, address, 1, 50)
 
-	normalTxs, err := n.getExplorerNormalTxs(ctx, normalURL)
-	if err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("explorer txlist chain=%d: %v", chainId, err))
+	normalTxs, normalErr := n.getExplorerNormalTxs(ctx, normalURL)
+	if normalErr != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("explorer txlist chain=%d: %v", chainId, normalErr))
 	} else {
 		for _, tx := range normalTxs {
 			model, dErr := decodeExplorerNormalTx(chainId, address, tx)
@@ -118,9 +146,12 @@ func (n *NService) fetchEvmExplorerTransactions(
 		}
 	}
 
-	tokenTxs, err := n.getExplorerTokenTxs(ctx, tokenURL)
-	if err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("explorer tokentx chain=%d: %v", chainId, err))
+	// Brief pause between list calls to stay under free-tier burst limits.
+	time.Sleep(200 * time.Millisecond)
+
+	tokenTxs, tokenErr := n.getExplorerTokenTxs(ctx, tokenURL)
+	if tokenErr != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("explorer tokentx chain=%d: %v", chainId, tokenErr))
 	} else {
 		for _, tx := range tokenTxs {
 			model, dErr := decodeExplorerTokenTx(chainId, address, tx)
@@ -131,10 +162,19 @@ func (n *NService) fetchEvmExplorerTransactions(
 		}
 	}
 
-	if len(all) == 0 && normalTxs == nil && tokenTxs == nil {
-		return nil, errors.New("explorer returned no usable transaction data")
-	}
+	// Dedupe across txlist + tokentx (and identical rows from explorers).
+	all = filterAndSortEvmTxs(all, "")
 
+	if normalErr != nil && tokenErr != nil {
+		return nil, fmt.Errorf("txlist=%v; tokentx=%v", normalErr, tokenErr)
+	}
+	// Empty history is valid (new address) when at least one call succeeded.
+	if normalErr != nil && tokenErr == nil && len(all) == 0 {
+		return all, nil
+	}
+	if tokenErr != nil && normalErr == nil && len(all) == 0 {
+		return all, nil
+	}
 	return all, nil
 }
 
@@ -144,7 +184,8 @@ func (n *NService) getExplorerNormalTxs(ctx context.Context, url string) ([]expl
 	}
 	httpClient := client
 	httpClient.URL = url
-	httpClient.Timeout = 20 * time.Second
+	// Keep short so multi-base failover stays responsive under bad networks.
+	httpClient.Timeout = 10 * time.Second
 
 	var resp explorerAPIResponse
 	if err := httpClient.HTTPGet(ctx, &resp); err != nil {
@@ -159,7 +200,7 @@ func (n *NService) getExplorerTokenTxs(ctx context.Context, url string) ([]explo
 	}
 	httpClient := client
 	httpClient.URL = url
-	httpClient.Timeout = 20 * time.Second
+	httpClient.Timeout = 10 * time.Second
 
 	var resp explorerAPIResponse
 	if err := httpClient.HTTPGet(ctx, &resp); err != nil {
@@ -169,23 +210,53 @@ func (n *NService) getExplorerTokenTxs(ctx context.Context, url string) ([]explo
 }
 
 func decodeExplorerResult[T any](resp explorerAPIResponse) ([]T, error) {
+	msg := strings.TrimSpace(resp.Message)
+	status := strings.TrimSpace(resp.Status)
+
+	// Empty / null result: only treat as "no txs" when the explorer says so.
 	if len(resp.Result) == 0 || string(resp.Result) == "null" {
-		return []T{}, nil
-	}
-	// Explorers return a string in Result when rate-limited / errored.
-	if resp.Result[0] == '"' {
-		var msg string
-		_ = json.Unmarshal(resp.Result, &msg)
-		if resp.Status == "0" {
-			return []T{}, fmt.Errorf("explorer error: %s", firstNonEmpty(msg, resp.Message))
+		if status == "0" && !isExplorerEmptyHistoryMessage(msg) {
+			return []T{}, fmt.Errorf("explorer error: %s", firstNonEmpty(msg, "empty result"))
 		}
 		return []T{}, nil
 	}
+
+	// Explorers return a string in Result when rate-limited / errored / plan-gated.
+	if resp.Result[0] == '"' {
+		var resultMsg string
+		_ = json.Unmarshal(resp.Result, &resultMsg)
+		if status == "0" && !isExplorerEmptyHistoryMessage(firstNonEmpty(resultMsg, msg)) {
+			return []T{}, fmt.Errorf("explorer error: %s", firstNonEmpty(resultMsg, msg))
+		}
+		return []T{}, nil
+	}
+
 	var rows []T
 	if err := json.Unmarshal(resp.Result, &rows); err != nil {
 		return nil, err
 	}
+	// Some explorers return status=0 + [] with "No transactions found".
+	if status == "0" && len(rows) == 0 && isExplorerEmptyHistoryMessage(msg) {
+		return rows, nil
+	}
+	if status == "0" && len(rows) == 0 && msg != "" && !strings.EqualFold(msg, "OK") {
+		return []T{}, fmt.Errorf("explorer error: %s", msg)
+	}
 	return rows, nil
+}
+
+func isExplorerEmptyHistoryMessage(msg string) bool {
+	m := strings.ToLower(strings.TrimSpace(msg))
+	if m == "" {
+		return false
+	}
+	if m == "ok" {
+		return true
+	}
+	return strings.Contains(m, "no transaction") ||
+		strings.Contains(m, "no records") ||
+		strings.Contains(m, "no txs") ||
+		strings.EqualFold(m, "no transactions found")
 }
 
 func firstNonEmpty(values ...string) string {
@@ -301,13 +372,101 @@ func isZeroAmount(v string) bool {
 	return ok && n.Sign() == 0
 }
 
+func normalizeTxAmount(amount string) string {
+	amount = strings.TrimSpace(amount)
+	if amount == "" {
+		return "0"
+	}
+	// Strip trailing zeros so "0.001000" and "0.001" collide.
+	if strings.Contains(amount, ".") {
+		amount = strings.TrimRight(amount, "0")
+		amount = strings.TrimRight(amount, ".")
+	}
+	if amount == "" || amount == "-" {
+		return "0"
+	}
+	return amount
+}
+
+func normalizeTxCategory(category string) string {
+	c := strings.ToLower(strings.TrimSpace(category))
+	switch c {
+	case "eth", "external", "native", "":
+		return "native"
+	case "erc20", "token":
+		return "erc20"
+	default:
+		return c
+	}
+}
+
+func clientTxDedupeKey(tx response.ClientTransaction) string {
+	// Identity for wallet history: hash + asset + direction + amount.
+	// Do NOT key on contractAddress — explorers/Alchemy often fill it inconsistently
+	// for the same transfer (empty vs token contract), which created false duplicates.
+	// Distinct transfers in one tx usually differ by asset and/or amount (e.g. swaps).
+	return strings.ToLower(strings.TrimSpace(tx.Hash)) + "|" +
+		strings.ToLower(strings.TrimSpace(tx.Asset)) + "|" +
+		strings.ToLower(strings.TrimSpace(tx.Type)) + "|" +
+		normalizeTxAmount(tx.Amount) + "|" +
+		normalizeTxCategory(tx.Category)
+}
+
+func preferClientTx(a, b response.ClientTransaction) response.ClientTransaction {
+	// Prefer confirmed over pending/failed when the same transfer appears twice.
+	rank := func(status string) int {
+		if strings.EqualFold(status, "Success") {
+			return 3
+		}
+		if strings.EqualFold(status, "Pending") {
+			return 1
+		}
+		if strings.EqualFold(status, "Failed") {
+			return 0
+		}
+		return 2
+	}
+	chosen := a
+	if rank(b.Status) > rank(a.Status) {
+		chosen = b
+	} else if rank(b.Status) == rank(a.Status) && b.BlockTimestamp > a.BlockTimestamp {
+		chosen = b
+	}
+	// Keep whichever contractAddress is non-empty for ERC20 display.
+	if strings.TrimSpace(chosen.ContractAddress) == "" {
+		if strings.TrimSpace(a.ContractAddress) != "" {
+			chosen.ContractAddress = a.ContractAddress
+		} else if strings.TrimSpace(b.ContractAddress) != "" {
+			chosen.ContractAddress = b.ContractAddress
+		}
+	}
+	return chosen
+}
+
 func filterAndSortEvmTxs(txs []response.ClientTransaction, asset string) []response.ClientTransaction {
 	asset = strings.TrimSpace(asset)
-	out := make([]response.ClientTransaction, 0, len(txs))
+	seen := make(map[string]response.ClientTransaction, len(txs))
+	order := make([]string, 0, len(txs))
+
 	for _, tx := range txs {
-		if asset == "" || strings.EqualFold(tx.Asset, asset) {
-			out = append(out, tx)
+		if tx.Hash == "" {
+			continue
 		}
+		if asset != "" && !strings.EqualFold(tx.Asset, asset) {
+			continue
+		}
+		key := clientTxDedupeKey(tx)
+		if existing, ok := seen[key]; ok {
+			seen[key] = preferClientTx(existing, tx)
+			continue
+		}
+		seen[key] = tx
+		order = append(order, key)
+	}
+
+	out := make([]response.ClientTransaction, 0, len(order))
+	for _, key := range order {
+		out = append(out, seen[key])
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].BlockTimestamp == 0 && out[j].BlockTimestamp != 0 {

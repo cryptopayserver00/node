@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"net/url"
 	"node/global"
 	"node/global/constant"
 	"node/model/node/request"
@@ -12,6 +13,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/xssnick/tonutils-go/address"
 )
 
 type tonCenterTxResponse struct {
@@ -21,9 +24,9 @@ type tonCenterTxResponse struct {
 			Hash string `json:"hash"`
 			Lt   string `json:"lt"`
 		} `json:"transaction_id"`
-		Utime   int64  `json:"utime"`
-		Fee     string `json:"fee"`
-		InMsg   *tonCenterMsg `json:"in_msg"`
+		Utime   int64          `json:"utime"`
+		Fee     string         `json:"fee"`
+		InMsg   *tonCenterMsg  `json:"in_msg"`
 		OutMsgs []tonCenterMsg `json:"out_msgs"`
 	} `json:"result"`
 	Error string `json:"error"`
@@ -34,12 +37,13 @@ type tonCenterMsg struct {
 	Destination string `json:"destination"`
 	Value       string `json:"value"`
 	Message     string `json:"message"`
+	MsgData     any    `json:"msg_data"`
 }
 
 func (n *NService) GetTonTransactions(ctx context.Context, req request.GetTonTransactions) ([]response.ClientTransaction, error) {
 	txs, err := n.fetchTonCenterTransactions(ctx, req.ChainId, req.Address)
 	if err != nil {
-		global.NODE_LOG.Error(fmt.Sprintf("ton txs failed: %v", err))
+		global.NODE_LOG.Error(fmt.Sprintf("ton txs failed chain=%d addr=%s: %v", req.ChainId, req.Address, err))
 		return []response.ClientTransaction{}, nil
 	}
 	asset := strings.TrimSpace(req.Asset)
@@ -71,15 +75,32 @@ func (n *NService) GetTon20Transactions(ctx context.Context, req request.GetTon2
 	return []response.ClientTransaction{}, nil
 }
 
-func (n *NService) fetchTonCenterTransactions(ctx context.Context, chainId uint, address string) ([]response.ClientTransaction, error) {
+func (n *NService) fetchTonCenterTransactions(ctx context.Context, chainId uint, addressRaw string) ([]response.ClientTransaction, error) {
 	base := constant.GetTonCenterAPIBase(chainId)
 	if base == "" {
 		return nil, fmt.Errorf("unsupported ton chain %d", chainId)
 	}
 
+	addr := strings.TrimSpace(addressRaw)
+	if addr == "" {
+		return nil, fmt.Errorf("empty ton address")
+	}
+
+	q := url.Values{}
+	q.Set("address", addr)
+	q.Set("limit", "50")
+	q.Set("archival", "true")
+	if key := strings.TrimSpace(global.NODE_CONFIG.Key.ToncenterApiKey); key != "" {
+		q.Set("api_key", key)
+	}
+
 	httpClient := client
-	httpClient.URL = fmt.Sprintf("%s/getTransactions?address=%s&limit=50", base, address)
-	httpClient.Timeout = 20 * time.Second
+	httpClient.URL = fmt.Sprintf("%s/getTransactions?%s", base, q.Encode())
+	httpClient.Timeout = 25 * time.Second
+	httpClient.Headers = map[string]string{}
+	if key := strings.TrimSpace(global.NODE_CONFIG.Key.ToncenterApiKey); key != "" {
+		httpClient.Headers["X-API-Key"] = key
+	}
 
 	var resp tonCenterTxResponse
 	if err := httpClient.HTTPGet(ctx, &resp); err != nil {
@@ -89,27 +110,32 @@ func (n *NService) fetchTonCenterTransactions(ctx context.Context, chainId uint,
 		return nil, fmt.Errorf("toncenter error: %s", firstNonEmpty(resp.Error, "request failed"))
 	}
 
+	seen := make(map[string]struct{}, len(resp.Result)*2)
 	var out []response.ClientTransaction
 	for _, row := range resp.Result {
-		hash := row.TransactionID.Hash
+		hash := strings.TrimSpace(row.TransactionID.Hash)
 		if hash == "" {
 			continue
 		}
+		tsMs := int(row.Utime * 1000)
 
-		// Received via in_msg
-		if row.InMsg != nil && strings.TrimSpace(row.InMsg.Value) != "" && row.InMsg.Value != "0" {
-			if model, err := decodeTonMsg(chainId, address, hash, int(row.Utime*1000), *row.InMsg); err == nil {
-				out = append(out, model)
+		if row.InMsg != nil {
+			if model, ok := decodeTonMsg(chainId, addr, hash, tsMs, *row.InMsg); ok {
+				key := hash + "|" + model.Type + "|" + model.Amount
+				if _, exists := seen[key]; !exists {
+					seen[key] = struct{}{}
+					out = append(out, model)
+				}
 			}
 		}
 
-		// Sent via out_msgs
 		for _, msg := range row.OutMsgs {
-			if strings.TrimSpace(msg.Value) == "" || msg.Value == "0" {
-				continue
-			}
-			if model, err := decodeTonMsg(chainId, address, hash, int(row.Utime*1000), msg); err == nil {
-				out = append(out, model)
+			if model, ok := decodeTonMsg(chainId, addr, hash, tsMs, msg); ok {
+				key := hash + "|" + model.Type + "|" + model.Amount
+				if _, exists := seen[key]; !exists {
+					seen[key] = struct{}{}
+					out = append(out, model)
+				}
 			}
 		}
 	}
@@ -120,28 +146,51 @@ func (n *NService) fetchTonCenterTransactions(ctx context.Context, chainId uint,
 	return out, nil
 }
 
-func decodeTonMsg(chainId uint, address, hash string, tsMs int, msg tonCenterMsg) (response.ClientTransaction, error) {
+func decodeTonMsg(chainId uint, walletAddr, hash string, tsMs int, msg tonCenterMsg) (response.ClientTransaction, bool) {
 	var model response.ClientTransaction
-	amountInt, ok := new(big.Int).SetString(msg.Value, 10)
+	amountInt, ok := new(big.Int).SetString(strings.TrimSpace(msg.Value), 10)
 	if !ok || amountInt.Sign() <= 0 {
-		return model, fmt.Errorf("skip empty ton value")
+		return model, false
+	}
+
+	isSend := tonAddrEqual(msg.Source, walletAddr)
+	isRecv := tonAddrEqual(msg.Destination, walletAddr)
+	if !isSend && !isRecv {
+		return model, false
+	}
+	// External inbound msgs can have empty source; treat as received when destination matches.
+	if isSend && isRecv {
+		// Self-transfer / bounce edge: prefer Send when source matches.
+		isRecv = false
 	}
 
 	model.ChainId = chainId
-	model.Address = address
+	model.Address = walletAddr
 	model.Hash = hash
 	model.Asset = constant.TON
 	model.Category = "ton"
 	model.Amount = utils.CalculateBalance(amountInt, 9) // nanotons
 	model.Status = "Success"
 	model.BlockTimestamp = tsMs
-
-	if strings.EqualFold(msg.Source, address) {
+	if isSend {
 		model.Type = "Send"
-	} else if strings.EqualFold(msg.Destination, address) {
-		model.Type = "Received"
 	} else {
-		return model, fmt.Errorf("address not involved")
+		model.Type = "Received"
 	}
-	return model, nil
+	return model, true
+}
+
+// tonAddrEqual compares TON addresses by workchain+account id so 0Q/EQ/UQ forms match.
+func tonAddrEqual(a, b string) bool {
+	a = strings.TrimSpace(a)
+	b = strings.TrimSpace(b)
+	if a == "" || b == "" {
+		return false
+	}
+	aa, errA := address.ParseAddr(a)
+	bb, errB := address.ParseAddr(b)
+	if errA != nil || errB != nil {
+		return strings.EqualFold(a, b)
+	}
+	return aa.Equals(bb)
 }

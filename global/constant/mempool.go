@@ -92,6 +92,42 @@ func MempoolGetUtxoByNetwork(network uint) string {
 	}
 }
 
+// MempoolGetAddressTxsByNetwork returns confirmed+recent txs for an address (Esplora).
+func MempoolGetAddressTxsByNetwork(network uint) string {
+	switch network {
+	case BTC_MAINNET:
+		return "https://mempool.space/api/address/%s/txs"
+	case BTC_TESTNET:
+		return "https://mempool.space/testnet/api/address/%s/txs"
+	case LTC_MAINNET:
+		return "https://litecoinspace.org/api/address/%s/txs"
+	case LTC_TESTNET:
+		return "https://litecoinspace.org/testnet/api/address/%s/txs"
+	case BCH_MAINNET:
+		return "https://bchexplorer.cash/api/address/%s/txs"
+	default:
+		return ""
+	}
+}
+
+// MempoolGetAddressMempoolTxsByNetwork returns unconfirmed txs for an address.
+func MempoolGetAddressMempoolTxsByNetwork(network uint) string {
+	switch network {
+	case BTC_MAINNET:
+		return "https://mempool.space/api/address/%s/txs/mempool"
+	case BTC_TESTNET:
+		return "https://mempool.space/testnet/api/address/%s/txs/mempool"
+	case LTC_MAINNET:
+		return "https://litecoinspace.org/api/address/%s/txs/mempool"
+	case LTC_TESTNET:
+		return "https://litecoinspace.org/testnet/api/address/%s/txs/mempool"
+	case BCH_MAINNET:
+		return "https://bchexplorer.cash/api/address/%s/txs/mempool"
+	default:
+		return ""
+	}
+}
+
 func MempoolGetFeesyNetwork(network uint) string {
 	switch network {
 	case BTC_MAINNET:

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"node/global"
 	"node/global/constant"
+	"strings"
 )
 
 func TransferFreeCoinToReceiveAddress(ctx context.Context, chainId uint, coin, address, amount string) (hash string, err error) {
@@ -56,7 +57,15 @@ func TransferFreeCoinToReceiveAddress(ctx context.Context, chainId uint, coin, a
 			hash, err = SendTonTokenTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Ton.Mnemonic, global.NODE_CONFIG.FreeCoin.Ton.PublicKey, address, coin, amount)
 		}
 	case constant.XRP_TESTNET:
-		hash, err = SendXrpTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.Xrp.Mnemonic, global.NODE_CONFIG.FreeCoin.Xrp.PublicKey, address, amount)
+		xrpSecret := strings.TrimSpace(global.NODE_CONFIG.FreeCoin.Xrp.Mnemonic)
+		if xrpSecret == "" {
+			xrpSecret = strings.TrimSpace(global.NODE_CONFIG.FreeCoin.Xrp.PrivateKey)
+		}
+		if coin == constant.XRP || strings.TrimSpace(coin) == "" {
+			hash, err = SendXrpTransfer(ctx, chainId, xrpSecret, global.NODE_CONFIG.FreeCoin.Xrp.PublicKey, address, amount)
+		} else {
+			hash, err = SendXrpTokenTransfer(ctx, chainId, xrpSecret, global.NODE_CONFIG.FreeCoin.Xrp.PublicKey, address, coin, amount)
+		}
 	case constant.BCH_TESTNET:
 		hash, err = SendBchTransfer(ctx, chainId, global.NODE_CONFIG.FreeCoin.BitcoinCash.PrivateKey, global.NODE_CONFIG.FreeCoin.BitcoinCash.PublicKey, address, amount)
 	default:

@@ -52,17 +52,17 @@ func HexStringToBigInt(hexString string) (*big.Int, error) {
 }
 
 func CalSubForBtcValue(incoming, outgoing string) (float64, error) {
-
-	incomingFloatValue, err := strconv.ParseFloat(incoming, 64)
+	inSats, err := FormatToOriginalValue(incoming, 8)
 	if err != nil {
 		return 0, err
 	}
-	outgoingFloatValue, err := strconv.ParseFloat(outgoing, 64)
+	outSats, err := FormatToOriginalValue(outgoing, 8)
 	if err != nil {
 		return 0, err
 	}
 
-	formattedBalance := fmt.Sprintf("%.8f", incomingFloatValue-outgoingFloatValue)
+	diff := new(big.Int).Sub(inSats, outSats)
+	formattedBalance := CalculateBalance(diff, 8)
 
 	balance, err := strconv.ParseFloat(formattedBalance, 64)
 	if err != nil {
@@ -84,18 +84,35 @@ func FormatToBtcValue(value int64) (float64, error) {
 	return balance, nil
 }
 
+// FormatToSatoshiValue converts a BTC/LTC decimal amount to satoshis.
+// Prefer FormatToSatoshiValueFromString when a decimal string is available.
 func FormatToSatoshiValue(value float64) int64 {
+	formatted := strconv.FormatFloat(value, 'f', 8, 64)
+	sats, err := FormatToSatoshiValueFromString(formatted)
+	if err != nil {
+		return 0
+	}
+	return sats
+}
 
-	formattedBalance := value * 100000000
-
-	return int64(formattedBalance)
+func FormatToSatoshiValueFromString(value string) (int64, error) {
+	sats, err := FormatToOriginalValue(value, 8)
+	if err != nil {
+		return 0, err
+	}
+	if !sats.IsInt64() {
+		return 0, errors.New("satoshi value overflows int64")
+	}
+	return sats.Int64(), nil
 }
 
 func FormatToEtherValue(value float64) int64 {
-
-	formattedBalance := value * 1000000000000000000
-
-	return int64(formattedBalance)
+	formatted := strconv.FormatFloat(value, 'f', 18, 64)
+	wei, err := FormatToOriginalValue(formatted, 18)
+	if err != nil || !wei.IsInt64() {
+		return 0
+	}
+	return wei.Int64()
 }
 
 func FormatToOriginalValue(value string, decimals int) (*big.Int, error) {

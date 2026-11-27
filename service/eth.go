@@ -21,8 +21,8 @@ import (
 )
 
 var (
-	// txs-chainId-address
-	constantTransactionHistory = "txs-%d-%s"
+	// txs-chainId-address (v2 invalidates pre-dedupe cache entries)
+	constantTransactionHistory = "txs-v2-%d-%s"
 	// tx-chainId-hash
 	constantOneTransactionHistory = "tx-%d-%s"
 	// tx-pending-chainId-hash
@@ -105,41 +105,34 @@ func (n *NService) GetEthPendingTransaction(req request.GetEthPendingTransaction
 }
 
 func (n *NService) GetEthTransactions(c *gin.Context, req request.GetEthTransactions) ([]response.ClientTransaction, error) {
-	ctx := c.Request.Context()
+	return n.GetEvmTransactions(c.Request.Context(), req)
+}
 
-	// Prefer free Blockscout explorer; fall back to Alchemy when available.
+// GetEvmTransactions is the shared address-history path for ETH + EVM L2s:
+// explorers first (Etherscan V2 / Blockscout / Routescan), Alchemy as fallback.
+func (n *NService) GetEvmTransactions(ctx context.Context, req request.GetChainTransactions) ([]response.ClientTransaction, error) {
 	txs, err := n.GetEvmTransactionsByExplorer(ctx, req.ChainId, req.Address, req.Asset)
 	if err == nil {
 		return txs, nil
 	}
-	global.NODE_LOG.Error(fmt.Sprintf("eth explorer txs failed: %v", err))
+	global.NODE_LOG.Error(fmt.Sprintf("evm explorer txs failed chain=%d: %v", req.ChainId, err))
 
-	if alchemyErr := n.UpdateEthTransactionsByAlchemy(ctx, req); alchemyErr != nil {
-		global.NODE_LOG.Error(alchemyErr.Error())
+	alchemyTxs, alchemyErr := n.FetchEvmTransactionsByAlchemy(ctx, req)
+	if alchemyErr != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("evm alchemy txs failed chain=%d: %v", req.ChainId, alchemyErr))
 		return []response.ClientTransaction{}, nil
 	}
-
-	if !memcacheEnabled() {
-		return []response.ClientTransaction{}, nil
-	}
-
-	item, cacheErr := global.NODE_MEMCACHE.Get(fmt.Sprintf(constantTransactionHistory, req.ChainId, req.Address))
-	if cacheErr != nil {
-		global.NODE_LOG.Error(cacheErr.Error())
-		return []response.ClientTransaction{}, nil
-	}
-
-	var cached []response.ClientTransaction
-	if uErr := json.Unmarshal(item.Value, &cached); uErr != nil {
-		return nil, uErr
-	}
-	return filterAndSortEvmTxs(cached, req.Asset), nil
+	return filterAndSortEvmTxs(alchemyTxs, req.Asset), nil
 }
 
-func (n *NService) UpdateEthTransactionsByAlchemy(ctx context.Context, req request.GetEthTransactions) (err error) {
+func (n *NService) FetchEthTransactionsByAlchemy(ctx context.Context, req request.GetEthTransactions) ([]response.ClientTransaction, error) {
+	return n.FetchEvmTransactionsByAlchemy(ctx, req)
+}
+
+func (n *NService) FetchEvmTransactionsByAlchemy(ctx context.Context, req request.GetChainTransactions) ([]response.ClientTransaction, error) {
 	client.URL = constant.GetAlchemyRPCUrlByChainId(req.ChainId)
 	if client.URL == "" {
-		return errors.New("alchemy rpc url is empty")
+		return nil, errors.New("alchemy rpc url is empty")
 	}
 
 	var fromRpcAlchemyTxs response.RPCAlchemyTransactionDetails
@@ -181,63 +174,58 @@ func (n *NService) UpdateEthTransactionsByAlchemy(ctx context.Context, req reque
 		},
 	}
 
-	err = client.HTTPPost(ctx, fromPayload, &fromRpcAlchemyTxs)
-	if err != nil {
+	if err := client.HTTPPost(ctx, fromPayload, &fromRpcAlchemyTxs); err != nil {
 		global.NODE_LOG.Error(err.Error())
-		return
+		return nil, err
 	}
 
-	err = client.HTTPPost(ctx, toPayload, &toRpcAlchemyTxs)
-	if err != nil {
+	if err := client.HTTPPost(ctx, toPayload, &toRpcAlchemyTxs); err != nil {
 		global.NODE_LOG.Error(err.Error())
-		return
+		return nil, err
 	}
 
 	transfers = append(transfers, fromRpcAlchemyTxs.Result.Transfers...)
 	transfers = append(transfers, toRpcAlchemyTxs.Result.Transfers...)
 
-	if len(transfers) == 0 {
-		return
-	}
-
 	var saveTxs []response.ClientTransaction
-
 	for _, v := range transfers {
 		model, err := n.DecodeEthTransactionForAlchemy(req.ChainId, req.Address, v)
-		if err != nil {
-			global.NODE_LOG.Error(err.Error())
+		if err != nil || model.Hash == "" {
+			if err != nil {
+				global.NODE_LOG.Error(err.Error())
+			}
 			continue
 		}
 		saveTxs = append(saveTxs, model)
 	}
 
-	// get pending transaction
-	pendingTxs, err := n.GetEthPendingTransactions(ctx, req)
-	if err == nil {
-		saveTxs = append(saveTxs, pendingTxs...)
+	// Pending pool decode is ETH-RPC specific; skip on other EVM chains.
+	if req.ChainId == constant.ETH_MAINNET || req.ChainId == constant.ETH_SEPOLIA {
+		if pendingTxs, err := n.GetEthPendingTransactions(ctx, req); err == nil {
+			saveTxs = append(saveTxs, pendingTxs...)
+		}
 	}
 
-	byteTxs, err := json.Marshal(saveTxs)
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return
+	// from/to Alchemy queries + pending can repeat the same transfer.
+	saveTxs = filterAndSortEvmTxs(saveTxs, "")
+
+	if memcacheEnabled() && len(saveTxs) > 0 {
+		if byteTxs, err := json.Marshal(saveTxs); err == nil {
+			_ = global.NODE_MEMCACHE.Set(&memcache.Item{
+				Key:        fmt.Sprintf(constantTransactionHistory, req.ChainId, strings.ToLower(req.Address)),
+				Value:      byteTxs,
+				Expiration: 300,
+			})
+		}
 	}
 
-	if !memcacheEnabled() {
-		return nil
-	}
+	return saveTxs, nil
+}
 
-	err = global.NODE_MEMCACHE.Set(&memcache.Item{
-		Key:        fmt.Sprintf(constantTransactionHistory, req.ChainId, req.Address),
-		Value:      byteTxs,
-		Expiration: 86400,
-	})
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return
-	}
-
-	return nil
+// UpdateEthTransactionsByAlchemy kept for sweep/task call sites; prefer FetchEvmTransactionsByAlchemy.
+func (n *NService) UpdateEthTransactionsByAlchemy(ctx context.Context, req request.GetEthTransactions) error {
+	_, err := n.FetchEvmTransactionsByAlchemy(ctx, req)
+	return err
 }
 
 func (n *NService) DecodeEthTransactionForRpc(chainId uint, address string, tx *response.RPCTransaction) (model response.ClientTransaction, err error) {
@@ -296,13 +284,15 @@ func (n *NService) DecodeEthTransactionForAlchemy(chainId uint, address string, 
 	model.ChainId = chainId
 	model.Address = address
 	model.Hash = tx.Hash
-	if tx.Asset == constant.ETH {
-		model.Asset = tx.Asset
+
+	native := constant.GetNativeAssetByChainId(chainId)
+	if isAlchemyNativeTransfer(chainId, tx) {
+		model.Asset = native
+		model.Category = "external"
 
 		hexString := strings.TrimPrefix(tx.RawContract.Value, "0x")
 		bigIntValue, _ := new(big.Int).SetString(hexString, 16)
 		model.Amount = utils.CalculateBalance(bigIntValue, 18)
-
 	} else if tx.Category == "erc20" {
 		isSupportContract, contractName, contractAddress, decimals := sweepUtils.GetContractInfo(chainId, tx.RawContract.Address)
 		if !isSupportContract {
@@ -310,6 +300,7 @@ func (n *NService) DecodeEthTransactionForAlchemy(chainId uint, address string, 
 		}
 		model.Asset = contractName
 		model.ContractAddress = contractAddress
+		model.Category = "erc20"
 
 		hexString := strings.TrimPrefix(tx.RawContract.Value, "0x")
 		bigIntValue, _ := new(big.Int).SetString(hexString, 16)
@@ -333,9 +324,41 @@ func (n *NService) DecodeEthTransactionForAlchemy(chainId uint, address string, 
 	}
 
 	model.Status = "Success"
-	model.Category = tx.Category
+	if model.Category == "" {
+		model.Category = tx.Category
+	}
 	timestamp, _ := time.Parse(time.RFC3339, tx.Metadata.BlockTimestamp)
 	model.BlockTimestamp = int(timestamp.Unix()) * 1000
 
 	return
+}
+
+// Alchemy labels native gas differently per chain (ETH/BNB/MATIC/AVAX); normalize to wallet symbols.
+func isAlchemyNativeTransfer(chainId uint, tx response.RPCAlchemyTransactionTransfer) bool {
+	if strings.EqualFold(tx.Category, "external") {
+		return true
+	}
+	asset := strings.TrimSpace(tx.Asset)
+	if asset == "" {
+		return false
+	}
+	native := constant.GetNativeAssetByChainId(chainId)
+	if strings.EqualFold(asset, native) {
+		return true
+	}
+	switch chainId {
+	case constant.ETH_MAINNET, constant.ETH_SEPOLIA,
+		constant.OP_MAINNET, constant.OP_SEPOLIA,
+		constant.ARBITRUM_ONE, constant.ARBITRUM_NOVA, constant.ARBITRUM_SEPOLIA,
+		constant.BASE_MAINNET, constant.BASE_SEPOLIA:
+		return strings.EqualFold(asset, constant.ETH)
+	case constant.BSC_MAINNET, constant.BSC_TESTNET:
+		return strings.EqualFold(asset, constant.BNB)
+	case constant.POL_MAINNET, constant.POL_TESTNET:
+		return strings.EqualFold(asset, constant.POL) || strings.EqualFold(asset, constant.MATIC)
+	case constant.AVAX_MAINNET, constant.AVAX_TESTNET:
+		return strings.EqualFold(asset, constant.AVAX)
+	default:
+		return false
+	}
 }

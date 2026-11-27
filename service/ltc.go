@@ -133,7 +133,15 @@ func (n *NService) GetLtcAddressUtxo(c *gin.Context, req request.GetLtcAddressUt
 			var mem mempool.MempoolUtxo
 			mem.TxId = v.TxHash
 			mem.Vout = v.Index
-			mem.Value = utils.FormatToSatoshiValue(v.Value)
+			if v.ValueString != "" {
+				if sats, err := utils.FormatToSatoshiValueFromString(v.ValueString); err == nil {
+					mem.Value = sats
+				} else {
+					mem.Value = utils.FormatToSatoshiValue(v.Value)
+				}
+			} else {
+				mem.Value = utils.FormatToSatoshiValue(v.Value)
+			}
 			utxos = append(utxos, mem)
 		}
 		return utxos, err

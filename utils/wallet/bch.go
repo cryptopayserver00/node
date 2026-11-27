@@ -53,7 +53,8 @@ const (
 // 或 GetBlock / Alchemy 等服务（形如 https://xxx/api/v2）。
 var (
 	BchMainnetAPIBase = "https://bch1.trezor.io/api/v2"
-	BchTestnetAPIBase = ""
+	// Public coverage is flaky; prefer configuring a private Blockbook for production.
+	BchTestnetAPIBase = "https://bchtest1.trezor.io/api/v2"
 )
 
 // ---------------------------------------------------------------------------

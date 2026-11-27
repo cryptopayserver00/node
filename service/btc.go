@@ -173,29 +173,135 @@ func (n *NService) PostBtcBroadcast(c *gin.Context, req request.PostBtcBroadcast
 func (n *NService) GetBtcTransactions(c *gin.Context, req request.GetBtcTransactions) ([]response.ClientBtcTxResponse, error) {
 	ctx := c.Request.Context()
 
-	if err := n.UpdateBtcTransactionsForBlockStream(ctx, req.ChainId, req.Address); err != nil {
+	txs, err := n.fetchBtcTransactionsLive(ctx, req.ChainId, req.Address)
+	if err != nil {
 		global.NODE_LOG.Error(err.Error())
+		// Fall back to cache, then Tatum update path.
+		if cached, cacheErr := n.readBtcTxCache(req.ChainId, req.Address); cacheErr == nil && len(cached) > 0 {
+			return cached, nil
+		}
+		if uErr := n.UpdateBtcTransactionsForTatum(ctx, req.ChainId, req.Address); uErr != nil {
+			global.NODE_LOG.Error(uErr.Error())
+			return []response.ClientBtcTxResponse{}, nil
+		}
+		if cached, cacheErr := n.readBtcTxCache(req.ChainId, req.Address); cacheErr == nil {
+			return cached, nil
+		}
+		return []response.ClientBtcTxResponse{}, nil
+	}
 
-		if err := n.UpdateBtcTransactionsForTatum(ctx, req.ChainId, req.Address); err != nil {
-			global.NODE_LOG.Error(err.Error())
+	n.writeBtcTxCache(req.ChainId, req.Address, txs)
+	return txs, nil
+}
+
+func (n *NService) readBtcTxCache(chainId uint, address string) ([]response.ClientBtcTxResponse, error) {
+	if !memcacheEnabled() {
+		return nil, fmt.Errorf("memcache disabled")
+	}
+	item, err := global.NODE_MEMCACHE.Get(fmt.Sprintf(constantTransactionHistory, chainId, address))
+	if err != nil {
+		return nil, err
+	}
+	var txs []response.ClientBtcTxResponse
+	if err := json.Unmarshal(item.Value, &txs); err != nil {
+		return nil, err
+	}
+	return txs, nil
+}
+
+func (n *NService) writeBtcTxCache(chainId uint, address string, txs []response.ClientBtcTxResponse) {
+	if !memcacheEnabled() || len(txs) == 0 {
+		return
+	}
+	raw, err := json.Marshal(txs)
+	if err != nil {
+		return
+	}
+	_ = global.NODE_MEMCACHE.Set(&memcache.Item{
+		Key:        fmt.Sprintf(constantTransactionHistory, chainId, address),
+		Value:      raw,
+		Expiration: 300,
+	})
+}
+
+// fetchBtcTransactionsLive pulls confirmed + mempool txs from Esplora-compatible APIs.
+func (n *NService) fetchBtcTransactionsLive(ctx context.Context, chainId uint, address string) ([]response.ClientBtcTxResponse, error) {
+	var raw []blockstream.TransactionResponse
+
+	appendFrom := func(url string) error {
+		if url == "" {
+			return fmt.Errorf("empty url")
+		}
+		httpClient := client
+		httpClient.URL = url
+		var rows []blockstream.TransactionResponse
+		if err := httpClient.HTTPGet(ctx, &rows); err != nil {
+			return err
+		}
+		raw = append(raw, rows...)
+		return nil
+	}
+
+	blockstreamURL := fmt.Sprintf("%s/address/%s/txs", constant.GetBlcokStreamHttpUrlByNetwork(chainId), address)
+	mempoolTxURL := fmt.Sprintf(constant.MempoolGetAddressTxsByNetwork(chainId), address)
+	mempoolPendingURL := fmt.Sprintf(constant.MempoolGetAddressMempoolTxsByNetwork(chainId), address)
+
+	var lastErr error
+	if err := appendFrom(blockstreamURL); err != nil {
+		lastErr = err
+		global.NODE_LOG.Error(fmt.Sprintf("btc blockstream txs: %v", err))
+		if err := appendFrom(mempoolTxURL); err != nil {
+			lastErr = err
+			global.NODE_LOG.Error(fmt.Sprintf("btc mempool txs: %v", err))
+		}
+	}
+	if err := appendFrom(mempoolPendingURL); err != nil {
+		global.NODE_LOG.Error(fmt.Sprintf("btc mempool pending txs: %v", err))
+		if lastErr == nil {
+			lastErr = err
 		}
 	}
 
-	var txs []response.ClientBtcTxResponse
-
-	item, err := global.NODE_MEMCACHE.Get(fmt.Sprintf(constantTransactionHistory, req.ChainId, req.Address))
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return nil, nil
+	if len(raw) == 0 {
+		if lastErr != nil {
+			return nil, lastErr
+		}
+		return []response.ClientBtcTxResponse{}, nil
 	}
 
-	err = json.Unmarshal(item.Value, &txs)
-	if err != nil {
-		global.NODE_LOG.Error(err.Error())
-		return nil, err
+	seen := make(map[string]response.ClientBtcTxResponse, len(raw))
+	order := make([]string, 0, len(raw))
+	for _, v := range raw {
+		tx, decodeErr := n.DecodeBtcTransactionForBlockStream(chainId, address, v)
+		if decodeErr != nil || tx.Hash == "" {
+			continue
+		}
+		key := tx.Hash
+		if existing, ok := seen[key]; ok {
+			// Prefer Success over Pending.
+			if existing.Status != "Success" && tx.Status == "Success" {
+				seen[key] = tx
+			}
+			continue
+		}
+		seen[key] = tx
+		order = append(order, key)
 	}
 
-	return txs, nil
+	out := make([]response.ClientBtcTxResponse, 0, len(order))
+	for _, key := range order {
+		out = append(out, seen[key])
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].BlockTimestamp == 0 && out[j].BlockTimestamp != 0 {
+			return true
+		}
+		if out[i].BlockTimestamp != 0 && out[j].BlockTimestamp == 0 {
+			return false
+		}
+		return out[i].BlockTimestamp > out[j].BlockTimestamp
+	})
+	return out, nil
 }
 
 func (n *NService) UpdateBtcTransactionsForBlockStream(ctx context.Context, chainId uint, address string) (err error) {

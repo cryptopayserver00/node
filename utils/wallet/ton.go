@@ -46,8 +46,21 @@ var (
 	// 测试网 liteserver 配置。生产环境建议换成自己托管的配置文件。
 	TonTestnetConfigURL = "https://ton-blockchain.github.io/testnet-global.config.json"
 
-	// 钱包版本。默认 V4R2。
+	// 钱包版本。默认 V4R2；tonOpen 在配置了地址时会自动尝试常见版本以匹配。
 	TonWalletVersion wallet.VersionConfig = wallet.V4R2
+
+	// tonWalletVersionCandidates are tried (after TonWalletVersion) when pub is a wallet address.
+	tonWalletVersionCandidates = []struct {
+		name string
+		cfg  wallet.VersionConfig
+	}{
+		{"V4R2", wallet.V4R2},
+		{"V5R1Final-testnet", wallet.ConfigV5R1Final{NetworkGlobalID: wallet.TestnetGlobalID}},
+		{"V5R1Final-mainnet", wallet.ConfigV5R1Final{NetworkGlobalID: wallet.MainnetGlobalID}},
+		{"V4R1", wallet.V4R1},
+		{"V3R2", wallet.V3R2},
+		{"V3R1", wallet.V3R1},
+	}
 
 	// jetton 转账附带的 TON（gas）。标准做法是 0.05，多余部分会退回。
 	TonJettonGas = "0.05"
@@ -165,14 +178,75 @@ func tonOpen(ctx context.Context, chainId uint, mnemonic, pub string) (*tonSessi
 	if conn.Sticky != nil {
 		ctx = conn.Sticky(ctx)
 	}
-	w, err := wallet.FromSeed(conn.API, words, TonWalletVersion)
+
+	w, verName, err := tonDeriveMatchingWallet(conn.API, words, pub, n)
 	if err != nil {
-		return nil, fmt.Errorf("derive wallet from mnemonic: %w", err)
-	}
-	if err := tonCheckPub(pub, w, n); err != nil {
 		return nil, err
 	}
+	if verName != "" {
+		// Keep for logs when auto-detected (e.g. freecoin V5R1 vs default V4R2).
+		_ = verName
+	}
 	return &tonSession{ctx: ctx, api: conn.API, w: w, net: n}, nil
+}
+
+// tonDeriveMatchingWallet derives a wallet from mnemonic. If pub is a wallet address,
+// it tries common TonWalletVersion variants until the address matches (Tonkeeper W5 etc.).
+func tonDeriveMatchingWallet(api tonAPI, words []string, pub string, n *tonNet) (*wallet.Wallet, string, error) {
+	pub = strings.TrimSpace(pub)
+	tryOrder := make([]struct {
+		name string
+		cfg  wallet.VersionConfig
+	}, 0, len(tonWalletVersionCandidates)+1)
+	tryOrder = append(tryOrder, struct {
+		name string
+		cfg  wallet.VersionConfig
+	}{"default", TonWalletVersion})
+	for _, c := range tonWalletVersionCandidates {
+		tryOrder = append(tryOrder, c)
+	}
+
+	var wantAddr *address.Address
+	if pub != "" {
+		if a, _, err := tonParseAddr(pub, n); err == nil {
+			wantAddr = a
+		}
+	}
+
+	var lastErr error
+	var firstWallet *wallet.Wallet
+	for _, c := range tryOrder {
+		w, err := wallet.FromSeed(api, words, c.cfg)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if firstWallet == nil {
+			firstWallet = w
+		}
+		if pub == "" {
+			return w, c.name, nil
+		}
+		if matchPubKeyHex(pub, w.PrivateKey().Public().(ed25519.PublicKey)) {
+			return w, c.name, nil
+		}
+		if wantAddr != nil &&
+			wantAddr.Workchain() == w.WalletAddress().Workchain() &&
+			bytes.Equal(wantAddr.Data(), w.WalletAddress().Data()) {
+			return w, c.name, nil
+		}
+	}
+
+	if wantAddr != nil && firstWallet != nil {
+		return nil, "", fmt.Errorf(
+			"address %s does not match the wallet derived from the mnemonic (%s); check TonWalletVersion",
+			pub, firstWallet.WalletAddress().String(),
+		)
+	}
+	if lastErr != nil {
+		return nil, "", fmt.Errorf("derive wallet from mnemonic: %w", lastErr)
+	}
+	return nil, "", errors.New("public key does not match the mnemonic")
 }
 
 // tonCheckPub：pub 为空不校验；可以是公钥 hex，也可以是钱包地址（友好或原始格式）。

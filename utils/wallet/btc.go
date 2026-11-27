@@ -329,19 +329,20 @@ func buildTransfer(ctx context.Context, net *btcNet, pri, pub, toAddress, sendVa
 
 	pubKey := wif.PrivKey.PubKey()
 	pubKeyBytes := pubKey.SerializeCompressed()
-	if pub != "" {
-		p := strings.ToLower(strings.TrimPrefix(pub, "0x"))
-		if p != hex.EncodeToString(pubKeyBytes) && p != hex.EncodeToString(pubKey.SerializeUncompressed()) {
-			return nil, errors.New("public key does not match private key")
-		}
-	}
-
 	pubKeyHash := btcutil.Hash160(pubKeyBytes)
 	fromAddr, err := btcutil.NewAddressWitnessPubKeyHash(pubKeyHash, net.Params)
 	if err != nil {
 		return nil, fmt.Errorf("derive p2wpkh address (pubkey hash len=%d, pubkey len=%d): %w",
 			len(pubKeyHash), len(pubKeyBytes), err)
 	}
+
+	// pub may be hex pubkey OR a bech32/base58 address (freecoin config uses address).
+	if pub != "" {
+		if err := matchBtcPubOrAddress(pub, pubKeyBytes, pubKey.SerializeUncompressed(), fromAddr.EncodeAddress()); err != nil {
+			return nil, err
+		}
+	}
+
 	fromPkScript, err := txscript.PayToAddrScript(fromAddr)
 	if err != nil {
 		return nil, fmt.Errorf("build sender pkScript: %w", err)
@@ -468,6 +469,41 @@ func SendBtcTransfer(ctx context.Context, chainId uint, pri, pub, toAddress stri
 	}
 
 	return txid, nil
+}
+
+// matchBtcPubOrAddress accepts either a hex pubkey or a bech32/base58 address.
+// Freecoin config historically stores the funding address in the public_key field.
+func matchBtcPubOrAddress(pub string, compressedPub, uncompressedPub []byte, derivedAddr string) error {
+	p := strings.TrimSpace(pub)
+	if p == "" {
+		return nil
+	}
+	hexCandidate := strings.ToLower(strings.TrimPrefix(p, "0x"))
+	if isLikelyPubKeyHex(hexCandidate) {
+		if hexCandidate == hex.EncodeToString(compressedPub) ||
+			hexCandidate == hex.EncodeToString(uncompressedPub) {
+			return nil
+		}
+		return errors.New("public key does not match private key")
+	}
+	if strings.EqualFold(p, derivedAddr) {
+		return nil
+	}
+	return fmt.Errorf("address does not match private key: derived %s", derivedAddr)
+}
+
+func isLikelyPubKeyHex(s string) bool {
+	if len(s) != 66 && len(s) != 130 {
+		return false
+	}
+	for _, c := range s {
+		switch {
+		case c >= '0' && c <= '9', c >= 'a' && c <= 'f':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 // validateRawTxHex 在广播前做本地检查：必须是纯 hex、能完整反序列化、
